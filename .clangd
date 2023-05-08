@@ -1,0 +1,7 @@
+Diagnostics:
+  ClangTidy:
+    Add: [performance-*, bugprone-*, portability-*, modernize-*]
+    Remove: modernize-use-trailing-return-type
+    CheckOptions:
+      WarnOnFloatingPointNarrowingConversion: false
+  Suppress: [builtin_definition, ovl_diff_return_type, static_non_static]

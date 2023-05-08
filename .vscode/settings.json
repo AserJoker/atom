@@ -1,0 +1,60 @@
+{
+  "editor.semanticHighlighting.enabled": true,
+  "editor.semanticTokenColorCustomizations": {
+    "enabled": true,
+    "rules": {
+      // 函数参数
+      "parameter": "#23b4c5",
+      // 类或者结构体
+      "class": {
+        "fontStyle": "bold",
+        "foreground": "#729de3"
+      },
+      // 普通函数
+      "function": {
+        "foreground": "#bbe524"
+      },
+      // 临时变量
+      "variable": "#26cdca",
+      // enum的名字（enum的成员似乎并没有可以配置的）
+      "enum": "#397797",
+      // enum子项，需要clangd12以上
+      "enumMember": "#397797",
+      // 宏
+      "macro": {
+        "foreground": "#8f5daf",
+        "fontStyle": "bold"
+      },
+      // 成员函数
+      "method": {
+        "foreground": "#e5b124",
+        "fontStyle": "underline"
+      },
+      // clangd12之后会将宏关闭的部分标为comment
+      "comment": "#505050",
+      // 命名空间
+      "namespace": {
+        "foreground": "#00d780",
+        "fontStyle": "bold"
+      },
+      // 只读量加粗
+      "*.readonly": {
+        "fontStyle": "bold"
+      },
+      // 只读量等效为宏
+      "variable.readonly": {
+        "foreground": "#8f5daf",
+        "fontStyle": "bold"
+      },
+      // 静态量（静态变量，静态函数）
+      "*.static": {
+        "fontStyle": "italic"
+      },
+      // 成员变量，似乎需要clangd12以上
+      "property": {
+        "foreground": "#7ca6b7",
+        "fontStyle": "underline"
+      }
+    }
+  }
+}
