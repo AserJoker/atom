@@ -1,6 +1,6 @@
 #pragma once
 #include "buffer.h"
-#include "dlist.h"
+#include "list.h"
 struct s_Tree_Option {
   int auto_free_data;
   Buffer_Free dispose;
@@ -22,11 +22,11 @@ Tree_Node Tree_root(Tree tree);
 Buffer Tree_get(Tree_Node node);
 Buffer Tree_set(Tree_Node node, Buffer data);
 
-DList Tree_getChildren(Tree_Node node);
+List Tree_getChildren(Tree_Node node);
 
 Tree_Node Tree_getRoot(Tree_Node node);
-Tree_Node Tree_insert(Tree tree, Tree_Node pos,Buffer data);
-Tree_Node Tree_insertChildren(Tree tree, Tree_Node root,Buffer data);
+Tree_Node Tree_insert(Tree tree, Tree_Node pos, Buffer data);
+Tree_Node Tree_insertChildren(Tree tree, Tree_Node root, Buffer data);
 int Tree_remove(Tree tree, Tree_Node node);
 Tree_Node Tree_find(Tree tree, Finder_t finder);
 

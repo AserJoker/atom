@@ -1,7 +1,6 @@
 #pragma once
 #include <stdint.h>
 #include <stdio.h>
-
 typedef void *Buffer;
 typedef Buffer (*Buffer_Alloc)(size_t size);
 typedef void (*Buffer_Free)(Buffer buffer);

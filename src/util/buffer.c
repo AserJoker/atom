@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 static Buffer_Alloc g_alloc = malloc;
 static Buffer_Free g_free = free;
 
@@ -15,4 +16,5 @@ Buffer Buffer_from(size_t size, Buffer source) {
   memcpy(buf, source, size);
   return buf;
 }
+
 void Buffer_free(Buffer buf) { g_free(buf); }

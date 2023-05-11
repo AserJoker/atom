@@ -1,5 +1,5 @@
 #include "map.h"
-#include "dlist.h"
+#include "list.h"
 #include <string.h>
 struct s_Map_Node {
   cstring _key;
@@ -7,7 +7,7 @@ struct s_Map_Node {
   Map _map;
 };
 struct s_Map {
-  DList _list;
+  List _list;
   Map_Option _option;
 };
 static Map_Node Map_Node_create() {
@@ -28,14 +28,14 @@ static void Map_Node_dispose(Map_Node node) {
 Map Map_create(Map_Option opt) {
   Map map = (Map)Buffer_alloc(sizeof(struct s_Map));
   map->_option = opt;
-  DList_Option list_opt = {1, (Buffer_Free)Map_Node_dispose};
-  map->_list = DList_create(list_opt);
+  List_Option list_opt = {1, (Buffer_Free)Map_Node_dispose};
+  map->_list = List_create(list_opt);
   return map;
 }
 Buffer Map_set(Map map, const cstring key, Buffer data) {
-  for (DList_Node it = DList_head(map->_list); it != DList_tail(map->_list);
-       it = DList_next(it)) {
-    Map_Node node = (Map_Node)(DList_get(it));
+  for (List_Node it = List_head(map->_list); it != List_tail(map->_list);
+       it = List_next(it)) {
+    Map_Node node = (Map_Node)(List_get(it));
     if (node->_key == key) {
       Buffer old = node->_data;
       node->_data = data;
@@ -48,13 +48,13 @@ Buffer Map_set(Map map, const cstring key, Buffer data) {
   node->_key = (cstring)Buffer_alloc(strlen(key) + 1);
   memcpy(node->_key, key, strlen(key) + 1);
   node->_map = map;
-  DList_insert_tail(map->_list, node);
+  List_insert_tail(map->_list, node);
   return NULL;
 }
 Buffer Map_get(Map map, const cstring key) {
-  for (DList_Node it = DList_head(map->_list); it != DList_tail(map->_list);
-       it = DList_next(it)) {
-    Map_Node node = (Map_Node)(DList_get(it));
+  for (List_Node it = List_head(map->_list); it != List_tail(map->_list);
+       it = List_next(it)) {
+    Map_Node node = (Map_Node)(List_get(it));
     if (node->_key == key) {
       return node->_data;
     }
@@ -67,30 +67,26 @@ Buffer Map_setValue(Map_Node node, Buffer data) {
   return old;
 }
 Buffer Map_getValue(Map_Node node) { return node->_data; }
-size_t Map_size(Map map) { return DList_size(map->_list); }
-int Map_empty(Map map) { return DList_empty(map->_list); }
+size_t Map_size(Map map) { return List_size(map->_list); }
+int Map_empty(Map map) { return List_empty(map->_list); }
 
-Map_Node Map_head(Map map) {
-  return (Map_Node)DList_get(DList_head(map->_list));
-}
-Map_Node Map_tail(Map map) {
-  return (Map_Node)DList_get(DList_tail(map->_list));
-}
+Map_Node Map_head(Map map) { return (Map_Node)List_get(List_head(map->_list)); }
+Map_Node Map_tail(Map map) { return (Map_Node)List_get(List_tail(map->_list)); }
 const cstring Map_getNodeKey(Map_Node node) { return node->_key; }
 Map_Node Map_next(Map_Node node) {
-  for (DList_Node it = DList_head(node->_map->_list);
-       it != DList_tail(node->_map->_list); it = DList_next(it)) {
-    if (DList_get(it) == node) {
-      return DList_get(DList_next(it));
+  for (List_Node it = List_head(node->_map->_list);
+       it != List_tail(node->_map->_list); it = List_next(it)) {
+    if (List_get(it) == node) {
+      return List_get(List_next(it));
     }
   }
   return NULL;
 }
 Map_Node Map_last(Map_Node node) {
-  for (DList_Node it = DList_head(node->_map->_list);
-       it != DList_tail(node->_map->_list); it = DList_next(it)) {
-    if (DList_get(it) == node) {
-      return DList_get(DList_last(it));
+  for (List_Node it = List_head(node->_map->_list);
+       it != List_tail(node->_map->_list); it = List_next(it)) {
+    if (List_get(it) == node) {
+      return List_get(List_last(it));
     }
   }
   return NULL;

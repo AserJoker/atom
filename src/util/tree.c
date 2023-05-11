@@ -2,7 +2,7 @@
 struct s_Tree_Node {
   Tree_Node _root;
   Buffer _data;
-  DList _children;
+  List _children;
   Tree _tree;
 };
 struct s_Tree {
@@ -16,17 +16,17 @@ static void Tree_Node_dispose(Tree_Node node) {
     node->_tree->_option.dispose(node->_data);
   }
   if (node->_children) {
-    DList_dispose(node->_children);
+    List_dispose(node->_children);
   }
   Buffer_free(node);
 }
 
 static Tree_Node Tree_Node_create() {
-  DList_Option opt;
+  List_Option opt;
   opt.auto_free_data = 1;
   opt.dispose = (Buffer_Free)Tree_Node_dispose;
   Tree_Node node = (Tree_Node)Buffer_alloc(sizeof(struct s_Tree_Node));
-  node->_children = DList_create(opt);
+  node->_children = List_create(opt);
   node->_data = NULL;
   node->_root = NULL;
   return node;
@@ -54,7 +54,7 @@ Buffer Tree_set(Tree_Node node, Buffer data) {
   node->_data = data;
   return old;
 }
-DList Tree_getChildren(Tree_Node node) { return node->_children; }
+List Tree_getChildren(Tree_Node node) { return node->_children; }
 
 Tree_Node Tree_getRoot(Tree_Node node) { return node->_root; }
 
@@ -65,10 +65,10 @@ Tree_Node Tree_insert(Tree tree, Tree_Node pos, Buffer data) {
     node->_root = pos->_root;
     node->_tree = tree;
     Tree_Node root = pos->_root;
-    for (DList_Node it = DList_head(root->_children);
-         it != DList_tail(root->_children); it = DList_next(it)) {
-      if (DList_get(it) == pos) {
-        DList_insert(root->_children, it, node);
+    for (List_Node it = List_head(root->_children);
+         it != List_tail(root->_children); it = List_next(it)) {
+      if (List_get(it) == pos) {
+        List_insert(root->_children, it, node);
         return node;
       }
     }
@@ -79,12 +79,12 @@ Tree_Node Tree_insert(Tree tree, Tree_Node pos, Buffer data) {
 int Tree_remove(Tree tree, Tree_Node node) {
   if (node->_root) {
     Tree_Node root = node->_root;
-    DList children = root->_children;
-    for (DList_Node it = DList_head(children); it != DList_tail(children);
-         it = DList_next(it)) {
-      Tree_Node c = (Tree_Node)DList_get(it);
+    List children = root->_children;
+    for (List_Node it = List_head(children); it != List_tail(children);
+         it = List_next(it)) {
+      Tree_Node c = (Tree_Node)List_get(it);
       if (c == node) {
-        DList_remove(children, it);
+        List_remove(children, it);
         return 1;
       }
     }
@@ -92,18 +92,18 @@ int Tree_remove(Tree tree, Tree_Node node) {
   return 0;
 }
 Tree_Node Tree_find(Tree tree, Finder_t finder) {
-  DList_Option opt = {0, NULL};
-  DList list = DList_create(opt);
-  DList_insert_tail(list, tree->_root);
-  while (!DList_empty(list)) {
-    DList_Node it = DList_head(list);
-    Tree_Node node = (Tree_Node)DList_get(it);
+  List_Option opt = {0, NULL};
+  List list = List_create(opt);
+  List_insert_tail(list, tree->_root);
+  while (!List_empty(list)) {
+    List_Node it = List_head(list);
+    Tree_Node node = (Tree_Node)List_get(it);
     if (finder(node->_data)) {
       return node;
     }
-    for (DList_Node cit = DList_head(node->_children);
-         cit != DList_tail(node->_children); cit = DList_next(cit)) {
-      DList_insert_tail(list, cit);
+    for (List_Node cit = List_head(node->_children);
+         cit != List_tail(node->_children); cit = List_next(cit)) {
+      List_insert_tail(list, cit);
     }
   }
   return NULL;
@@ -113,7 +113,7 @@ Tree_Node Tree_insertChildren(Tree tree, Tree_Node root, Buffer data) {
   node->_data = data;
   node->_root = root;
   node->_tree = tree;
-  DList_insert_tail(root->_children, node);
+  List_insert_tail(root->_children, node);
   return node;
 }
 size_t Tree_size(Tree tree) { return tree->_size; }
