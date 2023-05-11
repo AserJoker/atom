@@ -104,12 +104,12 @@ void Program_dispose(Program program) {
   if (program->_interpreter) {
     Interpreter_dispose(program->_interpreter);
   }
+  Buffer_free(program);
 }
 
 Statement readStatement(SourceFile file, cstring source) {
   Token token = readTokenSkipComment(file, source);
   if (token->_type == TT_Keyword) {
-    
   }
   return NULL;
 }

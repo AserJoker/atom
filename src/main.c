@@ -12,7 +12,7 @@
 
 int main(int argc, char **argv) {
 #ifdef _DEBUG
-  // Debug_init();
+  Debug_init();
 #endif
   SourceFile sf = SourceFile_read("./demo.js");
   parse(sf);
