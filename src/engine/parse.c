@@ -1,4 +1,6 @@
 #include "ast.h"
+#include "source.h"
+#include "strings.h"
 #include <string.h>
 
 typedef struct s_Context {
@@ -29,7 +31,6 @@ Token readTokenSkipNewline(SourceFile file, cstring source) {
   return token;
 }
 
-void AstNode_dispose(AstNode node);
 void AstNode_dispose(AstNode node) { Buffer_free(node); }
 
 AstNode AstNode_create() {
@@ -50,6 +51,7 @@ void Identifier_dispose(Identifier identifier) {
   if (identifier->_raw) {
     Token_dispose(identifier->_raw);
   }
+  Buffer_free(identifier);
 }
 
 Literal Literal_create() {
@@ -118,6 +120,7 @@ ImportStatement ImportStatement_create() {
   import_s->_node->_type = NT_ImportStatement;
   import_s->_assertions = List_create(assertions_opt);
   import_s->_specifiers = List_create(specifier_opt);
+  import_s->_source = NULL;
   return import_s;
 }
 
@@ -131,14 +134,10 @@ void ImportStatement_dispose(ImportStatement import_s) {
   Buffer_free(import_s);
 }
 
-Statement Statement_create() {
-  Statement statement = (Statement)Buffer_alloc(sizeof(struct s_Statement));
-  statement->_node = AstNode_create();
-  return statement;
-}
 void Statement_dispose(Statement statement) {
-  AstNode_dispose(statement->_node);
-  Buffer_free(statement);
+  if (statement->_node->_type == NT_ImportStatement) {
+    ImportStatement_dispose((ImportStatement)statement);
+  }
 }
 
 Directive Directive_create() {
@@ -187,7 +186,7 @@ void Program_dispose(Program program) {
 }
 
 Literal readLiteral(SourceFile file, cstring source) {
-  Token rawToken = readToken(file, source);
+  Token rawToken = readTokenSkipNewline(file, source);
   Literal literal = Literal_create();
   switch (rawToken->_type) {
   case TT_Regex:
@@ -231,13 +230,31 @@ Literal readLiteral(SourceFile file, cstring source) {
   return literal;
 }
 
+Identifier readIdentifier(SourceFile file, cstring source) {
+  Token token = readTokenSkipNewline(file, source);
+  if (token->_type == TT_Identifier) {
+    Identifier identifier = Identifier_create();
+    identifier->_raw = token;
+    identifier->_node->_position.begin = source;
+    identifier->_node->_position.end = token->_raw.end;
+    return identifier;
+  }
+  Token_dispose(token);
+  return NULL;
+}
+
 ImportSpecifier readImportSpecifier(SourceFile file, cstring source) {
-  Token token = readTokenSkipComment(file, source);
+  Token token = readTokenSkipNewline(file, source);
   if (token->_type == TT_Identifier) {
     Token_dispose(token);
     ImportSpecifier import_spec = ImportSpecifier_create();
     import_spec->_local = readIdentifier(file, source);
+    import_spec->_node->_type = NT_ImportDefaultSpecifier;
+    import_spec->_node->_position.begin = source;
+    import_spec->_node->_position.end = import_spec->_local->_raw->_raw.end;
+    return import_spec;
   }
+  Token_dispose(token);
   return NULL;
 }
 
@@ -250,6 +267,13 @@ ImportStatement readImportStatement(SourceFile file, cstring source) {
   while (specifier) {
     List_insert_tail(import_s->_specifiers, specifier);
     selector = specifier->_node->_position.end;
+    Token common = readTokenSkipNewline(file, selector);
+    if (common->_type != TT_Symbol || !strings_is(common->_raw, ",")) {
+      Token_dispose(common);
+      break;
+    }
+    selector = common->_raw.end;
+    Token_dispose(common);
     specifier = readImportSpecifier(file, selector);
   }
   if (ctx.error.error != NULL) {
@@ -287,6 +311,9 @@ ImportStatement readImportStatement(SourceFile file, cstring source) {
     Token_dispose(keyword);
     return import_s;
   }
+  Token_dispose(keyword);
+  import_s->_node->_position.begin = source;
+  import_s->_node->_position.end = selector;
   return import_s;
 }
 
@@ -294,6 +321,7 @@ Statement readStatement(SourceFile file, cstring source) {
   Token token = readTokenSkipComment(file, source);
   if (token->_type == TT_Keyword) {
     if (strings_is(token->_raw, "import")) {
+      Token_dispose(token);
       return (Statement)readImportStatement(file, source);
     }
   }
@@ -363,140 +391,15 @@ Program readProgram(SourceFile file, cstring source) {
     statement = readStatement(file, selector);
   }
   if (ctx.error.error != NULL) {
-    Statement_dispose(statement);
+    if (statement) {
+      Statement_dispose(statement);
+    }
     Program_dispose(program);
     return NULL;
   }
   program->_node->_position.begin = source;
   program->_node->_position.end = source + strlen(source);
   return program;
-}
-
-const cstring Token_getTypeString(Token token) {
-  switch (token->_type) {
-  case TT_BigInt:
-    return "TT_BigInt";
-  case TT_Interpreter:
-    return "TT_Interpreter";
-  case TT_Newline:
-    return "TT_Newline";
-  case TT_Number:
-    return "TT_Number";
-  case TT_String:
-    return "TT_String";
-  case TT_Keyword:
-    return "TT_Keyword";
-  case TT_Symbol:
-    return "TT_Symbol";
-  case TT_Identifier:
-    return "TT_Identifier";
-  case TT_Regex:
-    return "TT_Regex";
-  case TT_Comment:
-    return "TT_Comment";
-  case TT_Eof:
-    return "TT_Eof";
-  case TT_Init:
-    return "TT_Init";
-  case TT_Template:
-    return "TT_Template";
-  case TT_TemplateStart:
-    return "TT_TemplateStart";
-  case TT_TemplatePart:
-    return "TT_TemplatePart";
-  case TT_TemplateEnd:
-    return "TT_TemplateEnd";
-  }
-}
-
-cstring Token_toString(Token token) {
-  size_t len = token->_raw.end - token->_raw.begin;
-  cstring buf = (cstring)Buffer_alloc(len + 1);
-  if (token->_raw.begin[0] == '\n') {
-    cstring buf = (cstring)Buffer_alloc(3);
-    memcpy(buf, "\\n", 3);
-    return buf;
-  } else {
-    cstring buf = (cstring)Buffer_alloc(len + 1);
-    memcpy(buf, token->_raw.begin, len);
-    buf[len] = '\0';
-    return buf;
-  }
-}
-
-cstring printInterpreter(Interpreter interpreter) {
-  size_t len =
-      interpreter->_interpreter.end - interpreter->_interpreter.begin + 2;
-  cstring result = (cstring)Buffer_alloc(len);
-  result[len] = 0;
-  *result = '\"';
-  cstring selector = result + 1;
-  cstring sselector = interpreter->_interpreter.begin;
-  while (sselector != interpreter->_interpreter.end) {
-    *selector++ = *sselector++;
-  }
-  *selector = '\"';
-  return result;
-}
-
-cstring printDirective(Directive directive) {
-  size_t len = directive->_directive.end - directive->_directive.begin;
-  cstring result = (cstring)Buffer_alloc(len);
-  result[len] = 0;
-  cstring selector = result;
-  cstring sselector = directive->_directive.begin;
-  while (sselector != directive->_directive.end) {
-    *selector++ = *sselector++;
-  }
-  return result;
-}
-
-cstring printProgram(Program program) {
-  List_Option opt = {1, Buffer_free};
-  List parts = List_create(opt);
-  size_t len = 0;
-  List_insert_tail(parts, Buffer_fromString("{"));
-  len++;
-  List_insert_tail(parts, Buffer_fromString("\"type\":\"NT_Program\""));
-  len += strlen("\"type\":\"NT_Program\"");
-  if (program->_interpreter) {
-    List_insert_tail(parts, Buffer_fromString(",\"interpreter\":"));
-    len += strlen(",\"interpreter\":");
-    cstring s_interpreter = printInterpreter(program->_interpreter);
-    List_insert_tail(parts, s_interpreter);
-    len += strlen(s_interpreter);
-  }
-  if (List_size(program->_directives) != 0) {
-    List_insert_tail(parts, Buffer_fromString(",\"directives\":["));
-    len += strlen(",\"directives\":[");
-    for (List_Node node = List_head(program->_directives);
-         node != List_tail(program->_directives); node = List_next(node)) {
-      Directive directive = (Directive)List_get(node);
-      cstring s_directive = printDirective(directive);
-      if (node != List_head(program->_directives)) {
-        List_insert_tail(parts, Buffer_fromString(","));
-        len += 1;
-      }
-      List_insert_tail(parts, s_directive);
-      len += strlen(s_directive);
-    }
-    List_insert_tail(parts, Buffer_fromString("]"));
-    len++;
-  }
-  List_insert_tail(parts, Buffer_fromString("}"));
-  len++;
-  cstring result = (cstring)Buffer_alloc(len + 1);
-  result[len] = 0;
-  cstring selector = result;
-  for (List_Node node = List_head(parts); node != List_tail(parts);
-       node = List_next(node)) {
-    cstring data = (cstring)List_get(node);
-    while (*data) {
-      *selector++ = *data++;
-    }
-  }
-  List_dispose(parts);
-  return result;
 }
 
 AstNode parse(SourceFile file) {
@@ -507,16 +410,18 @@ AstNode parse(SourceFile file) {
   // cstring result = printProgram(program);
   // printf("%s", result);
   // Buffer_free(result);
-  Program_dispose(program);
+  if (program) {
+    Program_dispose(program);
+  }
   Error error = getTokenizerError();
   if (error.error) {
-    fprintf(stderr, "%s at\n  %s:%lld:%lld", error.error,
+    fprintf(stderr, "%s at\n  %s:%u:%u", error.error,
             error.location._filename, error.location._position._line + 1,
             error.location._position._column + 1);
   }
   uninitTokenizerContext();
   if (ctx.error.error) {
-    fprintf(stderr, "%s at\n  %s:%lld:%lld", ctx.error.error,
+    fprintf(stderr, "%s at\n  %s:%u:%u", ctx.error.error,
             ctx.error.location._filename,
             ctx.error.location._position._line + 1,
             ctx.error.location._position._column + 1);

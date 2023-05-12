@@ -31,7 +31,8 @@ static const char *keywords[] = {
     "return",       "short",     "static",   "super",      "switch",
     "synchronized", "this",      "throw",    "throws",     "transient",
     "true",         "try",       "typeof",   "var",        "void",
-    "volatile",     "while",     "with",     "yield",      NULL};
+    "volatile",     "while",     "with",     "yield",      "from",
+    "as",           "assert",    NULL};
 
 static const cstring symbols[] = {
     "===", "!==", "==", "?.(", ">=", "<=", "!=", "&&", "||", "++", "--", "+=",
@@ -398,7 +399,7 @@ Token readToken(SourceFile file, cstring source) {
     return readString(file, source);
   } else if (*source == '`') {
     return readTemplate(file, source);
-  } else if (*source == '\n') {
+  } else if (*source == '\n' || *source == '\r') {
     return readNewline(file, source);
   } else {
     return readSymbol(file, source);

@@ -3,7 +3,7 @@
 cstring JSON_fromList(List list, ToString toString) {
   List_Option opt = {1, Buffer_free};
   List parts = List_create(opt);
-  size_t len = 0;
+  uint32_t len = 0;
   List_insert_tail(parts, Buffer_from(2, "["));
   len += 1;
   for (List_Node it = List_head(list); it != List_tail(list);
@@ -32,7 +32,7 @@ cstring JSON_fromList(List list, ToString toString) {
   return result;
 }
 
-static void JSON_fromTreeNode(Tree_Node node, ToString toString, size_t *len,
+static void JSON_fromTreeNode(Tree_Node node, ToString toString, uint32_t *len,
                               List parts) {
   List_insert_tail(parts, Buffer_from(2, "{"));
   *len += 1;
@@ -68,7 +68,7 @@ static void JSON_fromTreeNode(Tree_Node node, ToString toString, size_t *len,
 cstring JSON_fromTree(Tree tree, ToString toString) {
   List_Option opt = {1, Buffer_free};
   List parts = List_create(opt);
-  size_t len = 0;
+  uint32_t len = 0;
   JSON_fromTreeNode(Tree_root(tree), toString, &len, parts);
   cstring result = (cstring)Buffer_alloc(len + 1);
   result[len] = '\0';

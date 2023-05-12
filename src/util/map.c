@@ -67,7 +67,7 @@ Buffer Map_setValue(Map_Node node, Buffer data) {
   return old;
 }
 Buffer Map_getValue(Map_Node node) { return node->_data; }
-size_t Map_size(Map map) { return List_size(map->_list); }
+uint32_t Map_size(Map map) { return List_size(map->_list); }
 int Map_empty(Map map) { return List_empty(map->_list); }
 
 Map_Node Map_head(Map map) { return (Map_Node)List_get(List_head(map->_list)); }

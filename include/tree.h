@@ -30,5 +30,5 @@ Tree_Node Tree_insertChildren(Tree tree, Tree_Node root, Buffer data);
 int Tree_remove(Tree tree, Tree_Node node);
 Tree_Node Tree_find(Tree tree, Finder_t finder);
 
-size_t Tree_size(Tree tree);
+uint32_t Tree_size(Tree tree);
 int Tree_empty(Tree tree);

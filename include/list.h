@@ -23,7 +23,7 @@ void List_insert(List list, List_Node pos, Buffer data);
 void List_insert_tail(List list, Buffer data);
 void List_insert_head(List list, Buffer data);
 int List_remove(List list, List_Node node);
-size_t List_size(List list);
+uint32_t List_size(List list);
 List_Node List_find(List list, Finder_t finder);
 int List_empty(List list);
 

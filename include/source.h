@@ -4,8 +4,8 @@
 
 typedef struct s_SourceLine {
   strings _raw;
-  size_t _begin;
-  size_t _end;
+  uint32_t _begin;
+  uint32_t _end;
 } *SourceLine;
 
 typedef struct s_SourceFile {
@@ -15,8 +15,8 @@ typedef struct s_SourceFile {
 } *SourceFile;
 
 struct s_Position {
-  size_t _line;
-  size_t _column;
+  uint32_t _line;
+  uint32_t _column;
 };
 typedef struct s_Position Position;
 

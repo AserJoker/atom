@@ -17,7 +17,7 @@ Buffer Map_set(Map map, const cstring key, Buffer data);
 Buffer Map_get(Map map, const cstring key);
 Buffer Map_setValue(Map_Node node, Buffer data);
 Buffer Map_getValue(Map_Node node);
-size_t Map_size(Map map);
+uint32_t Map_size(Map map);
 int Map_empty(Map map);
 
 Map_Node Map_head(Map map);

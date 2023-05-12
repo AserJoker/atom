@@ -10,7 +10,7 @@ struct s_List_Node {
 };
 
 struct s_List {
-  size_t _size;
+  uint32_t _size;
   List_Node _head;
   List_Node _tail;
   List_Option _option;
@@ -96,7 +96,7 @@ int List_remove(List list, List_Node node) {
   }
   return 0;
 }
-size_t List_size(List list) { return list->_size; }
+uint32_t List_size(List list) { return list->_size; }
 List_Node List_find(List list, Finder_t finder) {
   for (List_Node it = list->_head; it != list->_tail; it = it->_next) {
     if (finder(it->_data)) {

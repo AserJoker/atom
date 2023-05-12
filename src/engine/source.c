@@ -19,7 +19,7 @@ SourceFile SourceFile_read(cstring filename) {
   cstring source = NULL;
   fopen_s(&fp, filename, "rb");
   fseek(fp, 0, SEEK_END);
-  size_t len = ftell(fp);
+  uint32_t len = ftell(fp);
   source = (cstring)Buffer_alloc(len + 1);
   source[len] = 0;
   fseek(fp, 0, SEEK_SET);
@@ -63,7 +63,7 @@ void SourceFile_dispose(SourceFile sf) {
 Location getLocation(SourceFile file, cstring source) {
   Location loc;
   loc._filename = file->_filename;
-  size_t index = 0;
+  uint32_t index = 0;
   for (List_Node it = List_head(file->_lines); it != List_tail(file->_lines);
        it = List_next(it)) {
     SourceLine line = List_get(it);

@@ -7,7 +7,7 @@ struct s_Tree_Node {
 };
 struct s_Tree {
   Tree_Node _root;
-  size_t _size;
+  uint32_t _size;
   Tree_Option _option;
 };
 
@@ -116,5 +116,5 @@ Tree_Node Tree_insertChildren(Tree tree, Tree_Node root, Buffer data) {
   List_insert_tail(root->_children, node);
   return node;
 }
-size_t Tree_size(Tree tree) { return tree->_size; }
+uint32_t Tree_size(Tree tree) { return tree->_size; }
 int Tree_empty(Tree tree) { return tree->_size == 0; }
