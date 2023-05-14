@@ -2,4 +2,5 @@
 "use strict";
 "use atom"; // aaaa
 "use compiler";
-import std from "std";
+import std, { aaaa as bbbb } from "std";
+import os from "os";

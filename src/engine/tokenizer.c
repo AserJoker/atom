@@ -180,7 +180,7 @@ static Token readTemplatePartOrEnd(SourceFile file, cstring source) {
 static Token readSymbol(SourceFile file, cstring source) {
   cstring selector = source;
   if (*selector == '}') {
-    if (strcmp(ctx.current->_start, "${") == 0) {
+    if (ctx.current && strcmp(ctx.current->_start, "${") == 0) {
       return readTemplatePartOrEnd(file, source);
     } else {
       List_remove(ctx.frames, List_head(ctx.frames));
@@ -363,7 +363,7 @@ Token readInterepter(SourceFile file, cstring source) {
   cstring selector = source;
   if (*source == '#' && *(source + 1) == '!' && source == file->_source) {
     while (*selector) {
-      if (*selector == '\n') {
+      if (*selector == '\n' || *selector == '\r') {
         break;
       }
       selector++;

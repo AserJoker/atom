@@ -1,6 +1,8 @@
 #pragma once
+#include "json.h"
 #include "source.h"
 #include "strings.h"
+
 struct s_Token;
 typedef struct s_Token *Token;
 
@@ -201,3 +203,4 @@ struct s_Program {
 };
 
 AstNode parse(SourceFile file);
+JSON_Value JSON_fromProgram(Program program);

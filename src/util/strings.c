@@ -1,5 +1,10 @@
 #include "strings.h"
+#include "buffer.h"
+#include "list.h"
+#include <stdarg.h>
+#include <stdint.h>
 #include <string.h>
+
 Buffer Buffer_fromString(cstring source) {
   return Buffer_from(strlen(source) + 1, source);
 }
@@ -15,4 +20,56 @@ int strings_is(strings str, const cstring source) {
     ss++;
   }
   return *ss == 0;
+}
+cstring cstring_from(strings source) {
+  uint32_t len = source.end - source.begin;
+  cstring result = (cstring)Buffer_from(len + 1, source.begin);
+  result[len] = 0;
+  return result;
+}
+cstring cstring_concat(cstring str, ...) {
+  List_Option opt = {0, 0};
+  List parts = List_create(opt);
+  uint32_t len = strlen(str);
+  va_list args;
+  List_insert_tail(parts, str);
+  va_start(args, str);
+  for (;;) {
+    cstring arg = va_arg(args, cstring);
+    if (!arg) {
+      va_end(args);
+      break;
+    }
+    len += strlen(arg);
+    List_insert_tail(parts, arg);
+  }
+  cstring result = (cstring)Buffer_alloc(len + 1);
+  cstring selector = result;
+  result[len] = 0;
+  for (List_Node node = List_head(parts); node != List_tail(parts);
+       node = List_next(node)) {
+    cstring s = (cstring)List_get(node);
+    while (*s) {
+      *selector++ = *s++;
+    }
+  }
+  List_dispose(parts);
+  return result;
+}
+
+cstring cstring_join(cstring args[]) {
+  uint32_t len = 0;
+  for (uint32_t i = 0; args[i] != 0; i++) {
+    len+=strlen(args[i]);
+  }
+  cstring result = (cstring)Buffer_alloc(len + 1);
+  result[len] = 0;
+  cstring s = result;
+  for (uint32_t i = 0; args[i] != 0; i++) {
+    cstring ss = args[i];
+    while (*ss) {
+      *s++=*ss++;
+    }
+  }
+  return result;
 }

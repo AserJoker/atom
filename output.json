@@ -1,0 +1,39 @@
+{
+  "interpreter": {
+    "type": "Interpreter",
+    "interpreter": "#!/usr/local/bin/atom"
+  },
+  "type": "Program",
+  "directives": [
+    { "type": "Directive", "directive": "\"use strict\"" },
+    { "type": "Directive", "directive": "\"use atom\"" },
+    { "type": "Directive", "directive": "\"use compiler\"" }
+  ],
+  "statements": [
+    {
+      "type": "ImportStatement",
+      "specifiers": [
+        {
+          "type": "ImportDefaultSpecifier",
+          "local": { "type": "Identifier", "identifier": "std" }
+        },
+        {
+          "type": "ImportSpecifier",
+          "local": { "type": "Identifier", "identifier": "aaaa" },
+          "imported": { "type": "Identifier", "identifier": "bbbb" }
+        }
+      ],
+      "source": { "type": "StringLiteral", "literal": "\"std\"" }
+    },
+    {
+      "type": "ImportStatement",
+      "specifiers": [
+        {
+          "type": "ImportDefaultSpecifier",
+          "local": { "type": "Identifier", "identifier": "os" }
+        }
+      ],
+      "source": { "type": "StringLiteral", "literal": "\"os\"" }
+    }
+  ]
+}
