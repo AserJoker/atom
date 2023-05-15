@@ -66,6 +66,25 @@ JSON_Value JSON_fromImportDefaultSpecifier(ImportSpecifier import_spec) {
   return obj;
 }
 
+JSON_Value JSON_fromImportNamespaceSpecifier(ImportSpecifier import_spec) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("ImportNamespaceSpecifier"));
+  if (import_spec->_local) {
+    JSON_setField(obj, "local", JSON_fromIdentifier(import_spec->_local));
+  } else {
+    JSON_setField(obj, "local", JSON_createNull());
+  }
+  return obj;
+}
+
+JSON_Value JSON_fromImportAttribute(ImportAttribute import_attr) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("ImportAttribute"));
+  JSON_setField(obj, "key", JSON_fromIdentifier(import_attr->_key));
+  JSON_setField(obj, "value", JSON_fromLiteral(import_attr->_value));
+  return obj;
+}
+
 JSON_Value JSON_fromImportStatement(ImportStatement import_s) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("ImportStatement"));
@@ -80,10 +99,21 @@ JSON_Value JSON_fromImportStatement(ImportStatement import_s) {
     } else if (importSpecifier->_node->_type == NT_ImportDefaultSpecifier) {
       JSON_setIndex(specifiers, index,
                     JSON_fromImportDefaultSpecifier(importSpecifier));
+    } else if (importSpecifier->_node->_type == NT_ImportNamespaceSpecifier) {
+      JSON_setIndex(specifiers, index,
+                    JSON_fromImportNamespaceSpecifier(importSpecifier));
     }
     index++;
   }
   JSON_setField(obj, "specifiers", specifiers);
+  JSON_Value accertions = JSON_createArray();
+  index = 0;
+  for (List_Node node = List_head(import_s->_assertions);
+       node != List_tail(import_s->_assertions); node = List_next(node)) {
+    ImportAttribute import_attr = (ImportAttribute)List_get(node);
+    JSON_setIndex(accertions, index, JSON_fromImportAttribute(import_attr));
+  }
+  JSON_setField(obj, "accertions", accertions);
   JSON_setField(obj, "source", JSON_fromLiteral(import_s->_source));
   return obj;
 }

@@ -1,6 +1,7 @@
 #include "source.h"
 #include "list.h"
 #include "strings.h"
+#include <stdio.h>
 
 SourceLine SourceLine_create() {
   SourceLine sl = (SourceLine)Buffer_alloc(sizeof(struct s_SourceLine));
@@ -17,7 +18,7 @@ SourceFile SourceFile_read(cstring filename) {
   SourceFile sf = (SourceFile)Buffer_alloc(sizeof(struct s_SourceFile));
   FILE *fp = NULL;
   cstring source = NULL;
-  fopen_s(&fp, filename, "rb");
+  fp = fopen(filename, "rb");
   fseek(fp, 0, SEEK_END);
   uint32_t len = ftell(fp);
   source = (cstring)Buffer_alloc(len + 1);
@@ -70,6 +71,9 @@ Location getLocation(SourceFile file, cstring source) {
     if (source >= line->_raw.begin && source < line->_raw.end) {
       loc._position._line = index;
       loc._position._column = source - line->_raw.begin;
+      while (loc._position._column == '\r') {
+        loc._position._column--;
+      }
       break;
     }
     index++;

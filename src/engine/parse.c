@@ -17,7 +17,7 @@ Token readTokenSkipComment(SourceFile file, cstring source) {
   while (token && token->_type == TT_Comment) {
     selector = token->_raw.end;
     Token_dispose(token);
-    Token token = readToken(file, selector);
+    token = readToken(file, selector);
   }
   if (!token) {
     ctx.error = getTokenizerError();
@@ -31,7 +31,7 @@ Token readTokenSkipNewline(SourceFile file, cstring source) {
   while (token && token->_type == TT_Newline) {
     selector = token->_raw.end;
     Token_dispose(token);
-    Token token = readTokenSkipComment(file, selector);
+    token = readTokenSkipComment(file, selector);
   }
   if (!token) {
     ctx.error = getTokenizerError();
@@ -193,6 +193,21 @@ void Program_dispose(Program program) {
   Buffer_free(program);
 }
 
+int checkToken(Token token, TokenType tt, cstring str) {
+  return token->_type == tt && strings_is(token->_raw, str);
+}
+
+cstring skipToken(SourceFile file, cstring source) {
+  Token token = readTokenSkipNewline(file, source);
+  if (!token) {
+    ctx.error = getTokenizerError();
+    return NULL;
+  }
+  cstring selector = token->_raw.end;
+  Token_dispose(token);
+  return selector;
+}
+
 Literal readLiteral(SourceFile file, cstring source) {
   Token rawToken = readTokenSkipNewline(file, source);
   if (!rawToken) {
@@ -266,6 +281,84 @@ ImportSpecifier readImportDefaultSpecifier(SourceFile file, cstring source) {
   return import_spec;
 }
 
+ImportAttribute readImportAttribute(SourceFile file, cstring source) {
+  ImportAttribute import_attr = ImportAttribute_create();
+  cstring selector = source;
+  Identifier key = readIdentifier(file, selector);
+  if (!key) {
+    goto failed;
+  }
+  import_attr->_key = key;
+  selector = key->_node->_position.end;
+  Token token = readTokenSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (!checkToken(token, TT_Symbol, ":")) {
+    Token_dispose(token);
+    ctx.error.error = "Unexcept Error";
+    ctx.error.location = getLocation(file, selector);
+    goto failed;
+  }
+  selector = token->_raw.end;
+  Token_dispose(token);
+  Literal lit = readLiteral(file, selector);
+  if (!lit) {
+    ctx.error.error = "Unexcept Error";
+    ctx.error.location = getLocation(file, selector);
+    goto failed;
+  }
+  import_attr->_value = lit;
+  selector = lit->_node->_position.end;
+  import_attr->_node->_position.begin = source;
+  import_attr->_node->_position.end = selector;
+  return import_attr;
+failed:
+  ImportAttribute_dispose(import_attr);
+  return NULL;
+}
+
+ImportSpecifier readImportNamespaceSpecifier(SourceFile file, cstring source) {
+  ImportSpecifier import_spec = ImportSpecifier_create();
+  cstring selector = source;
+  import_spec->_node->_type = NT_ImportNamespaceSpecifier;
+  selector = skipToken(file, selector);
+  if (!selector) {
+    goto failed;
+  }
+  Token token = readTokenSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (!checkToken(token, TT_Keyword, "as")) {
+    Token_dispose(token);
+    ctx.error.error = "Unexcept error";
+    ctx.error.location = getLocation(file, selector);
+    goto failed;
+  }
+  Token_dispose(token);
+  selector = skipToken(file, selector);
+  if (!selector) {
+    goto failed;
+  }
+  Identifier identifier = readIdentifier(file, selector);
+  if (!identifier) {
+    if (!ctx.error.error) {
+      ctx.error.error = "Unexcept error";
+      ctx.error.location = getLocation(file, selector);
+    }
+    goto failed;
+  }
+  selector = identifier->_raw->_raw.end;
+  import_spec->_local = identifier;
+  import_spec->_node->_position.begin = source;
+  import_spec->_node->_position.end = selector;
+  return import_spec;
+failed:
+  ImportSpecifier_dispose(import_spec);
+  return NULL;
+}
+
 ImportSpecifier readImportSpecifier(SourceFile file, cstring source) {
   cstring selector = source;
   Identifier identify = readIdentifier(file, selector);
@@ -280,7 +373,7 @@ ImportSpecifier readImportSpecifier(SourceFile file, cstring source) {
     ImportSpecifier_dispose(import_spec);
     return NULL;
   }
-  if (token->_type == TT_Keyword && strings_is(token->_raw, "as")) {
+  if (checkToken(token, TT_Keyword, "as")) {
     selector = token->_raw.end;
     Token_dispose(token);
     identify = readIdentifier(file, selector);
@@ -303,114 +396,156 @@ ImportSpecifier readImportSpecifier(SourceFile file, cstring source) {
 }
 
 ImportStatement readImportStatement(SourceFile file, cstring source) {
-  Token keyword = readTokenSkipNewline(file, source);
-  if (!keyword) {
-    return NULL;
-  }
-  cstring selector = keyword->_raw.end;
-  Token_dispose(keyword);
   ImportStatement import_s = ImportStatement_create();
-  Token token = readTokenSkipNewline(file, selector);
-  if (!token) {
+  cstring selector = source;
+  selector = skipToken(file, selector);
+  if (!selector) {
     goto failed;
   }
-  if (token->_type == TT_Identifier) {
+  Token token = readTokenSkipNewline(file, selector);
+  if (strings_is(token->_raw, "*")) {
     Token_dispose(token);
-    ImportSpecifier specifier = readImportDefaultSpecifier(file, selector);
-    if (!specifier) {
-      goto failed;
-    }
-    selector = specifier->_node->_position.end;
-    List_insert_tail(import_s->_specifiers, specifier);
-    token = readTokenSkipNewline(file, selector);
-    if (!token) {
-      goto failed;
-    }
-    if (token->_type == TT_Symbol && strings_is(token->_raw, ",")) {
-      selector = token->_raw.end;
+    ImportSpecifier import_spec = readImportNamespaceSpecifier(file, selector);
+    if (!import_spec) {
+      ctx.error.error = "Unexcept error";
+      ctx.error.location = getLocation(file, selector);
       Token_dispose(token);
-      token = readTokenSkipNewline(file, selector);
+      goto failed;
+    }
+    List_insert_tail(import_s->_specifiers, import_spec);
+    selector = import_spec->_node->_position.end;
+  } else {
+    Token_dispose(token);
+    for (;;) {
+      Token token = readTokenSkipNewline(file, selector);
       if (!token) {
         goto failed;
       }
-      if (token->_type != TT_Symbol || !strings_is(token->_raw, "{")) {
-        ctx.error.error = "Unexpected token";
-        ctx.error.location = getLocation(file, selector);
-      } else {
-        selector = token->_raw.end;
-        specifier = readImportSpecifier(file, selector);
-        while (specifier) {
-          List_insert_tail(import_s->_specifiers, specifier);
-          selector = specifier->_node->_position.end;
+      if (token->_type == TT_Identifier) {
+        Token_dispose(token);
+        ImportSpecifier import_spec =
+            readImportDefaultSpecifier(file, selector);
+        if (!import_spec) {
+          if (!ctx.error.error) {
+            ctx.error.error = "Unexcept error";
+            ctx.error.location = getLocation(file, source);
+          }
+          goto failed;
+        }
+        List_insert_tail(import_s->_specifiers, import_spec);
+        selector = import_spec->_node->_position.end;
+      } else if (token->_type == TT_Symbol) {
+        if (strings_is(token->_raw, "{")) {
+          selector = token->_raw.end;
           Token_dispose(token);
+          ImportSpecifier import_spec = readImportSpecifier(file, selector);
+          List_insert_tail(import_s->_specifiers, import_spec);
+          selector = import_spec->_node->_position.end;
+          Token token = readTokenSkipNewline(file, selector);
+          if (!token) {
+            goto failed;
+          }
+          if (!checkToken(token, TT_Symbol, ",")) {
+            ctx.error.error = "Unexcept error";
+            ctx.error.location = getLocation(file, selector);
+            Token_dispose(token);
+            goto failed;
+          } else {
+            selector = token->_raw.end;
+            Token_dispose(token);
+          }
+          import_spec = readImportSpecifier(file, selector);
+          List_insert_tail(import_s->_specifiers, import_spec);
+          selector = import_spec->_node->_position.end;
           token = readTokenSkipNewline(file, selector);
           if (!token) {
             goto failed;
           }
-          if (token->_type != TT_Symbol || !strings_is(token->_raw, ",")) {
-            break;
+          if (!checkToken(token, TT_Symbol, "}")) {
+            ctx.error.error = "Unexcept error";
+            ctx.error.location = getLocation(file, selector);
+            Token_dispose(token);
+            goto failed;
+          } else {
+            selector = token->_raw.end;
+            Token_dispose(token);
           }
-          selector = token->_raw.end;
-          specifier = readImportSpecifier(file, selector);
-        }
-        Token_dispose(token);
-        if (ctx.error.error) {
-          goto failed;
-        }
-        token = readTokenSkipNewline(file, selector);
-        if (!token) {
-          goto failed;
-        }
-        if (token->_type != TT_Symbol || !strings_is(token->_raw, "}")) {
-          ctx.error.error = "Unexpected token";
-          ctx.error.location = getLocation(file, selector);
         } else {
-          selector = token->_raw.end;
+          ctx.error.error = "Unexcept error";
+          ctx.error.location = getLocation(file, selector);
+          Token_dispose(token);
+          goto failed;
         }
+      }
+      token = readTokenSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+      if (checkToken(token, TT_Symbol, ",")) {
+        selector = token->_raw.end;
+        Token_dispose(token);
+      } else {
+        Token_dispose(token);
+        break;
       }
     }
   }
-  Token_dispose(token);
-  if (ctx.error.error != NULL) {
-    goto failed;
-  }
   if (List_size(import_s->_specifiers)) {
-    keyword = readTokenSkipNewline(file, selector);
-    if (!keyword) {
+    Token token = readTokenSkipNewline(file, selector);
+    if (!checkToken(token, TT_Keyword, "from")) {
+      ctx.error.error = "Unexcept error";
+      ctx.error.location = getLocation(file, selector);
+      Token_dispose(token);
       goto failed;
     }
-    if (keyword->_type != TT_Keyword || !strings_is(keyword->_raw, "from")) {
-      ImportStatement_dispose(import_s);
-      Token_dispose(keyword);
-      ctx.error.error = "Unexpected token, expected \"from\"";
-      ctx.error.location = getLocation(file, selector);
-      return NULL;
-    }
-    selector = keyword->_raw.end;
-    Token_dispose(keyword);
+    selector = token->_raw.end;
+    Token_dispose(token);
   }
-  import_s->_source = readLiteral(file, selector);
-  if (ctx.error.error) {
-    goto failed;
-  }
-  if (!import_s->_source || import_s->_source->_raw->_type != TT_String) {
-    ImportStatement_dispose(import_s);
-    ctx.error.error = "Unexpected token";
+  Literal literal = readLiteral(file, selector);
+  if (!literal) {
+    ctx.error.error = "Unexcept error";
     ctx.error.location = getLocation(file, selector);
-    return NULL;
-  }
-  selector = import_s->_source->_node->_position.end;
-  keyword = readTokenSkipNewline(file, selector);
-  if (!keyword) {
     goto failed;
   }
-  if (keyword->_type == TT_Symbol && strings_is(keyword->_raw, ";")) {
-    import_s->_node->_position.begin = source;
-    import_s->_node->_position.end = keyword->_raw.end;
-    Token_dispose(keyword);
-    return import_s;
+  import_s->_source = literal;
+  selector = literal->_raw->_raw.end;
+  token = readTokenSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
   }
-  Token_dispose(keyword);
+  if (checkToken(token, TT_Keyword, "assert")) {
+    selector = token->_raw.end;
+    Token_dispose(token);
+    Token token = readTokenSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (!checkToken(token, TT_Symbol, "{")) {
+      ctx.error.error = "Unexcept error";
+      ctx.error.location = getLocation(file, selector);
+      Token_dispose(token);
+      goto failed;
+    }
+    selector = token->_raw.end;
+    Token_dispose(token);
+    ImportAttribute import_attr = readImportAttribute(file, selector);
+    List_insert_tail(import_s->_assertions, import_attr);
+    selector = import_attr->_node->_position.end;
+    token = readTokenSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (!checkToken(token, TT_Symbol, "}")) {
+      ctx.error.error = "Unexcept error";
+      ctx.error.location = getLocation(file, selector);
+      Token_dispose(token);
+      goto failed;
+    }
+    selector = token->_raw.end;
+    Token_dispose(token);
+  } else {
+    Token_dispose(token);
+  }
   import_s->_node->_position.begin = source;
   import_s->_node->_position.end = selector;
   return import_s;
@@ -443,18 +578,18 @@ Interpreter readInterpreter(SourceFile file, cstring source) {
     return NULL;
   }
   if (token->_type == TT_Interpreter) {
-    Token newline = readTokenSkipComment(file, token->_raw.end);
-    if (!newline) {
-      Token_dispose(token);
-      return NULL;
-    }
     Interpreter interpreter = Interpreter_create();
     interpreter->_interpreter = token->_raw;
     interpreter->_node->_position = token->_raw;
+    selector = token->_raw.end;
+    Token_dispose(token);
+    Token newline = readTokenSkipComment(file, selector);
+    if (!newline) {
+      return NULL;
+    }
     interpreter->_node->_position.end = newline->_raw.end;
     selector = newline->_raw.end;
     Token_dispose(newline);
-    Token_dispose(token);
     return interpreter;
   }
   Token_dispose(token);
@@ -499,13 +634,13 @@ Directive readDirective(SourceFile file, cstring source) {
 Program readProgram(SourceFile file, cstring source) {
   Program program = Program_create();
   cstring selector = source;
-  program->_interpreter = readInterpreter(file, selector);
-  if (ctx.error.error) {
-    Program_dispose(program);
-    return NULL;
+  Interpreter interpreter = readInterpreter(file, selector);
+  if (interpreter) {
+    selector = interpreter->_node->_position.end;
+    program->_interpreter = interpreter;
   }
-  if (program->_interpreter) {
-    selector = program->_interpreter->_node->_position.end;
+  if (ctx.error.error) {
+    goto failed;
   }
   Directive directive = readDirective(file, selector);
   while (directive) {
@@ -514,13 +649,25 @@ Program readProgram(SourceFile file, cstring source) {
     directive = readDirective(file, selector);
   }
   if (ctx.error.error) {
-    Program_dispose(program);
-    return NULL;
+    goto failed;
   }
   Statement statement = readStatement(file, selector);
   while (statement) {
     List_insert_tail(program->_body, statement);
     selector = statement->_node->_position.end;
+    Token token = readTokenSkipComment(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (checkToken(token, TT_Symbol, ";") || token->_type == TT_Newline) {
+      selector = token->_raw.end;
+      Token_dispose(token);
+    } else {
+      ctx.error.error = "Unexcept error";
+      ctx.error.location = getLocation(file, selector);
+      Token_dispose(token);
+      goto failed;
+    }
     statement = readStatement(file, selector);
   }
   if (ctx.error.error != NULL) {
@@ -530,6 +677,9 @@ Program readProgram(SourceFile file, cstring source) {
   program->_node->_position.begin = source;
   program->_node->_position.end = source + strlen(source);
   return program;
+failed:
+  Program_dispose(program);
+  return NULL;
 }
 
 AstNode parse(SourceFile file) {

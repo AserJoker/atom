@@ -2,5 +2,5 @@
 "use strict";
 "use atom"; // aaaa
 "use compiler";
-import std, { aaaa as bbbb } from "std";
-import os from "os";
+import * as ddd from "std" assert { type: "javascript" };
+import os, { getEnv, setEnv } from "os";

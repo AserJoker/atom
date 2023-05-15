@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 static uint32_t g_memory_alloced = 0;
-Buffer Debug_alloc(uint32_t size) {
+Buffer Debug_alloc(size_t size) {
   void *data = malloc(size + sizeof(uint32_t));
   // printf("[DEBUG] : alloc memory with size: %lld, address is 0x%llx\n", size,
   //        (uintptr_t)((uint32_t *)data + 1));
