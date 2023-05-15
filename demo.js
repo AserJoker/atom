@@ -4,3 +4,4 @@
 "use compiler";
 import * as ddd from "std" assert { type: "javascript" };
 import os, { getEnv, setEnv } from "os";
+;

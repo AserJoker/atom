@@ -674,6 +674,16 @@ Program readProgram(SourceFile file, cstring source) {
     Program_dispose(program);
     return NULL;
   }
+  Token token = readTokenSkipNewline(file, selector);
+  if (token->_type != TT_Eof) {
+    Token_dispose(token);
+    ctx.error.error = "Unexcept token";
+    ctx.error.location = getLocation(file, selector);
+    Program_dispose(program);
+    return NULL;
+  } else {
+    Token_dispose(token);
+  }
   program->_node->_position.begin = source;
   program->_node->_position.end = source + strlen(source);
   return program;
