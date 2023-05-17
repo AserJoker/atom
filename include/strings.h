@@ -10,3 +10,4 @@ cstring cstring_from(strings source);
 cstring cstring_concat(cstring str, ...);
 cstring cstring_join(cstring args[]);
 int strings_is(strings str, const cstring source);
+int strings_contains(strings str, const cstring list[]);

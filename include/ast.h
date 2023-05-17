@@ -51,20 +51,11 @@ typedef struct s_Identifier *Identifier;
 struct s_Literal;
 typedef struct s_Literal *Literal;
 
-struct s_LogicalExpression;
-typedef struct s_LogicalExpression *LogicalExpression;
-
-struct s_Expression;
-typedef struct s_Expression *Expression;
-
 struct s_ExpressionStatement;
 typedef struct s_ExpressionStatement *ExpressionStatement;
 
 struct s_BlockStatement;
 typedef struct s_BlockStatement *BlockStatement;
-
-struct s_IfStatement;
-typedef struct s_IfStatement *IfStatement;
 
 struct s_ImportAttribute;
 typedef struct s_ImportAttribute *ImportAttribute;
@@ -74,6 +65,9 @@ typedef struct s_ImportSpecifier *ImportSpecifier;
 
 struct s_ImportStatement;
 typedef struct s_ImportStatement *ImportStatement;
+
+struct s_ExpressionStatement;
+typedef struct s_ExpressionStatement *ExpressionStatement;
 
 struct s_Statement;
 typedef struct s_Statement *Statement;
@@ -89,6 +83,9 @@ typedef struct s_Directive *Directive;
 
 struct s_Program;
 typedef struct s_Program *Program;
+
+struct s_Expression;
+typedef struct s_Expression *Expression;
 
 typedef enum e_NodeType {
   // Program
@@ -118,6 +115,27 @@ typedef enum e_NodeType {
   NT_ImportAttribute,
   NT_ImportStatement,
   //--Import
+
+  // Block
+  NT_BlockStatement,
+  // --Block
+
+  // Empty
+  NT_EmptyStatement,
+  //--Empty
+
+  // Expression
+  NT_ExpressionStatement,
+
+  NT_BinaryExpression,
+  NT_BracketExpression,
+  NT_LiteralExpression,
+  NT_IdentifierExpression,
+
+  NT_CallExpression,
+  NT_TemplateException,
+  //--Expression
+
 } NodeType;
 
 struct s_AstNode {
@@ -125,20 +143,19 @@ struct s_AstNode {
   strings _position;
 };
 
-struct s_Expression {
-  AstNode _node;
-};
-
 struct s_Identifier {
   AstNode _node;
   Token _raw;
 };
 
-struct s_LogicalExpression {
+struct s_Expression {
   AstNode _node;
   Expression _left;
   Expression _right;
   Token _operator;
+  Identifier _identifier;
+  Literal _literal;
+  int _level;
 };
 
 struct s_ExpressionStatement {
@@ -149,13 +166,6 @@ struct s_ExpressionStatement {
 struct s_BlockStatement {
   AstNode _node;
   List _body;
-};
-
-struct s_IfStatement {
-  AstNode _node;
-  LogicalExpression _condition;
-  Statement _consequent;
-  Statement _alternate;
 };
 
 struct s_Literal {

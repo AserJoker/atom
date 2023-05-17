@@ -10,6 +10,41 @@ typedef struct s_Context {
 } Context;
 
 static Context ctx;
+typedef struct s_OperatorSet {
+  cstring *operators;
+} s_OperatorSet;
+
+static cstring operator_0[] = {".", 0};
+static cstring operator_1[] = {"*", "/", "%", 0};
+static cstring operator_2[] = {"+", "-", 0};
+static cstring operator_3[] = {"<<", ">>", 0};
+static cstring operator_4[] = {">", ">=", "<", "<=", 0};
+static cstring operator_5[] = {"==", "!=", 0};
+static cstring operator_6[] = {"&", 0};
+static cstring operator_7[] = {"^", 0};
+static cstring operator_8[] = {"|", 0};
+static cstring operator_9[] = {"&&", 0};
+static cstring operator_10[] = {"||", 0};
+static cstring operator_11[] = {
+    "=", "/=", "*=", "%=", "+=", "-=", "<<=", ">>=", "&=", "^=", "|=", 0};
+static cstring operator_12[] = {",", 0};
+static s_OperatorSet optset0 = {.operators = &operator_0[0]};
+static s_OperatorSet optset1 = {.operators = &operator_1[0]};
+static s_OperatorSet optset2 = {.operators = &operator_2[0]};
+static s_OperatorSet optset3 = {.operators = &operator_3[0]};
+static s_OperatorSet optset4 = {.operators = &operator_4[0]};
+static s_OperatorSet optset5 = {.operators = &operator_5[0]};
+static s_OperatorSet optset6 = {.operators = &operator_6[0]};
+static s_OperatorSet optset7 = {.operators = &operator_7[0]};
+static s_OperatorSet optset8 = {.operators = &operator_8[0]};
+static s_OperatorSet optset9 = {.operators = &operator_9[0]};
+static s_OperatorSet optset10 = {.operators = &operator_10[0]};
+static s_OperatorSet optset11 = {.operators = &operator_11[0]};
+static s_OperatorSet optset12 = {.operators = &operator_12[0]};
+
+static s_OperatorSet *opts[] = {
+    &optset0, &optset1, &optset2, &optset3,  &optset4,  &optset5,  &optset6,
+    &optset7, &optset8, &optset9, &optset10, &optset11, &optset12, 0};
 
 Token readTokenSkipComment(SourceFile file, cstring source) {
   cstring selector = source;
@@ -38,6 +73,8 @@ Token readTokenSkipNewline(SourceFile file, cstring source) {
   }
   return token;
 }
+
+void Statement_dispose(Statement statement);
 
 void AstNode_dispose(AstNode node) { Buffer_free(node); }
 
@@ -75,6 +112,38 @@ void Literal_dispose(Literal literal) {
     Token_dispose(literal->_raw);
   }
   Buffer_free(literal);
+}
+
+void Expression_dispose(Expression expression) {
+  if (expression->_left) {
+    Expression_dispose(expression->_left);
+  }
+  if (expression->_right) {
+    Expression_dispose(expression->_right);
+  }
+  if (expression->_identifier) {
+    Identifier_dispose(expression->_identifier);
+  }
+  if (expression->_literal) {
+    Literal_dispose(expression->_literal);
+  }
+  if (expression->_operator) {
+    Token_dispose(expression->_operator);
+  }
+  AstNode_dispose(expression->_node);
+  Buffer_free(expression);
+}
+
+Expression Expression_create() {
+  Expression expr = (Expression)Buffer_alloc(sizeof(struct s_Expression));
+  expr->_identifier = NULL;
+  expr->_left = NULL;
+  expr->_literal = NULL;
+  expr->_right = NULL;
+  expr->_operator = NULL;
+  expr->_level = 0;
+  expr->_node = AstNode_create();
+  return expr;
 }
 
 ImportSpecifier ImportSpecifier_create() {
@@ -142,9 +211,60 @@ void ImportStatement_dispose(ImportStatement import_s) {
   Buffer_free(import_s);
 }
 
+Statement EmptyStatement_create() {
+  Statement statement = (Statement)Buffer_alloc(sizeof(struct s_Statement));
+  statement->_node = AstNode_create();
+  statement->_node->_type = NT_EmptyStatement;
+  return statement;
+}
+
+BlockStatement BlockStatement_create() {
+  BlockStatement blockStatement =
+      (BlockStatement)Buffer_alloc(sizeof(struct s_BlockStatement));
+  List_Option opt = {1, (Buffer_Free)Statement_dispose};
+  blockStatement->_body = List_create(opt);
+  blockStatement->_node = AstNode_create();
+  blockStatement->_node->_type = NT_BlockStatement;
+  return blockStatement;
+}
+
+ExpressionStatement ExpressionStatement_create() {
+  ExpressionStatement expression_s =
+      (ExpressionStatement)Buffer_alloc(sizeof(struct s_ExpressionStatement));
+  expression_s->_expression = NULL;
+  expression_s->_node = AstNode_create();
+  expression_s->_node->_type = NT_ExpressionStatement;
+  return expression_s;
+}
+
+void ExpressionStatement_dispose(ExpressionStatement expression_s) {
+  if (expression_s->_expression) {
+    Expression_dispose(expression_s->_expression);
+  }
+  AstNode_dispose(expression_s->_node);
+  Buffer_free(expression_s);
+}
+
+void BlockStatement_dispose(BlockStatement blockStatement) {
+  List_dispose(blockStatement->_body);
+  AstNode_dispose(blockStatement->_node);
+  Buffer_free(blockStatement);
+}
+
+void EmptyStatement_dispose(Statement statement) {
+  AstNode_dispose(statement->_node);
+  Buffer_free(statement);
+}
+
 void Statement_dispose(Statement statement) {
   if (statement->_node->_type == NT_ImportStatement) {
     ImportStatement_dispose((ImportStatement)statement);
+  } else if (statement->_node->_type == NT_EmptyStatement) {
+    EmptyStatement_dispose(statement);
+  } else if (statement->_node->_type == NT_BlockStatement) {
+    BlockStatement_dispose((BlockStatement)statement);
+  } else if (statement->_node->_type == NT_ExpressionStatement) {
+    ExpressionStatement_dispose((ExpressionStatement)statement);
   }
 }
 
@@ -154,10 +274,12 @@ Directive Directive_create() {
   directive->_node->_type = NT_Directive;
   return directive;
 }
+
 void Directive_dispose(Directive directive) {
   AstNode_dispose(directive->_node);
   Buffer_free(directive);
 }
+
 Interpreter Interpreter_create() {
   Interpreter interpreter =
       (Interpreter)Buffer_alloc(sizeof(struct s_Interpreter));
@@ -332,7 +454,7 @@ ImportSpecifier readImportNamespaceSpecifier(SourceFile file, cstring source) {
   }
   if (!checkToken(token, TT_Keyword, "as")) {
     Token_dispose(token);
-    ctx.error.error = "Unexcept error";
+    ctx.error.error = "Unexcept error,must be 'as'";
     ctx.error.location = getLocation(file, selector);
     goto failed;
   }
@@ -439,24 +561,22 @@ ImportStatement readImportStatement(SourceFile file, cstring source) {
           selector = token->_raw.end;
           Token_dispose(token);
           ImportSpecifier import_spec = readImportSpecifier(file, selector);
-          List_insert_tail(import_s->_specifiers, import_spec);
-          selector = import_spec->_node->_position.end;
-          Token token = readTokenSkipNewline(file, selector);
-          if (!token) {
-            goto failed;
+          while (import_spec) {
+            List_insert_tail(import_s->_specifiers, import_spec);
+            selector = import_spec->_node->_position.end;
+            Token token = readTokenSkipNewline(file, selector);
+            if (!token) {
+              goto failed;
+            }
+            if (checkToken(token, TT_Symbol, ",")) {
+              selector = token->_raw.end;
+              Token_dispose(token);
+              import_spec = readImportSpecifier(file, selector);
+            } else {
+              Token_dispose(token);
+              break;
+            }
           }
-          if (!checkToken(token, TT_Symbol, ",")) {
-            ctx.error.error = "Unexcept error";
-            ctx.error.location = getLocation(file, selector);
-            Token_dispose(token);
-            goto failed;
-          } else {
-            selector = token->_raw.end;
-            Token_dispose(token);
-          }
-          import_spec = readImportSpecifier(file, selector);
-          List_insert_tail(import_s->_specifiers, import_spec);
-          selector = import_spec->_node->_position.end;
           token = readTokenSkipNewline(file, selector);
           if (!token) {
             goto failed;
@@ -556,6 +676,164 @@ failed:
   return NULL;
 }
 
+Statement readEmptyStatement(SourceFile file, cstring source) {
+  Statement empty_s = EmptyStatement_create();
+  empty_s->_node->_position.begin = source;
+  Token token = readTokenSkipNewline(file, source);
+  empty_s->_node->_position.end = token->_raw.end;
+  Token_dispose(token);
+  return empty_s;
+}
+
+Statement readStatement(SourceFile file, cstring source);
+
+BlockStatement readBlockStatement(SourceFile file, cstring source) {
+  cstring selector = skipToken(file, source);
+  if (!selector) {
+    return NULL;
+  }
+  BlockStatement block_s = BlockStatement_create();
+  Statement statement = readStatement(file, selector);
+  while (statement) {
+    List_insert_tail(block_s->_body, statement);
+    selector = statement->_node->_position.end;
+    Token token = readTokenSkipComment(file, selector);
+    if (token->_type == TT_Newline || checkToken(token, TT_Symbol, ";")) {
+      selector = token->_raw.end;
+    }
+    Token_dispose(token);
+    statement = readStatement(file, selector);
+  }
+  if (ctx.error.error) {
+    BlockStatement_dispose(block_s);
+    return NULL;
+  }
+  Token token = readTokenSkipNewline(file, selector);
+  if (!checkToken(token, TT_Symbol, "}")) {
+    Token_dispose(token);
+    BlockStatement_dispose(block_s);
+    ctx.error.error = "Unexcept token,must be '}'";
+    ctx.error.location = getLocation(file, selector);
+    return NULL;
+  }
+  selector = token->_raw.end;
+  Token_dispose(token);
+  block_s->_node->_position.begin = source;
+  block_s->_node->_position.end = selector;
+  return block_s;
+}
+
+Expression readExpression(SourceFile file, cstring source) {
+  Expression expr = NULL;
+  cstring selector = source;
+  Token token = readTokenSkipNewline(file, selector);
+  for (;;) {
+    if (token->_type == TT_Identifier) {
+      Token_dispose(token);
+      Identifier identifier = readIdentifier(file, selector);
+      Expression identifier_expr = Expression_create();
+      identifier_expr->_identifier = identifier;
+      identifier_expr->_level = -1;
+      identifier_expr->_node->_type = NT_IdentifierExpression;
+      identifier_expr->_node->_position = identifier->_node->_position;
+      selector = identifier->_node->_position.end;
+      if (!expr) {
+        expr = identifier_expr;
+      } else {
+        Expression current = expr;
+        while (current->_right) {
+          current = current->_right;
+        }
+        current->_right = identifier_expr;
+      }
+      token = readTokenSkipNewline(file, selector);
+    } else if (token->_type == TT_Symbol) {
+      if (strings_is(token->_raw, "(")) {
+        // TODO: call expression
+        selector = token->_raw.end;
+        Token_dispose(token);
+        Expression sub = readExpression(file, selector);
+        selector = sub->_node->_position.end;
+        token = readTokenSkipNewline(file, selector);
+        if (checkToken(token, TT_Symbol, ")")) {
+          selector = token->_raw.end;
+          Token_dispose(token);
+        }
+        Expression subExpr = Expression_create();
+        subExpr->_left = sub;
+        subExpr->_node->_type = NT_BracketExpression;
+        if (!expr) {
+          expr = subExpr;
+        } else {
+          Expression current = expr;
+          while (current->_right) {
+            current = current->_right;
+          }
+          current->_right = subExpr;
+        }
+        token = readTokenSkipNewline(file, selector);
+      } else {
+        int level = 0;
+        for (; opts[level] != 0; level++) {
+          if (strings_contains(token->_raw, opts[level]->operators)) {
+            break;
+          }
+        }
+        if (!opts[level]) {
+          Token_dispose(token);
+          break;
+        }
+        Expression opt_expr = Expression_create();
+        opt_expr->_operator = token;
+        opt_expr->_left = expr;
+        opt_expr->_node->_type = NT_BinaryExpression;
+        opt_expr->_level = level;
+        if (opt_expr->_level >= expr->_level) {
+          opt_expr->_left = expr;
+          expr = opt_expr;
+        } else {
+          Expression current = expr;
+          while (opt_expr->_level < current->_right->_level) {
+            current = current->_right;
+          }
+          opt_expr->_left = current->_right;
+          current->_right = opt_expr;
+        }
+        selector = token->_raw.end;
+        token = readTokenSkipNewline(file, selector);
+      }
+    } else {
+      Token_dispose(token);
+      break;
+    }
+  }
+  if (!expr) {
+    return NULL;
+  }
+  expr->_node->_position.begin = source;
+  expr->_node->_position.end = selector;
+  return expr;
+failed:
+  if (expr) {
+    Expression_dispose(expr);
+  }
+  return NULL;
+}
+
+ExpressionStatement readExpressionStatement(SourceFile file, cstring source) {
+  cstring selector = source;
+  Expression expression = readExpression(file, selector);
+  if (!expression) {
+    return NULL;
+  }
+  selector = expression->_node->_position.end;
+  ExpressionStatement expr = ExpressionStatement_create();
+  expr->_expression = expression;
+  expr->_node->_position.begin = source;
+  expr->_node->_position.end = selector;
+  return expr;
+}
+
 Statement readStatement(SourceFile file, cstring source) {
   Token token = readTokenSkipNewline(file, source);
   if (!token) {
@@ -566,9 +844,17 @@ Statement readStatement(SourceFile file, cstring source) {
       Token_dispose(token);
       return (Statement)readImportStatement(file, source);
     }
+  } else if (token->_type == TT_Symbol) {
+    if (strings_is(token->_raw, ";")) {
+      Token_dispose(token);
+      return (Statement)readEmptyStatement(file, source);
+    } else if (strings_is(token->_raw, "{")) {
+      Token_dispose(token);
+      return (Statement)readBlockStatement(file, source);
+    }
   }
   Token_dispose(token);
-  return NULL;
+  return (Statement)readExpressionStatement(file, source);
 }
 
 Interpreter readInterpreter(SourceFile file, cstring source) {
@@ -595,6 +881,7 @@ Interpreter readInterpreter(SourceFile file, cstring source) {
   Token_dispose(token);
   return NULL;
 }
+
 Directive readDirective(SourceFile file, cstring source) {
   cstring selector = source;
   Token literal = readTokenSkipComment(file, selector);
@@ -662,6 +949,9 @@ Program readProgram(SourceFile file, cstring source) {
     if (checkToken(token, TT_Symbol, ";") || token->_type == TT_Newline) {
       selector = token->_raw.end;
       Token_dispose(token);
+    } else if (token->_type == TT_Eof) {
+      Token_dispose(token);
+      break;
     } else {
       ctx.error.error = "Unexcept error";
       ctx.error.location = getLocation(file, selector);

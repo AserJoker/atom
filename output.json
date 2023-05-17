@@ -1,84 +1,70 @@
 {
-  "interpreter": {
-    "type": "Interpreter",
-    "interpreter": "#!/usr/local/bin/atom"
-  },
   "type": "Program",
-  "directives": [
-    {
-      "type": "Directive",
-      "directive": "\"use strict\""
-    },
-    {
-      "type": "Directive",
-      "directive": "\"use atom\""
-    },
-    {
-      "type": "Directive",
-      "directive": "\"use compiler\""
-    }
-  ],
+  "directives": [],
   "statements": [
     {
-      "type": "ImportStatement",
-      "specifiers": [
-        {
-          "type": "ImportNamespaceSpecifier",
-          "local": {
-            "type": "Identifier",
-            "identifier": "ddd"
-          }
-        }
-      ],
-      "accertions": [
-        {
-          "type": "ImportAttribute",
-          "key": {
-            "type": "Identifier",
-            "identifier": "type"
+      "type": "ExpressionStatement",
+      "expression": {
+        "type": "BinaryExpression",
+        "operator": ",",
+        "left": {
+          "type": "BinaryExpression",
+          "operator": "=",
+          "left": {
+            "type": "IdentifierExpression",
+            "identifier": {
+              "type": "Identifier",
+              "identifier": "a"
+            }
           },
-          "value": {
-            "type": "StringLiteral",
-            "literal": "\"javascript\""
-          }
-        }
-      ],
-      "source": {
-        "type": "StringLiteral",
-        "literal": "\"std\""
-      }
-    },
-    {
-      "type": "ImportStatement",
-      "specifiers": [
-        {
-          "type": "ImportDefaultSpecifier",
-          "local": {
-            "type": "Identifier",
-            "identifier": "os"
+          "right": {
+            "type": "BinaryExpression",
+            "operator": "*",
+            "left": {
+              "type": "IdentifierExpression",
+              "identifier": {
+                "type": "Identifier",
+                "identifier": "b"
+              }
+            },
+            "right": {
+              "type": "IdentifierExpression",
+              "identifier": {
+                "type": "Identifier",
+                "identifier": "c"
+              }
+            }
           }
         },
-        {
-          "type": "ImportSpecifier",
-          "local": {
-            "type": "Identifier",
-            "identifier": "getEnv"
+        "right": {
+          "type": "BinaryExpression",
+          "operator": "=",
+          "left": {
+            "type": "IdentifierExpression",
+            "identifier": {
+              "type": "Identifier",
+              "identifier": "d"
+            }
           },
-          "imported": null
-        },
-        {
-          "type": "ImportSpecifier",
-          "local": {
-            "type": "Identifier",
-            "identifier": "setEnv"
-          },
-          "imported": null
+          "right": {
+            "type": "BinaryExpression",
+            "operator": "+",
+            "left": {
+              "type": "IdentifierExpression",
+              "identifier": {
+                "type": "Identifier",
+                "identifier": "a"
+              }
+            },
+            "right": {
+              "type": "IdentifierExpression",
+              "identifier": {
+                "type": "Identifier",
+                "identifier": "b"
+              }
+            }
+          }
         }
-      ],
-      "accertions": [],
-      "source": {
-        "type": "StringLiteral",
-        "literal": "\"os\""
       }
     }
   ]
