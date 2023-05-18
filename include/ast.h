@@ -40,6 +40,8 @@ typedef struct s_SourceFile *SourceFile;
 SourceFile SourceFile_read(cstring filename);
 void SourceFile_dispose(SourceFile sf);
 Token readToken(SourceFile file, cstring source);
+Token readTokenSkipComment(SourceFile file, cstring source);
+Token readTokenSkipNewline(SourceFile file, cstring source);
 void Token_dispose(Token token);
 void initTokenizerContext();
 void uninitTokenizerContext();
@@ -128,14 +130,23 @@ typedef enum e_NodeType {
   NT_ExpressionStatement,
 
   NT_BinaryExpression,
+  NT_ComputeExpression,
   NT_BracketExpression,
   NT_LiteralExpression,
   NT_IdentifierExpression,
 
   NT_CallExpression,
-  NT_TemplateException,
+  NT_OptionalCallExpression,
+  NT_OptionalComputeExpression,
+  NT_TemplateExpression,
   //--Expression
 
+  // Pattern
+  NT_ObjectPattern,
+  NT_ArrayPattern,
+  NT_FunctionPattern,
+  NT_LambdaPattern,
+  //--Pattern
 } NodeType;
 
 struct s_AstNode {
@@ -146,6 +157,28 @@ struct s_AstNode {
 struct s_Identifier {
   AstNode _node;
   Token _raw;
+};
+
+struct s_LambdaPattern {
+  AstNode _node;
+  Expression _args;
+  Statement _body;
+};
+
+struct s_ObjectProperty {
+  AstNode _node;
+  Expression _key;
+  Expression _value;
+};
+
+struct s_ObjectPattern {
+  AstNode _node;
+  List _properties; // Expression
+};
+
+struct s_ArrayPattern {
+  AstNode _node;
+  List _items; // Expression
 };
 
 struct s_Expression {
@@ -212,5 +245,46 @@ struct s_Program {
   List _body;       // Statement[]
 };
 
+AstNode AstNode_create();
+void AstNode_dispose(AstNode node);
+
+void Program_dispose(Program program);
+Program readProgram(SourceFile file, cstring source);
+
+Statement readStatement(SourceFile file, cstring source);
+void Statement_dispose(Statement statement);
+
+BlockStatement readBlockStatement(SourceFile file, cstring source);
+void BlockStatement_dispose(BlockStatement blockStatement);
+
+ImportStatement readImportStatement(SourceFile file, cstring source);
+void ImportStatement_dispose(ImportStatement import_s);
+
+Literal readLiteral(SourceFile file, cstring source);
+void Literal_dispose(Literal literal);
+
+Identifier readIdentifier(SourceFile file, cstring source);
+void Identifier_dispose(Identifier identifier);
+
+Statement readEmptyStatement(SourceFile file, cstring source);
+void EmptyStatement_dispose(Statement statement);
+
+ExpressionStatement readExpressionStatement(SourceFile file, cstring source);
+void ExpressionStatement_dispose(ExpressionStatement expression_s);
+
+int checkToken(Token token, TokenType tt, cstring str);
+cstring skipToken(SourceFile file, cstring source);
+
 AstNode parse(SourceFile file);
 JSON_Value JSON_fromProgram(Program program);
+
+void setAstError(Error error);
+Error getAstError();
+
+Expression Expression_create();
+void Expression_dispose(Expression expression);
+Expression readExpression(SourceFile file, cstring source);
+
+Expression readIdentifierExpression(SourceFile file, cstring source);
+Expression readBracketExpression(SourceFile file, cstring selector);
+Expression readComputeExpression(SourceFile file, cstring source);

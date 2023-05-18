@@ -164,6 +164,46 @@ JSON_Value JSON_fromExpression(Expression expression) {
       JSON_setField(obj, "right", JSON_fromExpression(expression->_right));
     }
   }
+  if (expression->_node->_type == NT_ComputeExpression) {
+    JSON_setField(obj, "type", JSON_createString("ComputeExpression"));
+    if (expression->_left) {
+      JSON_setField(obj, "property", JSON_fromExpression(expression->_left));
+    }
+    if (expression->_right) {
+      JSON_setField(obj, "field", JSON_fromExpression(expression->_right));
+    }
+  }
+  if (expression->_node->_type == NT_OptionalComputeExpression) {
+    JSON_setField(obj, "type", JSON_createString("OptionalComputeExpression"));
+    if (expression->_left) {
+      JSON_setField(obj, "property", JSON_fromExpression(expression->_left));
+    }
+    if (expression->_right) {
+      JSON_setField(obj, "field", JSON_fromExpression(expression->_right));
+    }
+  }
+  if (expression->_node->_type == NT_CallExpression) {
+    JSON_setField(obj, "type", JSON_createString("CallExpression"));
+    if (expression->_left) {
+      JSON_setField(obj, "callee", JSON_fromExpression(expression->_left));
+    }
+    if (expression->_right) {
+      JSON_setField(obj, "args", JSON_fromExpression(expression->_right));
+    } else {
+      JSON_setField(obj, "args", JSON_createNull());
+    }
+  }
+  if (expression->_node->_type == NT_OptionalCallExpression) {
+    JSON_setField(obj, "type", JSON_createString("OptionalCallExpression"));
+    if (expression->_left) {
+      JSON_setField(obj, "callee", JSON_fromExpression(expression->_left));
+    }
+    if (expression->_right) {
+      JSON_setField(obj, "args", JSON_fromExpression(expression->_right));
+    } else {
+      JSON_setField(obj, "args", JSON_createNull());
+    }
+  }
   return obj;
 }
 
