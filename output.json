@@ -1,84 +1,40 @@
 {
-  "interpreter": {
-    "type": "Interpreter",
-    "interpreter": "#!/usr/local/bin/atom"
-  },
   "type": "Program",
-  "directives": [
-    {
-      "type": "Directive",
-      "directive": "\"use strict\""
-    },
-    {
-      "type": "Directive",
-      "directive": "\"use atom\""
-    },
-    {
-      "type": "Directive",
-      "directive": "\"use compiler\""
-    }
-  ],
+  "directives": [],
   "statements": [
     {
-      "type": "ImportStatement",
-      "specifiers": [
-        {
-          "type": "ImportNamespaceSpecifier",
-          "local": {
+      "type": "ExpressionStatement",
+      "expression": {
+        "type": "BinaryExpression",
+        "operator": "*",
+        "left": {
+          "type": "IdentifierExpression",
+          "identifier": {
             "type": "Identifier",
-            "identifier": "ddd"
-          }
-        }
-      ],
-      "accertions": [
-        {
-          "type": "ImportAttribute",
-          "key": {
-            "type": "Identifier",
-            "identifier": "type"
-          },
-          "value": {
-            "type": "StringLiteral",
-            "literal": "\"javascript\""
-          }
-        }
-      ],
-      "source": {
-        "type": "StringLiteral",
-        "literal": "\"std\""
-      }
-    },
-    {
-      "type": "ImportStatement",
-      "specifiers": [
-        {
-          "type": "ImportDefaultSpecifier",
-          "local": {
-            "type": "Identifier",
-            "identifier": "os"
+            "identifier": "a"
           }
         },
-        {
-          "type": "ImportSpecifier",
-          "local": {
-            "type": "Identifier",
-            "identifier": "getEnv"
-          },
-          "imported": null
-        },
-        {
-          "type": "ImportSpecifier",
-          "local": {
-            "type": "Identifier",
-            "identifier": "setEnv"
-          },
-          "imported": null
+        "right": {
+          "type": "BracketExpression",
+          "left": {
+            "type": "BinaryExpression",
+            "operator": "+",
+            "left": {
+              "type": "IdentifierExpression",
+              "identifier": {
+                "type": "Identifier",
+                "identifier": "b"
+              }
+            },
+            "right": {
+              "type": "IdentifierExpression",
+              "identifier": {
+                "type": "Identifier",
+                "identifier": "c"
+              }
+            }
+          }
         }
-      ],
-      "accertions": [],
-      "source": {
-        "type": "StringLiteral",
-        "literal": "\"os\""
       }
     }
   ]

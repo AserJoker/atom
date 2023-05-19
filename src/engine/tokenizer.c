@@ -13,10 +13,11 @@ typedef struct s_BlockFrame {
 typedef struct s_Context {
   List frames;
   BlockFrame current;
+  int enableRegex;
   Error error;
 } Context;
 
-static Context ctx = {NULL};
+static Context ctx = {NULL, NULL, 0};
 
 static const char *keywords[] = {
     "abstract",     "arguments", "await",    "boolean",    "break",
@@ -35,10 +36,11 @@ static const char *keywords[] = {
     "as",           "assert",    NULL};
 
 static const cstring symbols[] = {
-    "===", "!==", "==", "?.(", ">=", "<=", "!=", "&&", "||", "++", "--", "+=",
-    "-=",  "**",  "/=", "*=",  "&=", "|=", "%=", "<<", ">>", "??", "?.", "+",
-    "-",   "*",   "/",  "%",   "&",  "|",  "!",  "~",  ";",  ",",  ".",  ">",
-    "<",   "=",   "{",  "}",   "[",  "]",  "(",  ")",  "@",  "?",  ":",  NULL};
+    "===", "!==", "==", "?.", "...", ">=", "<=", "!=", "&&", "||",
+    "++",  "--",  "+=", "-=", "**",  "/=", "*=", "&=", "|=", "%=",
+    "<<",  ">>",  "??", "?.", "+",   "-",  "*",  "/",  "%",  "&",
+    "|",   "!",   "~",  ";",  ",",   ".",  ">",  "<",  "=",  "{",
+    "}",   "[",   "]",  "(",  ")",   "@",  "?",  ":",  NULL};
 
 static BlockFrame BlockFrame_create() {
   BlockFrame bf = (BlockFrame)Buffer_alloc(sizeof(struct s_BlockFrame));
@@ -122,7 +124,7 @@ static Token readNumber(SourceFile file, cstring source) {
   }
   return token;
 }
-static Token readIdentifier(SourceFile file, cstring source) {
+static Token readIdentifierToken(SourceFile file, cstring source) {
   cstring selector = source;
   while (*selector) {
     if ((*selector >= 'a' && *selector <= 'z') ||
@@ -389,11 +391,12 @@ Token readToken(SourceFile file, cstring source) {
   } else if ((*source >= 'a' && *source <= 'z') ||
              (*source >= 'A' && *source <= 'Z') || *source == '_' ||
              *source == '$' || *source == '#') {
-    return readIdentifier(file, source);
+    return readIdentifierToken(file, source);
   } else if ((*source == '/' && source[1] == '/') ||
              (*source == '/' && source[1] == '*')) {
     return readComment(file, source);
-  } else if (*source == '/') {
+  } else if (*source == '/' && ctx.enableRegex) {
+    disableReadRegex();
     return readRegex(file, source);
   } else if (*source == '\"' || *source == '\'') {
     return readString(file, source);
@@ -418,3 +421,47 @@ void initTokenizerContext() {
 }
 void uninitTokenizerContext() { List_dispose(ctx.frames); }
 Error getTokenizerError() { return ctx.error; }
+void enableReadRegex() { ctx.enableRegex = 1; }
+void disableReadRegex() { ctx.enableRegex = 0; }
+
+int checkToken(Token token, TokenType tt, cstring str) {
+  return token->_type == tt && strings_is(token->_raw, str);
+}
+
+cstring skipToken(SourceFile file, cstring source) {
+  Token token = readTokenSkipNewline(file, source);
+  if (!token) {
+    ctx.error = getTokenizerError();
+    return NULL;
+  }
+  cstring selector = token->_raw.end;
+  Token_dispose(token);
+  return selector;
+}
+Token readTokenSkipComment(SourceFile file, cstring source) {
+  cstring selector = source;
+  Token token = readToken(file, selector);
+  while (token && token->_type == TT_Comment) {
+    selector = token->_raw.end;
+    Token_dispose(token);
+    token = readToken(file, selector);
+  }
+  if (!token) {
+    ctx.error = getTokenizerError();
+  }
+  return token;
+}
+
+Token readTokenSkipNewline(SourceFile file, cstring source) {
+  cstring selector = source;
+  Token token = readTokenSkipComment(file, selector);
+  while (token && token->_type == TT_Newline) {
+    selector = token->_raw.end;
+    Token_dispose(token);
+    token = readTokenSkipComment(file, selector);
+  }
+  if (!token) {
+    ctx.error = getTokenizerError();
+  }
+  return token;
+}

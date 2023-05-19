@@ -24,16 +24,76 @@ JSON_Value JSON_fromStringLiteral(Literal literal) {
   return val;
 }
 
+JSON_Value JSON_fromNumberLiteral(Literal literal) {
+  cstring s_literal = cstring_from(literal->_raw->_raw);
+  JSON_Value val = JSON_createObject();
+  JSON_setField(val, "type", JSON_createString("NumberLiteral"));
+  JSON_setField(val, "literal", JSON_createString(s_literal));
+  Buffer_free(s_literal);
+  return val;
+}
+
+JSON_Value JSON_fromBooleanLiteral(Literal literal) {
+  cstring s_literal = cstring_from(literal->_raw->_raw);
+  JSON_Value val = JSON_createObject();
+  JSON_setField(val, "type", JSON_createString("BooleanLiteral"));
+  JSON_setField(val, "literal", JSON_createString(s_literal));
+  Buffer_free(s_literal);
+  return val;
+}
+
+JSON_Value JSON_fromNullLiteral(Literal literal) {
+  cstring s_literal = cstring_from(literal->_raw->_raw);
+  JSON_Value val = JSON_createObject();
+  JSON_setField(val, "type", JSON_createString("NullLiteral"));
+  JSON_setField(val, "literal", JSON_createString(s_literal));
+  Buffer_free(s_literal);
+  return val;
+}
+
+JSON_Value JSON_fromUndefinedLiteral(Literal literal) {
+  cstring s_literal = cstring_from(literal->_raw->_raw);
+  JSON_Value val = JSON_createObject();
+  JSON_setField(val, "type", JSON_createString("UndefinedLiteral"));
+  JSON_setField(val, "literal", JSON_createString(s_literal));
+  Buffer_free(s_literal);
+  return val;
+}
+
+JSON_Value JSON_fromRegexLiteral(Literal literal) {
+  cstring s_literal = cstring_from(literal->_raw->_raw);
+  JSON_Value val = JSON_createObject();
+  JSON_setField(val, "type", JSON_createString("RegexLiteral"));
+  JSON_setField(val, "literal", JSON_createString(s_literal));
+  Buffer_free(s_literal);
+  return val;
+}
+
+JSON_Value JSON_fromBigIntLiteral(Literal literal) {
+  cstring s_literal = cstring_from(literal->_raw->_raw);
+  JSON_Value val = JSON_createObject();
+  JSON_setField(val, "type", JSON_createString("BigIntLiteral"));
+  JSON_setField(val, "literal", JSON_createString(s_literal));
+  Buffer_free(s_literal);
+  return val;
+}
+
 JSON_Value JSON_fromLiteral(Literal literal) {
   switch (literal->_node->_type) {
   case NT_StringLiteral:
     return JSON_fromStringLiteral(literal);
   case NT_NumericLiteral:
+    return JSON_fromNumberLiteral(literal);
   case NT_BooelanLiteral:
+    return JSON_fromBooleanLiteral(literal);
   case NT_NullLiteral:
+    return JSON_fromNullLiteral(literal);
   case NT_UndefinedLiteral:
+    return JSON_fromUndefinedLiteral(literal);
   case NT_RegExLiteral:
+    return JSON_fromRegexLiteral(literal);
   case NT_BigIntLiteral:
+    return JSON_fromBigIntLiteral(literal);
   default:
     return NULL;
   }
@@ -117,11 +177,116 @@ JSON_Value JSON_fromImportStatement(ImportStatement import_s) {
   JSON_setField(obj, "source", JSON_fromLiteral(import_s->_source));
   return obj;
 }
+JSON_Value JSON_fromStatement(Statement statement);
+JSON_Value JSON_fromEmptyStatement(Statement empty_S) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("EmptyStatement"));
+  return obj;
+}
+JSON_Value JSON_fromBlockStatement(BlockStatement block_s) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("BlockStatement"));
+  JSON_Value body = JSON_createArray();
+  int32_t index = 0;
+  for (List_Node node = List_head(block_s->_body);
+       node != List_tail(block_s->_body); node = List_next(node)) {
+    Statement statement = (Statement)List_get(node);
+    JSON_setIndex(body, index++, JSON_fromStatement(statement));
+  }
+  JSON_setField(obj, "body", body);
+  return obj;
+}
+
+JSON_Value JSON_fromExpression(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  if (expression->_node->_type == NT_IdentifierExpression) {
+    JSON_setField(obj, "type", JSON_createString("IdentifierExpression"));
+    JSON_setField(obj, "identifier",
+                  JSON_fromIdentifier(expression->_identifier));
+  }
+  if (expression->_node->_type == NT_LiteralExpression) {
+    JSON_setField(obj, "type", JSON_createString("LiteralExpression"));
+    JSON_setField(obj, "literal", JSON_fromLiteral(expression->_literal));
+  }
+  if (expression->_node->_type == NT_BracketExpression) {
+    JSON_setField(obj, "type", JSON_createString("BracketExpression"));
+    JSON_setField(obj, "left", JSON_fromExpression(expression->_left));
+  }
+  if (expression->_node->_type == NT_BinaryExpression) {
+    JSON_setField(obj, "type", JSON_createString("BinaryExpression"));
+    cstring s_opt = cstring_from(expression->_operator->_raw);
+    JSON_setField(obj, "operator", JSON_createString(s_opt));
+    Buffer_free(s_opt);
+    if (expression->_left) {
+      JSON_setField(obj, "left", JSON_fromExpression(expression->_left));
+    }
+    if (expression->_right) {
+      JSON_setField(obj, "right", JSON_fromExpression(expression->_right));
+    }
+  }
+  if (expression->_node->_type == NT_ComputeExpression) {
+    JSON_setField(obj, "type", JSON_createString("ComputeExpression"));
+    if (expression->_left) {
+      JSON_setField(obj, "property", JSON_fromExpression(expression->_left));
+    }
+    if (expression->_right) {
+      JSON_setField(obj, "field", JSON_fromExpression(expression->_right));
+    }
+  }
+  if (expression->_node->_type == NT_OptionalComputeExpression) {
+    JSON_setField(obj, "type", JSON_createString("OptionalComputeExpression"));
+    if (expression->_left) {
+      JSON_setField(obj, "property", JSON_fromExpression(expression->_left));
+    }
+    if (expression->_right) {
+      JSON_setField(obj, "field", JSON_fromExpression(expression->_right));
+    }
+  }
+  if (expression->_node->_type == NT_CallExpression) {
+    JSON_setField(obj, "type", JSON_createString("CallExpression"));
+    if (expression->_left) {
+      JSON_setField(obj, "callee", JSON_fromExpression(expression->_left));
+    }
+    if (expression->_right) {
+      JSON_setField(obj, "args", JSON_fromExpression(expression->_right));
+    } else {
+      JSON_setField(obj, "args", JSON_createNull());
+    }
+  }
+  if (expression->_node->_type == NT_OptionalCallExpression) {
+    JSON_setField(obj, "type", JSON_createString("OptionalCallExpression"));
+    if (expression->_left) {
+      JSON_setField(obj, "callee", JSON_fromExpression(expression->_left));
+    }
+    if (expression->_right) {
+      JSON_setField(obj, "args", JSON_fromExpression(expression->_right));
+    } else {
+      JSON_setField(obj, "args", JSON_createNull());
+    }
+  }
+  return obj;
+}
+
+JSON_Value JSON_fromExpressionStatement(ExpressionStatement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("ExpressionStatement"));
+  if (statement->_expression) {
+    JSON_setField(obj, "expression",
+                  JSON_fromExpression(statement->_expression));
+  }
+  return obj;
+}
 
 JSON_Value JSON_fromStatement(Statement statement) {
   switch (statement->_node->_type) {
   case NT_ImportStatement:
     return JSON_fromImportStatement((ImportStatement)statement);
+  case NT_EmptyStatement:
+    return JSON_fromEmptyStatement(statement);
+  case NT_BlockStatement:
+    return JSON_fromBlockStatement((BlockStatement)statement);
+  case NT_ExpressionStatement:
+    return JSON_fromExpressionStatement((ExpressionStatement)statement);
   default:
     return NULL;
   }
@@ -147,8 +312,10 @@ JSON_Value JSON_fromDirective(Directive directive) {
 
 JSON_Value JSON_fromProgram(Program program) {
   JSON_Value obj = JSON_createObject();
-  JSON_setField(obj, "interpreter",
-                JSON_fromInterpreter(program->_interpreter));
+  if (program->_interpreter) {
+    JSON_setField(obj, "interpreter",
+                  JSON_fromInterpreter(program->_interpreter));
+  }
   JSON_setField(obj, "type", JSON_createString("Program"));
   JSON_Value directives = JSON_createArray();
   int32_t index = 0;

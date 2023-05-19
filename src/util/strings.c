@@ -21,6 +21,16 @@ int strings_is(strings str, const cstring source) {
   }
   return *ss == 0;
 }
+
+int strings_contains(strings str, const cstring list[]) {
+  for (int index = 0; list[index] != 0; index++) {
+    if (strings_is(str, list[index])) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 cstring cstring_from(strings source) {
   uint32_t len = source.end - source.begin;
   cstring result = (cstring)Buffer_from(len + 1, source.begin);
@@ -60,7 +70,7 @@ cstring cstring_concat(cstring str, ...) {
 cstring cstring_join(cstring args[]) {
   uint32_t len = 0;
   for (uint32_t i = 0; args[i] != 0; i++) {
-    len+=strlen(args[i]);
+    len += strlen(args[i]);
   }
   cstring result = (cstring)Buffer_alloc(len + 1);
   result[len] = 0;
@@ -68,7 +78,7 @@ cstring cstring_join(cstring args[]) {
   for (uint32_t i = 0; args[i] != 0; i++) {
     cstring ss = args[i];
     while (*ss) {
-      *s++=*ss++;
+      *s++ = *ss++;
     }
   }
   return result;
