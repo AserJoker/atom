@@ -48,5 +48,6 @@ BlockStatement readBlockStatement(SourceFile file, cstring source) {
   Token_dispose(token);
   block_s->_node->_position.begin = source;
   block_s->_node->_position.end = selector;
+  disableTailCheck();
   return block_s;
 }

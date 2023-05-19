@@ -3,68 +3,12 @@
   "directives": [],
   "statements": [
     {
-      "type": "ExpressionStatement",
-      "expression": {
-        "type": "BinaryExpression",
-        "operator": "+",
-        "left": {
-          "type": "BinaryExpression",
-          "operator": "+",
-          "left": {
-            "type": "IdentifierExpression",
-            "identifier": {
-              "type": "Identifier",
-              "identifier": "a"
-            }
-          },
-          "right": {
-            "type": "BinaryExpression",
-            "operator": "/",
-            "left": {
-              "type": "IdentifierExpression",
-              "identifier": {
-                "type": "Identifier",
-                "identifier": "b"
-              }
-            },
-            "right": {
-              "type": "IdentifierExpression",
-              "identifier": {
-                "type": "Identifier",
-                "identifier": "c"
-              }
-            }
-          }
-        },
-        "right": {
-          "type": "CallExpression",
-          "callee": {
-            "type": "BinaryExpression",
-            "operator": ".",
-            "left": {
-              "type": "LiteralExpression",
-              "literal": {
-                "type": "RegexLiteral",
-                "literal": "/aaa/"
-              }
-            },
-            "right": {
-              "type": "IdentifierExpression",
-              "identifier": {
-                "type": "Identifier",
-                "identifier": "test"
-              }
-            }
-          },
-          "args": {
-            "type": "LiteralExpression",
-            "literal": {
-              "type": "StringLiteral",
-              "literal": "\"aabbcc\""
-            }
-          }
-        }
-      }
+      "type": "BlockStatement",
+      "body": []
+    },
+    {
+      "type": "BlockStatement",
+      "body": []
     }
   ]
 }

@@ -517,12 +517,16 @@ Program readProgram(SourceFile file, cstring source) {
       Token_dispose(token);
       break;
     } else {
-      Error error;
-      error.error = "Unexcept error";
-      error.location = getLocation(file, selector);
-      setAstError(error);
-      Token_dispose(token);
-      goto failed;
+      if (isTailCheckEnable()) {
+        Error error;
+        error.error = "Unexcept error";
+        error.location = getLocation(file, selector);
+        setAstError(error);
+        Token_dispose(token);
+        goto failed;
+      } else {
+        enableTailCheck();
+      }
     }
     statement = readStatement(file, selector);
   }

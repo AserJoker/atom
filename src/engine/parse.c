@@ -7,6 +7,7 @@
 
 typedef struct s_Context {
   Error error;
+  int skipTailCheck;
 } Context;
 
 static Context ctx;
@@ -153,6 +154,7 @@ AstNode parse(SourceFile file) {
   cstring source = file->_source;
   initTokenizerContext();
   ctx.error.error = NULL;
+  ctx.skipTailCheck = 0;
   Program program = readProgram(file, source);
   if (program) {
     JSON_Value val = JSON_fromProgram(program);
@@ -174,3 +176,6 @@ AstNode parse(SourceFile file) {
 
 void setAstError(Error error) { ctx.error = error; }
 Error getAstError() { return ctx.error; }
+void enableTailCheck() { ctx.skipTailCheck = 0; }
+void disableTailCheck() { ctx.skipTailCheck = 1; }
+int isTailCheckEnable() { return !ctx.skipTailCheck; }

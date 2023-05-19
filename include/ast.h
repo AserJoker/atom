@@ -277,6 +277,10 @@ void ExpressionStatement_dispose(ExpressionStatement expression_s);
 int checkToken(Token token, TokenType tt, cstring str);
 cstring skipToken(SourceFile file, cstring source);
 
+void enableTailCheck();
+void disableTailCheck();
+int isTailCheckEnable();
+
 AstNode parse(SourceFile file);
 JSON_Value JSON_fromProgram(Program program);
 
