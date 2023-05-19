@@ -525,6 +525,7 @@ Program readProgram(SourceFile file, cstring source) {
         Token_dispose(token);
         goto failed;
       } else {
+        Token_dispose(token);
         enableTailCheck();
       }
     }
