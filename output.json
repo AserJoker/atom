@@ -6,7 +6,7 @@
       "type": "ExpressionStatement",
       "expression": {
         "type": "BinaryExpression",
-        "operator": "+",
+        "operator": "*",
         "left": {
           "type": "IdentifierExpression",
           "identifier": {
@@ -15,13 +15,23 @@
           }
         },
         "right": {
-          "type": "BinaryExpression",
-          "operator": "++",
-          "right": {
-            "type": "IdentifierExpression",
-            "identifier": {
-              "type": "Identifier",
-              "identifier": "b"
+          "type": "BracketExpression",
+          "left": {
+            "type": "BinaryExpression",
+            "operator": "+",
+            "left": {
+              "type": "IdentifierExpression",
+              "identifier": {
+                "type": "Identifier",
+                "identifier": "b"
+              }
+            },
+            "right": {
+              "type": "IdentifierExpression",
+              "identifier": {
+                "type": "Identifier",
+                "identifier": "c"
+              }
             }
           }
         }

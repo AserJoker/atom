@@ -10,7 +10,7 @@ typedef struct s_Context {
   int skipTailCheck;
 } Context;
 
-static Context ctx;
+static Context *ctx = NULL;
 
 void AstNode_dispose(AstNode node) { Buffer_free(node); }
 
@@ -150,11 +150,27 @@ Statement readStatement(SourceFile file, cstring source) {
   return (Statement)readExpressionStatement(file, source);
 }
 
+Context *pushContext() {
+  Context *current = ctx;
+  ctx = (Context *)Buffer_alloc(sizeof(Context));
+  ctx->skipTailCheck = 0;
+  ctx->error.error = 0;
+  return current;
+}
+void popContext(Context *current) {
+  if (ctx) {
+    if (current) {
+      current->error = ctx->error;
+    }
+    Buffer_free(ctx);
+  }
+  ctx = current;
+}
+
 AstNode parse(SourceFile file) {
   cstring source = file->_source;
   initTokenizerContext();
-  ctx.error.error = NULL;
-  ctx.skipTailCheck = 0;
+  Context *current = pushContext();
   Program program = readProgram(file, source);
   if (program) {
     JSON_Value val = JSON_fromProgram(program);
@@ -165,17 +181,18 @@ AstNode parse(SourceFile file) {
     Program_dispose(program);
   }
   uninitTokenizerContext();
-  if (ctx.error.error) {
-    fprintf(stderr, "%s at\n  %s:%u:%u", ctx.error.error,
-            ctx.error.location._filename,
-            ctx.error.location._position._line + 1,
-            ctx.error.location._position._column + 1);
+  if (ctx->error.error) {
+    fprintf(stderr, "%s at\n  %s:%u:%u", ctx->error.error,
+            ctx->error.location._filename,
+            ctx->error.location._position._line + 1,
+            ctx->error.location._position._column + 1);
   }
+  popContext(current);
   return NULL;
 }
 
-void setAstError(Error error) { ctx.error = error; }
-Error getAstError() { return ctx.error; }
-void enableTailCheck() { ctx.skipTailCheck = 0; }
-void disableTailCheck() { ctx.skipTailCheck = 1; }
-int isTailCheckEnable() { return !ctx.skipTailCheck; }
+void setAstError(Error error) { ctx->error = error; }
+Error getAstError() { return ctx->error; }
+void enableTailCheck() { ctx->skipTailCheck = 0; }
+void disableTailCheck() { ctx->skipTailCheck = 1; }
+int isTailCheckEnable() { return !ctx->skipTailCheck; }

@@ -296,3 +296,8 @@ Expression readBracketExpression(SourceFile file, cstring selector);
 Expression readComputeExpression(SourceFile file, cstring source);
 Expression readLiteralExpression(SourceFile file, cstring source);
 int isLiteralToken(Token token);
+
+struct s_Context;
+typedef struct s_Context Context;
+Context *pushContext();
+void popContext(Context *current);

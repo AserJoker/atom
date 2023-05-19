@@ -11,7 +11,9 @@ Expression readBracketExpression(SourceFile file, cstring source) {
   }
   selector = token->_raw.end;
   Token_dispose(token);
+  Context *current = pushContext();
   Expression sub_expr = readExpression(file, selector);
+  popContext(current);
   if (!sub_expr) {
     return NULL;
   }
