@@ -35,7 +35,7 @@ static s_OperatorSet *opts[] = {
     &optset0, &optset1, &optset2, &optset3,  &optset4,  &optset5,  &optset6,
     &optset7, &optset8, &optset9, &optset10, &optset11, &optset12, 0};
 
-static cstring unaryOperators[] = {"...", "!", "+", "-", "~", 0};
+static cstring unaryOperators[] = {"++", "--", "...", "!", "+", "-", "~", 0};
 
 static cstring updateOperators[] = {"++", "--", 0};
 void Expression_dispose(Expression expression) {
@@ -110,6 +110,12 @@ Expression readExpression(SourceFile file, cstring source) {
         Token_dispose(next);
         break;
       }
+      if (!current && expr && next->_type == TT_Symbol &&
+          strings_contains(next->_raw, updateOperators)) {
+        Token_dispose(token);
+        Token_dispose(next);
+        break;
+      }
       Token_dispose(token);
       token = next;
       selector = token->_raw.begin;
@@ -166,7 +172,15 @@ Expression readExpression(SourceFile file, cstring source) {
       if (!current && expr) {
         // 表达式已完整 例如a + b 可作为一个原子嵌套到更复杂的表达式中
         // TODO: update expression （左结合表达式）
-        if (strings_is(token->_raw, "(")) {
+        if (strings_contains(token->_raw, updateOperators)) {
+          int index = -2;
+          selector = token->_raw.end;
+          Expression update_expr = Expression_create();
+          update_expr->_node->_type = NT_BinaryExpression;
+          update_expr->_level = index;
+          update_expr->_operator = token;
+          bindLeft(&expr, update_expr);
+        } else if (strings_is(token->_raw, "(")) {
           int index = -2;
           Token_dispose(token);
           Expression call_expr = readBracketExpression(file, selector);
@@ -174,16 +188,20 @@ Expression readExpression(SourceFile file, cstring source) {
             goto failed;
           }
           selector = call_expr->_node->_position.end;
-          token = readTokenSkipNewline(file, selector);
+          token = readTokenSkipComment(file, selector);
           if (checkToken(token, TT_Symbol, "=>")) {
             Token_dispose(token);
+            selector = token->_raw.end;
             // TODO: lambda pattern
+          } else {
+            Token_dispose(token);
           }
           call_expr->_right = call_expr->_left;
           call_expr->_left = NULL;
           call_expr->_node->_type = NT_CallExpression;
           call_expr->_level = index;
           bindLeft(&expr, call_expr);
+          token = readTokenSkipNewline(file, selector);
         } else if (strings_is(token->_raw, ".") ||
                    strings_is(token->_raw, "?.")) {
           if (strings_is(token->_raw, "?.")) {

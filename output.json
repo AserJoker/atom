@@ -3,12 +3,29 @@
   "directives": [],
   "statements": [
     {
-      "type": "BlockStatement",
-      "body": []
-    },
-    {
-      "type": "BlockStatement",
-      "body": []
+      "type": "ExpressionStatement",
+      "expression": {
+        "type": "BinaryExpression",
+        "operator": "+",
+        "left": {
+          "type": "IdentifierExpression",
+          "identifier": {
+            "type": "Identifier",
+            "identifier": "a"
+          }
+        },
+        "right": {
+          "type": "BinaryExpression",
+          "operator": "++",
+          "right": {
+            "type": "IdentifierExpression",
+            "identifier": {
+              "type": "Identifier",
+              "identifier": "b"
+            }
+          }
+        }
+      }
     }
   ]
 }
