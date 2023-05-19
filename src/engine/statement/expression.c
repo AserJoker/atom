@@ -94,12 +94,18 @@ Expression readExpression(SourceFile file, cstring source) {
   Expression current = NULL;
   for (;;) {
     if (token->_type == TT_Newline) {
+      if (!current && expr) {
+        disableReadRegex();
+      } else {
+        enableReadRegex();
+      }
       Token next = readTokenSkipNewline(file, selector);
       if (!next) {
         Token_dispose(token);
         goto failed;
       }
-      if (next->_type == TT_Identifier && !current && expr) {
+      if ((next->_type == TT_Identifier || isLiteralToken(token)) && !current &&
+          expr) {
         Token_dispose(token);
         Token_dispose(next);
         break;
@@ -129,6 +135,28 @@ Expression readExpression(SourceFile file, cstring source) {
         current->_right = identifier_expr;
         current = NULL;
       }
+      disableReadRegex();
+      token = readTokenSkipComment(file, selector);
+    } else if (isLiteralToken(token)) {
+      Token_dispose(token);
+      if (!current && expr) {
+        break;
+      }
+      Expression literal_expr = readLiteralExpression(file, selector);
+      if (!literal_expr) {
+        goto failed;
+      }
+      selector = literal_expr->_node->_position.end;
+      if (!literal_expr) {
+        goto failed;
+      }
+      if (!expr) {
+        expr = literal_expr;
+      } else {
+        current->_right = literal_expr;
+        current = NULL;
+      }
+      disableReadRegex();
       token = readTokenSkipComment(file, selector);
     } else if (token->_type == TT_Symbol) {
       if (strings_is(token->_raw, ";")) {
@@ -269,6 +297,11 @@ Expression readExpression(SourceFile file, cstring source) {
         }
       }
     end:
+      if (!current && expr) {
+        disableReadRegex();
+      } else {
+        enableReadRegex();
+      }
       token = readTokenSkipComment(file, selector);
     } else {
       Token_dispose(token);

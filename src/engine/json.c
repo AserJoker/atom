@@ -24,16 +24,76 @@ JSON_Value JSON_fromStringLiteral(Literal literal) {
   return val;
 }
 
+JSON_Value JSON_fromNumberLiteral(Literal literal) {
+  cstring s_literal = cstring_from(literal->_raw->_raw);
+  JSON_Value val = JSON_createObject();
+  JSON_setField(val, "type", JSON_createString("NumberLiteral"));
+  JSON_setField(val, "literal", JSON_createString(s_literal));
+  Buffer_free(s_literal);
+  return val;
+}
+
+JSON_Value JSON_fromBooleanLiteral(Literal literal) {
+  cstring s_literal = cstring_from(literal->_raw->_raw);
+  JSON_Value val = JSON_createObject();
+  JSON_setField(val, "type", JSON_createString("BooleanLiteral"));
+  JSON_setField(val, "literal", JSON_createString(s_literal));
+  Buffer_free(s_literal);
+  return val;
+}
+
+JSON_Value JSON_fromNullLiteral(Literal literal) {
+  cstring s_literal = cstring_from(literal->_raw->_raw);
+  JSON_Value val = JSON_createObject();
+  JSON_setField(val, "type", JSON_createString("NullLiteral"));
+  JSON_setField(val, "literal", JSON_createString(s_literal));
+  Buffer_free(s_literal);
+  return val;
+}
+
+JSON_Value JSON_fromUndefinedLiteral(Literal literal) {
+  cstring s_literal = cstring_from(literal->_raw->_raw);
+  JSON_Value val = JSON_createObject();
+  JSON_setField(val, "type", JSON_createString("UndefinedLiteral"));
+  JSON_setField(val, "literal", JSON_createString(s_literal));
+  Buffer_free(s_literal);
+  return val;
+}
+
+JSON_Value JSON_fromRegexLiteral(Literal literal) {
+  cstring s_literal = cstring_from(literal->_raw->_raw);
+  JSON_Value val = JSON_createObject();
+  JSON_setField(val, "type", JSON_createString("RegexLiteral"));
+  JSON_setField(val, "literal", JSON_createString(s_literal));
+  Buffer_free(s_literal);
+  return val;
+}
+
+JSON_Value JSON_fromBigIntLiteral(Literal literal) {
+  cstring s_literal = cstring_from(literal->_raw->_raw);
+  JSON_Value val = JSON_createObject();
+  JSON_setField(val, "type", JSON_createString("BigIntLiteral"));
+  JSON_setField(val, "literal", JSON_createString(s_literal));
+  Buffer_free(s_literal);
+  return val;
+}
+
 JSON_Value JSON_fromLiteral(Literal literal) {
   switch (literal->_node->_type) {
   case NT_StringLiteral:
     return JSON_fromStringLiteral(literal);
   case NT_NumericLiteral:
+    return JSON_fromNumberLiteral(literal);
   case NT_BooelanLiteral:
+    return JSON_fromBooleanLiteral(literal);
   case NT_NullLiteral:
+    return JSON_fromNullLiteral(literal);
   case NT_UndefinedLiteral:
+    return JSON_fromUndefinedLiteral(literal);
   case NT_RegExLiteral:
+    return JSON_fromRegexLiteral(literal);
   case NT_BigIntLiteral:
+    return JSON_fromBigIntLiteral(literal);
   default:
     return NULL;
   }

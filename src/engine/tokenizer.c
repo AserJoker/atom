@@ -13,10 +13,11 @@ typedef struct s_BlockFrame {
 typedef struct s_Context {
   List frames;
   BlockFrame current;
+  int enableRegex;
   Error error;
 } Context;
 
-static Context ctx = {NULL};
+static Context ctx = {NULL, NULL, 0};
 
 static const char *keywords[] = {
     "abstract",     "arguments", "await",    "boolean",    "break",
@@ -394,7 +395,8 @@ Token readToken(SourceFile file, cstring source) {
   } else if ((*source == '/' && source[1] == '/') ||
              (*source == '/' && source[1] == '*')) {
     return readComment(file, source);
-  } else if (*source == '/') {
+  } else if (*source == '/' && ctx.enableRegex) {
+    disableReadRegex();
     return readRegex(file, source);
   } else if (*source == '\"' || *source == '\'') {
     return readString(file, source);
@@ -419,6 +421,8 @@ void initTokenizerContext() {
 }
 void uninitTokenizerContext() { List_dispose(ctx.frames); }
 Error getTokenizerError() { return ctx.error; }
+void enableReadRegex() { ctx.enableRegex = 1; }
+void disableReadRegex() { ctx.enableRegex = 0; }
 
 int checkToken(Token token, TokenType tt, cstring str) {
   return token->_type == tt && strings_is(token->_raw, str);

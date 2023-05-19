@@ -46,6 +46,8 @@ void Token_dispose(Token token);
 void initTokenizerContext();
 void uninitTokenizerContext();
 Error getTokenizerError();
+void enableReadRegex();
+void disableReadRegex();
 
 struct s_Identifier;
 typedef struct s_Identifier *Identifier;
@@ -288,3 +290,5 @@ Expression readExpression(SourceFile file, cstring source);
 Expression readIdentifierExpression(SourceFile file, cstring source);
 Expression readBracketExpression(SourceFile file, cstring selector);
 Expression readComputeExpression(SourceFile file, cstring source);
+Expression readLiteralExpression(SourceFile file, cstring source);
+int isLiteralToken(Token token);

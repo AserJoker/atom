@@ -62,6 +62,7 @@ void Statement_dispose(Statement statement) {
 }
 
 Literal readLiteral(SourceFile file, cstring source) {
+  enableReadRegex();
   Token rawToken = readTokenSkipNewline(file, source);
   if (!rawToken) {
     return NULL;
@@ -155,11 +156,11 @@ AstNode parse(SourceFile file) {
   Program program = readProgram(file, source);
   if (program) {
     JSON_Value val = JSON_fromProgram(program);
-    Program_dispose(program);
     cstring source = JSON_stringlify(val);
     JSON_dispose(val);
     printf("%s", source);
     Buffer_free(source);
+    Program_dispose(program);
   }
   uninitTokenizerContext();
   if (ctx.error.error) {

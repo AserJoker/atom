@@ -65,6 +65,7 @@ void ImportStatement_dispose(ImportStatement import_s) {
   }
   Buffer_free(import_s);
 }
+
 ImportSpecifier readImportDefaultSpecifier(SourceFile file, cstring source) {
   ImportSpecifier import_spec = ImportSpecifier_create();
   import_spec->_local = readIdentifier(file, source);
@@ -372,6 +373,7 @@ failed:
   }
   return NULL;
 }
+
 Directive Directive_create() {
   Directive directive = (Directive)Buffer_alloc(sizeof(struct s_Directive));
   directive->_node = AstNode_create();

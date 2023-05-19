@@ -8,71 +8,59 @@
         "type": "BinaryExpression",
         "operator": "+",
         "left": {
-          "type": "IdentifierExpression",
-          "identifier": {
-            "type": "Identifier",
-            "identifier": "b"
-          }
-        },
-        "right": {
-          "type": "OptionalComputeExpression",
-          "property": {
-            "type": "CallExpression",
-            "callee": {
+          "type": "BinaryExpression",
+          "operator": "+",
+          "left": {
+            "type": "IdentifierExpression",
+            "identifier": {
+              "type": "Identifier",
+              "identifier": "a"
+            }
+          },
+          "right": {
+            "type": "BinaryExpression",
+            "operator": "/",
+            "left": {
               "type": "IdentifierExpression",
               "identifier": {
                 "type": "Identifier",
-                "identifier": "a"
+                "identifier": "b"
               }
             },
-            "args": {
-              "type": "BinaryExpression",
-              "operator": ",",
-              "left": {
-                "type": "IdentifierExpression",
-                "identifier": {
-                  "type": "Identifier",
-                  "identifier": "aaa"
-                }
-              },
-              "right": {
-                "type": "BinaryExpression",
-                "operator": "...",
-                "right": {
-                  "type": "IdentifierExpression",
-                  "identifier": {
-                    "type": "Identifier",
-                    "identifier": "b"
-                  }
-                }
-              }
-            }
-          },
-          "field": {
-            "type": "ComputeExpression",
-            "property": {
-              "type": "CallExpression",
-              "callee": {
-                "type": "IdentifierExpression",
-                "identifier": {
-                  "type": "Identifier",
-                  "identifier": "d"
-                }
-              },
-              "args": {
-                "type": "IdentifierExpression",
-                "identifier": {
-                  "type": "Identifier",
-                  "identifier": "aaa"
-                }
-              }
-            },
-            "field": {
+            "right": {
               "type": "IdentifierExpression",
               "identifier": {
                 "type": "Identifier",
                 "identifier": "c"
               }
+            }
+          }
+        },
+        "right": {
+          "type": "CallExpression",
+          "callee": {
+            "type": "BinaryExpression",
+            "operator": ".",
+            "left": {
+              "type": "LiteralExpression",
+              "literal": {
+                "type": "RegexLiteral",
+                "literal": "/aaa/"
+              }
+            },
+            "right": {
+              "type": "IdentifierExpression",
+              "identifier": {
+                "type": "Identifier",
+                "identifier": "test"
+              }
+            }
+          },
+          "args": {
+            "type": "LiteralExpression",
+            "literal": {
+              "type": "StringLiteral",
+              "literal": "\"aabbcc\""
             }
           }
         }
