@@ -311,6 +311,12 @@ Expression readExpression(SourceFile file, cstring source) {
   if (!expr) {
     return NULL;
   }
+  if (current) {
+    Expression_dispose(current);
+    Error error = {"Unexcept token", getLocation(file, selector)};
+    setAstError(error);
+    return NULL;
+  }
   expr->_node->_position.begin = source;
   expr->_node->_position.end = selector;
   return expr;
