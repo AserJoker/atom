@@ -35,8 +35,10 @@ typedef struct s_Error {
   cstring error;
   Location location;
 } Error;
+
 struct s_SourceFile;
 typedef struct s_SourceFile *SourceFile;
+
 SourceFile SourceFile_read(cstring filename);
 void SourceFile_dispose(SourceFile sf);
 Token readToken(SourceFile file, cstring source);
@@ -91,6 +93,21 @@ typedef struct s_Program *Program;
 struct s_Expression;
 typedef struct s_Expression *Expression;
 
+struct s_ArrayPattern;
+typedef struct s_ArrayPattern *ArrayPattern;
+
+struct s_ObjectPattern;
+typedef struct s_ObjectPattern *ObjectPattern;
+
+struct s_LambdaPattern;
+typedef struct s_LambdaPattern *LambdaPattern;
+
+struct s_FunctionPattern;
+typedef struct s_FunctionPattern *FunctionPattern;
+
+struct s_ObjectProperty;
+typedef struct s_ObjectProperty *ObjectProperty;
+
 typedef enum e_NodeType {
   // Program
   NT_Interpreter,
@@ -141,6 +158,7 @@ typedef enum e_NodeType {
   NT_OptionalCallExpression,
   NT_OptionalComputeExpression,
   NT_TemplateExpression,
+  NT_AwaitExpression,
   //--Expression
 
   // Pattern
@@ -161,26 +179,37 @@ struct s_Identifier {
   Token _raw;
 };
 
+typedef union u_Pattern {
+  ArrayPattern _array;
+  ObjectPattern _object;
+  LambdaPattern _lambda;
+  FunctionPattern _function;
+} Pattern;
+
 struct s_LambdaPattern {
-  AstNode _node;
-  Expression _args;
+  List _args;
   Statement _body;
+  int _async;
 };
 
 struct s_ObjectProperty {
-  AstNode _node;
   Expression _key;
   Expression _value;
 };
 
 struct s_ObjectPattern {
-  AstNode _node;
-  List _properties; // Expression
+  List _properties; // ObjectProperty
 };
 
 struct s_ArrayPattern {
-  AstNode _node;
   List _items; // Expression
+};
+
+struct s_FunctionPattern {
+  List _args;
+  Expression _name;
+  BlockStatement _body;
+  int _async;
 };
 
 struct s_Expression {
@@ -190,6 +219,7 @@ struct s_Expression {
   Token _operator;
   Identifier _identifier;
   Literal _literal;
+  Pattern _pattern;
   int _level;
 };
 
@@ -280,6 +310,9 @@ cstring skipToken(SourceFile file, cstring source);
 void enableTailCheck();
 void disableTailCheck();
 int isTailCheckEnable();
+void enableCommaTail();
+void disableCommaTail();
+int isCommaTail();
 
 AstNode parse(SourceFile file);
 JSON_Value JSON_fromProgram(Program program);
@@ -295,7 +328,16 @@ Expression readIdentifierExpression(SourceFile file, cstring source);
 Expression readBracketExpression(SourceFile file, cstring selector);
 Expression readComputeExpression(SourceFile file, cstring source);
 Expression readLiteralExpression(SourceFile file, cstring source);
+Expression readLambdaPattern(SourceFile file, cstring selector);
+Expression readFunctionPattern(SourceFile file, cstring source);
+
 int isLiteralToken(Token token);
+
+LambdaPattern LambdaPattern_create();
+void LambdaPattern_dispose(LambdaPattern pattern);
+
+FunctionPattern FunctionPattern_create();
+void FunctionPattern_dispose(FunctionPattern pattern);
 
 struct s_Context;
 typedef struct s_Context Context;

@@ -5,34 +5,105 @@
     {
       "type": "ExpressionStatement",
       "expression": {
-        "type": "BinaryExpression",
-        "operator": "*",
-        "left": {
-          "type": "IdentifierExpression",
-          "identifier": {
-            "type": "Identifier",
-            "identifier": "a"
-          }
-        },
-        "right": {
-          "type": "BracketExpression",
-          "left": {
+        "type": "FunctionPattern",
+        "args": [
+          {
+            "type": "IdentifierExpression",
+            "identifier": {
+              "type": "Identifier",
+              "identifier": "a"
+            }
+          },
+          {
+            "type": "IdentifierExpression",
+            "identifier": {
+              "type": "Identifier",
+              "identifier": "b"
+            }
+          },
+          {
             "type": "BinaryExpression",
-            "operator": "+",
+            "operator": "=",
             "left": {
-              "type": "IdentifierExpression",
-              "identifier": {
-                "type": "Identifier",
-                "identifier": "b"
-              }
-            },
-            "right": {
               "type": "IdentifierExpression",
               "identifier": {
                 "type": "Identifier",
                 "identifier": "c"
               }
+            },
+            "right": {
+              "type": "BinaryExpression",
+              "operator": "+",
+              "left": {
+                "type": "IdentifierExpression",
+                "identifier": {
+                  "type": "Identifier",
+                  "identifier": "a"
+                }
+              },
+              "right": {
+                "type": "IdentifierExpression",
+                "identifier": {
+                  "type": "Identifier",
+                  "identifier": "b"
+                }
+              }
             }
+          }
+        ],
+        "body": {
+          "type": "BlockStatement",
+          "body": [
+            {
+              "type": "ExpressionStatement",
+              "expression": {
+                "type": "CallExpression",
+                "callee": {
+                  "type": "BinaryExpression",
+                  "operator": ".",
+                  "left": {
+                    "type": "IdentifierExpression",
+                    "identifier": {
+                      "type": "Identifier",
+                      "identifier": "console"
+                    }
+                  },
+                  "right": {
+                    "type": "IdentifierExpression",
+                    "identifier": {
+                      "type": "Identifier",
+                      "identifier": "log"
+                    }
+                  }
+                },
+                "args": {
+                  "type": "BinaryExpression",
+                  "operator": ",",
+                  "left": {
+                    "type": "LiteralExpression",
+                    "literal": {
+                      "type": "StringLiteral",
+                      "literal": "\"hello world %o\""
+                    }
+                  },
+                  "right": {
+                    "type": "IdentifierExpression",
+                    "identifier": {
+                      "type": "Identifier",
+                      "identifier": "c"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "async": true,
+        "name": {
+          "type": "IdentifierExpression",
+          "identifier": {
+            "type": "Identifier",
+            "identifier": "test"
           }
         }
       }

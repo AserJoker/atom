@@ -20,27 +20,27 @@ typedef struct s_Context {
 static Context ctx = {NULL, NULL, 0};
 
 static const char *keywords[] = {
-    "abstract",     "arguments", "await",    "boolean",    "break",
-    "byte",         "case",      "catch",    "char",       "class",
-    "const",        "continue",  "debugger", "default",    "delete",
-    "do",           "double",    "else",     "enum",       "eval",
-    "export",       "extends",   "false",    "final",      "finally",
-    "float",        "for",       "function", "goto",       "if",
-    "implements",   "import",    "in",       "instanceof", "int",
-    "interface",    "let",       "long",     "native",     "new",
-    "null",         "package",   "private",  "protected",  "public",
-    "return",       "short",     "static",   "super",      "switch",
-    "synchronized", "this",      "throw",    "throws",     "transient",
-    "true",         "try",       "typeof",   "var",        "void",
-    "volatile",     "while",     "with",     "yield",      "from",
-    "as",           "assert",    NULL};
+    "abstract",  "arguments",    "async",    "await",    "boolean",
+    "break",     "byte",         "case",     "catch",    "char",
+    "class",     "const",        "continue", "debugger", "default",
+    "delete",    "do",           "double",   "else",     "enum",
+    "eval",      "export",       "extends",  "false",    "final",
+    "finally",   "float",        "for",      "function", "goto",
+    "if",        "implements",   "import",   "in",       "instanceof",
+    "int",       "interface",    "let",      "long",     "native",
+    "new",       "null",         "package",  "private",  "protected",
+    "public",    "return",       "short",    "static",   "super",
+    "switch",    "synchronized", "this",     "throw",    "throws",
+    "transient", "true",         "try",      "typeof",   "var",
+    "void",      "volatile",     "while",    "with",     "yield",
+    "from",      "as",           "assert",   NULL};
 
 static const cstring symbols[] = {
     "===", "!==", "==", "?.", "...", ">=", "<=", "!=", "&&", "||",
     "++",  "--",  "+=", "-=", "**",  "/=", "*=", "&=", "|=", "%=",
-    "<<",  ">>",  "??", "?.", "+",   "-",  "*",  "/",  "%",  "&",
-    "|",   "!",   "~",  ";",  ",",   ".",  ">",  "<",  "=",  "{",
-    "}",   "[",   "]",  "(",  ")",   "@",  "?",  ":",  NULL};
+    "<<",  ">>",  "??", "?.", "=>",  "+",  "-",  "*",  "/",  "%",
+    "&",   "|",   "!",  "~",  ";",   ",",  ".",  ">",  "<",  "=",
+    "{",   "}",   "[",  "]",  "(",   ")",  "@",  "?",  ":",  NULL};
 
 static BlockFrame BlockFrame_create() {
   BlockFrame bf = (BlockFrame)Buffer_alloc(sizeof(struct s_BlockFrame));
@@ -442,6 +442,18 @@ Token readTokenSkipComment(SourceFile file, cstring source) {
   cstring selector = source;
   Token token = readToken(file, selector);
   while (token && token->_type == TT_Comment) {
+    cstring it = token->_raw.begin;
+    int isNewline = 0;
+    while (it != token->_raw.end) {
+      if (*it == '\n' || *it == '\r') {
+        isNewline = 1;
+        break;
+      }
+    }
+    if (isNewline) {
+      token->_type = TT_Newline;
+      break;
+    }
     selector = token->_raw.end;
     Token_dispose(token);
     token = readToken(file, selector);

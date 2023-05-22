@@ -14,8 +14,10 @@ void BlockStatement_dispose(BlockStatement blockStatement) {
   Buffer_free(blockStatement);
 }
 BlockStatement readBlockStatement(SourceFile file, cstring source) {
+  Context *current = pushContext();
   cstring selector = skipToken(file, source);
   if (!selector) {
+    popContext(current);
     return NULL;
   }
   BlockStatement block_s = BlockStatement_create();
@@ -32,6 +34,7 @@ BlockStatement readBlockStatement(SourceFile file, cstring source) {
   }
   if (getAstError().error) {
     BlockStatement_dispose(block_s);
+    popContext(current);
     return NULL;
   }
   Token token = readTokenSkipNewline(file, selector);
@@ -42,8 +45,10 @@ BlockStatement readBlockStatement(SourceFile file, cstring source) {
     error.error = "Unexcept token,must be '}'";
     error.location = getLocation(file, selector);
     setAstError(error);
+    popContext(current);
     return NULL;
   }
+  popContext(current);
   selector = token->_raw.end;
   Token_dispose(token);
   block_s->_node->_position.begin = source;

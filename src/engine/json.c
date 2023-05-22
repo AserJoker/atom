@@ -210,7 +210,9 @@ JSON_Value JSON_fromExpression(Expression expression) {
   }
   if (expression->_node->_type == NT_BracketExpression) {
     JSON_setField(obj, "type", JSON_createString("BracketExpression"));
-    JSON_setField(obj, "left", JSON_fromExpression(expression->_left));
+    if (expression->_left) {
+      JSON_setField(obj, "left", JSON_fromExpression(expression->_left));
+    }
   }
   if (expression->_node->_type == NT_BinaryExpression) {
     JSON_setField(obj, "type", JSON_createString("BinaryExpression"));
@@ -262,6 +264,52 @@ JSON_Value JSON_fromExpression(Expression expression) {
       JSON_setField(obj, "args", JSON_fromExpression(expression->_right));
     } else {
       JSON_setField(obj, "args", JSON_createNull());
+    }
+  }
+  if (expression->_node->_type == NT_LambdaPattern) {
+    JSON_setField(obj, "type", JSON_createString("LambdaPattern"));
+    JSON_Value args = JSON_createArray();
+    if (expression->_pattern._lambda->_args) {
+      int index = 0;
+      List list_args = expression->_pattern._lambda->_args;
+      for (List_Node node = List_head(list_args); node != List_tail(list_args);
+           node = List_next(node)) {
+        Expression arg = (Expression)List_get(node);
+        JSON_setIndex(args, index++, JSON_fromExpression(arg));
+      }
+    }
+    JSON_setField(obj, "args", args);
+    JSON_setField(obj, "body",
+                  JSON_fromStatement(expression->_pattern._lambda->_body));
+    JSON_setField(obj, "async",
+                  JSON_createBoolean(expression->_pattern._lambda->_async));
+  }
+
+  if (expression->_node->_type == NT_FunctionPattern) {
+    JSON_setField(obj, "type", JSON_createString("FunctionPattern"));
+    JSON_Value args = JSON_createArray();
+    if (expression->_pattern._function->_args) {
+      int index = 0;
+      List list_args = expression->_pattern._function->_args;
+      for (List_Node node = List_head(list_args); node != List_tail(list_args);
+           node = List_next(node)) {
+        Expression arg = (Expression)List_get(node);
+        JSON_setIndex(args, index++, JSON_fromExpression(arg));
+      }
+    }
+    JSON_setField(obj, "args", args);
+    JSON_setField(
+        obj, "body",
+        JSON_fromBlockStatement(expression->_pattern._function->_body));
+    JSON_setField(obj, "async",
+                  JSON_createBoolean(expression->_pattern._function->_async));
+    JSON_setField(obj, "name",
+                  JSON_fromExpression(expression->_pattern._function->_name));
+  }
+  if (expression->_node->_type == NT_AwaitExpression) {
+    JSON_setField(obj, "type", JSON_createString("AwaitExpression"));
+    if (expression->_right) {
+      JSON_setField(obj, "expr", JSON_fromExpression(expression->_right));
     }
   }
   return obj;

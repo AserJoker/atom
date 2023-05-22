@@ -14,17 +14,20 @@ Expression readBracketExpression(SourceFile file, cstring source) {
   Context *current = pushContext();
   Expression sub_expr = readExpression(file, selector);
   popContext(current);
-  if (!sub_expr) {
-    return NULL;
+  if (sub_expr) {
+    selector = sub_expr->_node->_position.end;
   }
-  selector = sub_expr->_node->_position.end;
   Token next = readTokenSkipNewline(file, selector);
   if (!next) {
-    Expression_dispose(sub_expr);
+    if(sub_expr){
+      Expression_dispose(sub_expr);
+    }
     return NULL;
   }
   if (!checkToken(next, TT_Symbol, ")")) {
-    Expression_dispose(sub_expr);
+    if(sub_expr){
+      Expression_dispose(sub_expr);
+    }
     Token_dispose(next);
     Error error = {"Unexcept token: missing token ')'",
                    getLocation(file, selector)};

@@ -8,6 +8,7 @@
 typedef struct s_Context {
   Error error;
   int skipTailCheck;
+  int commaTailCheck;
 } Context;
 
 static Context *ctx = NULL;
@@ -154,6 +155,7 @@ Context *pushContext() {
   Context *current = ctx;
   ctx = (Context *)Buffer_alloc(sizeof(Context));
   ctx->skipTailCheck = 0;
+  ctx->commaTailCheck = 0;
   ctx->error.error = 0;
   return current;
 }
@@ -196,3 +198,6 @@ Error getAstError() { return ctx->error; }
 void enableTailCheck() { ctx->skipTailCheck = 0; }
 void disableTailCheck() { ctx->skipTailCheck = 1; }
 int isTailCheckEnable() { return !ctx->skipTailCheck; }
+int isCommaTail() { return ctx->commaTailCheck; }
+void enableCommaTail() { ctx->commaTailCheck = 1; }
+void disableCommaTail() { ctx->commaTailCheck = 0; }
