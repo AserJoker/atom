@@ -301,10 +301,75 @@ JSON_Value JSON_fromExpression(Expression expression) {
     JSON_setField(
         obj, "body",
         JSON_fromBlockStatement(expression->_pattern._function->_body));
-    JSON_setField(obj, "async",
-                  JSON_createBoolean(expression->_pattern._function->_async));
     JSON_setField(obj, "name",
                   JSON_fromExpression(expression->_pattern._function->_name));
+    JSON_setField(obj, "async",
+                  JSON_createBoolean(expression->_pattern._function->_async));
+    JSON_setField(
+        obj, "generator",
+        JSON_createBoolean(expression->_pattern._function->_generator));
+    JSON_setField(obj, "setter",
+                  JSON_createBoolean(expression->_pattern._function->_setter));
+    JSON_setField(obj, "getter",
+                  JSON_createBoolean(expression->_pattern._function->_getter));
+  }
+  if (expression->_node->_type == NT_ArrayPattern) {
+    JSON_setField(obj, "type", JSON_createString("ArrayPattern"));
+    JSON_Value items = JSON_createArray();
+    int index = 0;
+    for (List_Node node = List_head(expression->_pattern._array->_items);
+         node != List_tail(expression->_pattern._array->_items);
+         node = List_next(node)) {
+      Expression item = (Expression)List_get(node);
+      JSON_setIndex(items, index++, JSON_fromExpression(item));
+    }
+    JSON_setField(obj, "items", items);
+  }
+  if (expression->_node->_type == NT_TemplatePattern) {
+    JSON_setField(obj, "type", JSON_createString("TemplatePattern"));
+    if (expression->_pattern._template->_tag) {
+      JSON_setField(obj, "tag",
+                    JSON_fromIdentifier(expression->_pattern._template->_tag));
+    }
+    JSON_Value _strings = JSON_createArray();
+    int index = 0;
+    List list_strings = expression->_pattern._template->_strings;
+    for (List_Node node = List_head(list_strings);
+         node != List_tail(list_strings); node = List_next(node)) {
+      Token str = (Token)List_get(node);
+      cstring source = cstring_from(str->_raw);
+      JSON_setIndex(_strings, index++, JSON_createString(source));
+      Buffer_free(source);
+    }
+    JSON_setField(obj, "strings", _strings);
+    index = 0;
+    List list_parts = expression->_pattern._template->_parts;
+    JSON_Value parts = JSON_createArray();
+    for (List_Node node = List_head(list_parts); node != List_tail(list_parts);
+         node = List_next(node)) {
+      Expression item = (Expression)List_get(node);
+      JSON_setIndex(parts, index++, JSON_fromExpression(item));
+    }
+    JSON_setField(obj, "parts", parts);
+  }
+  if (expression->_node->_type == NT_ObjectPattern) {
+    JSON_setField(obj, "type", JSON_createString("ObjectPattern"));
+    JSON_Value properties = JSON_createArray();
+    int index = 0;
+    for (List_Node node = List_head(expression->_pattern._array->_items);
+         node != List_tail(expression->_pattern._array->_items);
+         node = List_next(node)) {
+      ObjectProperty item = (ObjectProperty)List_get(node);
+      JSON_Value property = JSON_createObject();
+      if (item->_key) {
+        JSON_setField(property, "key", JSON_fromExpression(item->_key));
+      }
+      if (item->_value) {
+        JSON_setField(property, "value", JSON_fromExpression(item->_value));
+      }
+      JSON_setIndex(properties, index++, property);
+    }
+    JSON_setField(obj, "properties", properties);
   }
   if (expression->_node->_type == NT_AwaitExpression) {
     JSON_setField(obj, "type", JSON_createString("AwaitExpression"));

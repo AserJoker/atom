@@ -61,6 +61,15 @@ void Expression_dispose(Expression expression) {
   if (expression->_node->_type == NT_FunctionPattern) {
     FunctionPattern_dispose(expression->_pattern._function);
   }
+  if (expression->_node->_type == NT_ArrayPattern) {
+    ArrayPattern_dispose(expression->_pattern._array);
+  }
+  if (expression->_node->_type == NT_ObjectPattern) {
+    ObjectPattern_dispose(expression->_pattern._object);
+  }
+  if (expression->_node->_type == NT_TemplatePattern) {
+    TemplatePattern_dispose(expression->_pattern._template);
+  }
   AstNode_dispose(expression->_node);
   Buffer_free(expression);
 }
@@ -129,21 +138,28 @@ Expression readExpression(SourceFile file, cstring source) {
       selector = token->_raw.begin;
     }
     if (token->_type == TT_Identifier) {
+      cstring template_selector = token->_raw.end;
       Token_dispose(token);
       if (!current && expr) {
         break;
       }
-      Expression lambda_expr = readLambdaPattern(file, selector);
-      if (lambda_expr) {
+      Token next = readTokenSkipComment(file, template_selector);
+      if (!next) {
+        Token_dispose(next);
+        goto failed;
+      }
+      if (token->_type == TT_TemplateStart || token->_type == TT_Template) {
+        Token_dispose(next);
+        Expression template_expr = readTemplateExpression(file, selector);
         if (!expr) {
-          expr = lambda_expr;
+          expr = template_expr;
         } else {
-          current->_right = lambda_expr;
+          current->_right = template_expr;
           current = NULL;
         }
-        selector = lambda_expr->_node->_position.end;
+        selector = template_expr->_node->_position.end;
       } else {
-        // TODO: template string expression
+        Token_dispose(next);
         Expression identifier_expr = readIdentifierExpression(file, selector);
         if (!identifier_expr) {
           goto failed;
@@ -158,8 +174,8 @@ Expression readExpression(SourceFile file, cstring source) {
           current->_right = identifier_expr;
           current = NULL;
         }
-        disableReadRegex();
       }
+      disableReadRegex();
       token = readTokenSkipComment(file, selector);
     } else if (isLiteralToken(token)) {
       Token_dispose(token);
@@ -356,6 +372,40 @@ Expression readExpression(SourceFile file, cstring source) {
             }
             selector = brackets->_node->_position.end;
           }
+        } else if (strings_is(token->_raw, "[")) {
+          Token_dispose(token);
+          Expression array_expr = readArrayExpression(file, selector);
+          if (!array_expr) {
+            if (!getAstError().error) {
+              Error error = {"Unexcept token", getLocation(file, selector)};
+              setAstError(error);
+            }
+            goto failed;
+          }
+          if (!expr) {
+            expr = array_expr;
+          } else {
+            current->_right = array_expr;
+            current = NULL;
+          }
+          selector = array_expr->_node->_position.end;
+        } else if (strings_is(token->_raw, "{")) {
+          Token_dispose(token);
+          Expression object_expr = readObjectExpression(file, selector);
+          if (!object_expr) {
+            if (!getAstError().error) {
+              Error error = {"Unexcept token", getLocation(file, selector)};
+              setAstError(error);
+            }
+            goto failed;
+          }
+          if (!expr) {
+            expr = object_expr;
+          } else {
+            current->_right = object_expr;
+            current = NULL;
+          }
+          selector = object_expr->_node->_position.end;
         } else if (strings_contains(token->_raw, unaryOperators)) {
           Expression unary_expr = Expression_create();
           unary_expr->_operator = token;
@@ -369,6 +419,8 @@ Expression readExpression(SourceFile file, cstring source) {
           }
           current = unary_expr;
           selector = token->_raw.end;
+        } else if (strings_is(token->_raw, "@")) {
+          // TODO: read class
         } else {
           Token_dispose(token);
           break;
@@ -405,7 +457,6 @@ Expression readExpression(SourceFile file, cstring source) {
               current->_right = lambda_expr;
               current = NULL;
             }
-            token = readTokenSkipComment(file, selector);
           } else if (checkToken(token, TT_Keyword, "function")) {
             Token_dispose(token);
             Expression function_expr = readFunctionPattern(file, selector);
@@ -424,13 +475,14 @@ Expression readExpression(SourceFile file, cstring source) {
               current->_right = function_expr;
               current = NULL;
             }
-            token = readTokenSkipComment(file, selector);
           } else {
             Token_dispose(token);
             Error error = {"Unexcept token", getLocation(file, selector)};
             setAstError(error);
             goto failed;
           }
+          disableReadRegex();
+          token = readTokenSkipComment(file, selector);
         } else if (strings_is(token->_raw, "await")) {
           selector = token->_raw.end;
           Token_dispose(token);
@@ -443,6 +495,7 @@ Expression readExpression(SourceFile file, cstring source) {
             current->_right = await_expr;
             current = await_expr;
           }
+          disableReadRegex();
           token = readTokenSkipComment(file, selector);
         } else if (strings_is(token->_raw, "function")) {
           Token_dispose(token);
@@ -461,6 +514,7 @@ Expression readExpression(SourceFile file, cstring source) {
             current->_right = function_expr;
             current = NULL;
           }
+          disableReadRegex();
           token = readTokenSkipComment(file, selector);
         } else if (strings_is(token->_raw, "class")) {
           // TODO: read class
@@ -468,6 +522,31 @@ Expression readExpression(SourceFile file, cstring source) {
           Token_dispose(token);
           break;
         }
+      }
+    } else if (token->_type == TT_TemplateStart ||
+               token->_type == TT_Template) {
+      if (!current && expr) {
+        Token_dispose(token);
+        break;
+      } else {
+        Token_dispose(token);
+        Expression template_expr = readTemplateExpression(file, selector);
+        if (!template_expr) {
+          if (!getAstError().error) {
+            Error error = {"Unexcept token", getLocation(file, selector)};
+            setAstError(error);
+          }
+          goto failed;
+        }
+        if (!expr) {
+          expr = template_expr;
+        } else {
+          current->_right = template_expr;
+          current = NULL;
+        }
+        selector = template_expr->_node->_position.end;
+        disableReadRegex();
+        token = readTokenSkipComment(file, selector);
       }
     } else {
       Token_dispose(token);

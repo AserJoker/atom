@@ -65,6 +65,13 @@ Location getLocation(SourceFile file, cstring source) {
   Location loc;
   loc._filename = file->_filename;
   uint32_t index = 0;
+  if (!*source) {
+    loc._position._line = List_size(file->_lines);
+    List_Node last = List_last(List_tail(file->_lines));
+    SourceLine line = (SourceLine)List_get(last);
+    loc._position._column = line->_end - line->_begin;
+    return loc;
+  }
   for (List_Node it = List_head(file->_lines); it != List_tail(file->_lines);
        it = List_next(it)) {
     SourceLine line = List_get(it);

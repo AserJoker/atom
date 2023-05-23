@@ -5,19 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef struct s_BlockFrame {
-  cstring _start;
-  cstring _end;
-} *BlockFrame;
-
-typedef struct s_Context {
-  List frames;
-  BlockFrame current;
-  int enableRegex;
-  Error error;
-} Context;
-
-static Context ctx = {NULL, NULL, 0};
+static TokenContext ctx = 0;
 
 static const char *keywords[] = {
     "abstract",  "arguments",    "async",    "await",    "boolean",
@@ -156,16 +144,16 @@ static Token readTemplatePartOrEnd(SourceFile file, cstring source) {
     if (*selector == '{' && *(selector - 1) == '$') {
       break;
     } else if (*selector == '`') {
-      List_remove(ctx.frames, List_head(ctx.frames));
-      ctx.current = (BlockFrame)List_get(List_head(ctx.frames));
+      List_remove(ctx->frames, List_head(ctx->frames));
+      ctx->current = (BlockFrame)List_get(List_head(ctx->frames));
       break;
     } else {
       selector++;
     }
   }
   if (!*selector) {
-    ctx.error.error = "Unterminated template literal.";
-    ctx.error.location = getLocation(file, selector);
+    ctx->error.error = "Unterminated template literal.";
+    ctx->error.location = getLocation(file, selector);
     return NULL;
   }
   Token token = Token_create();
@@ -182,18 +170,18 @@ static Token readTemplatePartOrEnd(SourceFile file, cstring source) {
 static Token readSymbol(SourceFile file, cstring source) {
   cstring selector = source;
   if (*selector == '}') {
-    if (ctx.current && strcmp(ctx.current->_start, "${") == 0) {
+    if (ctx->current && strcmp(ctx->current->_start, "${") == 0) {
       return readTemplatePartOrEnd(file, source);
     } else {
-      List_remove(ctx.frames, List_head(ctx.frames));
-      ctx.current = (BlockFrame)List_get(List_head(ctx.frames));
+      List_remove(ctx->frames, List_head(ctx->frames));
+      ctx->current = (BlockFrame)List_get(List_head(ctx->frames));
     }
   }
   if (*selector == '{') {
     BlockFrame bf = BlockFrame_create();
     bf->_start = "{";
     bf->_end = "}";
-    List_insert_head(ctx.frames, bf);
+    List_insert_head(ctx->frames, bf);
   }
   cstring symbol = NULL;
   for (int index = 0; symbols[index] != NULL; index++) {
@@ -219,8 +207,8 @@ static Token readSymbol(SourceFile file, cstring source) {
       return token;
     }
   }
-  ctx.error.error = "Invalid character.";
-  ctx.error.location = getLocation(file, selector);
+  ctx->error.error = "Invalid character.";
+  ctx->error.location = getLocation(file, selector);
   return NULL;
 }
 static Token readRegex(SourceFile file, cstring source) {
@@ -270,8 +258,8 @@ static Token readComment(SourceFile file, cstring source) {
       }
     }
     if (!*selector) {
-      ctx.error.error = "'*/' expected.";
-      ctx.error.location = getLocation(file, selector);
+      ctx->error.error = "'*/' expected.";
+      ctx->error.location = getLocation(file, selector);
       return NULL;
     } else {
       selector++;
@@ -302,8 +290,8 @@ Token readString(SourceFile file, cstring source) {
     }
   }
   if (!*selector || *selector == '\n') {
-    ctx.error.error = "Unterminated string literal.";
-    ctx.error.location = getLocation(file, selector);
+    ctx->error.error = "Unterminated string literal.";
+    ctx->error.location = getLocation(file, selector);
     return NULL;
   }
   Token token = Token_create();
@@ -322,15 +310,16 @@ Token readTemplate(SourceFile file, cstring source) {
       BlockFrame bf = BlockFrame_create();
       bf->_start = "${";
       bf->_end = "}";
-      List_insert_head(ctx.frames, bf);
+      List_insert_head(ctx->frames, bf);
+      ctx->current = bf;
       break;
     } else {
       selector++;
     }
   }
   if (!*selector) {
-    ctx.error.error = "Unterminated template literal.";
-    ctx.error.location = getLocation(file, selector);
+    ctx->error.error = "Unterminated template literal.";
+    ctx->error.location = getLocation(file, selector);
     return NULL;
   }
   Token token = Token_create();
@@ -395,7 +384,7 @@ Token readToken(SourceFile file, cstring source) {
   } else if ((*source == '/' && source[1] == '/') ||
              (*source == '/' && source[1] == '*')) {
     return readComment(file, source);
-  } else if (*source == '/' && ctx.enableRegex) {
+  } else if (*source == '/' && ctx->enableRegex) {
     disableReadRegex();
     return readRegex(file, source);
   } else if (*source == '\"' || *source == '\'') {
@@ -411,18 +400,18 @@ Token readToken(SourceFile file, cstring source) {
 
 void initTokenizerContext() {
   List_Option opt = {1, (Buffer_Free)BlockFrame_dispose};
-  ctx.frames = List_create(opt);
+  ctx->frames = List_create(opt);
   BlockFrame bf = BlockFrame_create();
-  List_insert_head(ctx.frames, bf);
-  ctx.current = bf;
+  List_insert_head(ctx->frames, bf);
+  ctx->current = bf;
   bf->_start = "";
   bf->_end = "";
-  ctx.error.error = NULL;
+  ctx->error.error = NULL;
 }
-void uninitTokenizerContext() { List_dispose(ctx.frames); }
-Error getTokenizerError() { return ctx.error; }
-void enableReadRegex() { ctx.enableRegex = 1; }
-void disableReadRegex() { ctx.enableRegex = 0; }
+void uninitTokenizerContext() { List_dispose(ctx->frames); }
+Error getTokenizerError() { return ctx->error; }
+void enableReadRegex() { ctx->enableRegex = 1; }
+void disableReadRegex() { ctx->enableRegex = 0; }
 
 int checkToken(Token token, TokenType tt, cstring str) {
   return token->_type == tt && strings_is(token->_raw, str);
@@ -431,7 +420,7 @@ int checkToken(Token token, TokenType tt, cstring str) {
 cstring skipToken(SourceFile file, cstring source) {
   Token token = readTokenSkipNewline(file, source);
   if (!token) {
-    ctx.error = getTokenizerError();
+    ctx->error = getTokenizerError();
     return NULL;
   }
   cstring selector = token->_raw.end;
@@ -459,7 +448,7 @@ Token readTokenSkipComment(SourceFile file, cstring source) {
     token = readToken(file, selector);
   }
   if (!token) {
-    ctx.error = getTokenizerError();
+    ctx->error = getTokenizerError();
   }
   return token;
 }
@@ -473,7 +462,26 @@ Token readTokenSkipNewline(SourceFile file, cstring source) {
     token = readTokenSkipComment(file, selector);
   }
   if (!token) {
-    ctx.error = getTokenizerError();
+    ctx->error = getTokenizerError();
   }
   return token;
+}
+
+TokenContext pushTokenContext() {
+  TokenContext result = ctx;
+  ctx = (TokenContext)Buffer_alloc(sizeof(struct s_TokenContext));
+  initTokenizerContext();
+  return result;
+}
+void popTokenContext(TokenContext tctx) {
+  if (tctx) {
+    if (!tctx->error.error) {
+      if (ctx) {
+        tctx->error = ctx->error;
+      }
+    }
+  }
+  uninitTokenizerContext();
+  Buffer_free(ctx);
+  ctx = tctx;
 }

@@ -7,6 +7,9 @@ FunctionPattern FunctionPattern_create() {
   pattern->_async = 0;
   pattern->_body = NULL;
   pattern->_name = NULL;
+  pattern->_generator = 0;
+  pattern->_getter = 0;
+  pattern->_setter = 0;
   return pattern;
 }
 void FunctionPattern_dispose(FunctionPattern pattern) {
@@ -34,6 +37,12 @@ Expression readFunctionPattern(SourceFile file, cstring source) {
   Token_dispose(token);
   FunctionPattern pattern = FunctionPattern_create();
   token = readTokenSkipNewline(file, selector);
+  if (checkToken(token, TT_Symbol, "*")) {
+    selector = token->_raw.end;
+    Token_dispose(token);
+    pattern->_generator = 1;
+    token = readTokenSkipNewline(file, selector);
+  }
   if (token->_type == TT_Identifier) {
     Token_dispose(token);
     Identifier name = readIdentifier(file, selector);
@@ -50,19 +59,6 @@ Expression readFunctionPattern(SourceFile file, cstring source) {
     name_expr->_node->_type = NT_IdentifierExpression;
     name_expr->_identifier = name;
     pattern->_name = name_expr;
-    selector = name->_node->_position.end;
-  } else if (checkToken(token, TT_Symbol, "[")) {
-    selector = token->_raw.end;
-    Token_dispose(token);
-    Expression name = readExpression(file, source);
-    if (!name) {
-      Token_dispose(token);
-      FunctionPattern_dispose(pattern);
-      Error error = {"Unexcept function name", getLocation(file, selector)};
-      setAstError(error);
-      return NULL;
-    }
-    pattern->_name = name;
     selector = name->_node->_position.end;
   } else {
     Token_dispose(token);

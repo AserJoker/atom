@@ -171,7 +171,7 @@ void popContext(Context *current) {
 
 AstNode parse(SourceFile file) {
   cstring source = file->_source;
-  initTokenizerContext();
+  pushTokenContext();
   Context *current = pushContext();
   Program program = readProgram(file, source);
   if (program) {
@@ -182,7 +182,6 @@ AstNode parse(SourceFile file) {
     Buffer_free(source);
     Program_dispose(program);
   }
-  uninitTokenizerContext();
   if (ctx->error.error) {
     fprintf(stderr, "%s at\n  %s:%u:%u", ctx->error.error,
             ctx->error.location._filename,
@@ -190,6 +189,7 @@ AstNode parse(SourceFile file) {
             ctx->error.location._position._column + 1);
   }
   popContext(current);
+  popTokenContext(NULL);
   return NULL;
 }
 

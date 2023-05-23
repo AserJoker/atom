@@ -14,6 +14,15 @@ void BlockStatement_dispose(BlockStatement blockStatement) {
   Buffer_free(blockStatement);
 }
 BlockStatement readBlockStatement(SourceFile file, cstring source) {
+  Token token = readTokenSkipNewline(file, source);
+  if (!token) {
+    return NULL;
+  }
+  if (!checkToken(token, TT_Symbol, "{")) {
+    Token_dispose(token);
+    return NULL;
+  }
+  Token_dispose(token);
   Context *current = pushContext();
   cstring selector = skipToken(file, source);
   if (!selector) {
@@ -37,7 +46,7 @@ BlockStatement readBlockStatement(SourceFile file, cstring source) {
     popContext(current);
     return NULL;
   }
-  Token token = readTokenSkipNewline(file, selector);
+  token = readTokenSkipNewline(file, selector);
   if (!checkToken(token, TT_Symbol, "}")) {
     Token_dispose(token);
     BlockStatement_dispose(block_s);

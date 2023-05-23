@@ -24,69 +24,54 @@ Expression readLambdaPattern(SourceFile file, cstring source) {
     return NULL;
   }
   LambdaPattern lambda = LambdaPattern_create();
-  if (token->_type == TT_Identifier) {
+  if (!checkToken(token, TT_Symbol, "(")) {
     Token_dispose(token);
-    Identifier arg = readIdentifier(file, selector);
-    if (!arg) {
-      LambdaPattern_dispose(lambda);
-      return NULL;
-    }
-    Expression identifier_expr = Expression_create();
-    identifier_expr->_identifier = arg;
-    identifier_expr->_node->_position = arg->_node->_position;
-    identifier_expr->_node->_type = NT_IdentifierExpression;
-    List_insert_tail(lambda->_args, identifier_expr);
-    selector = identifier_expr->_node->_position.end;
-  } else {
-    if (!checkToken(token, TT_Symbol, "(")) {
-      Token_dispose(token);
-      LambdaPattern_dispose(lambda);
-      return NULL;
-    }
-    selector = token->_raw.end;
-    Token_dispose(token);
-    Context *current = pushContext();
-    enableCommaTail();
-    Expression arg = readExpression(file, selector);
-    while (arg) {
-      List_insert_tail(lambda->_args, arg);
-      selector = arg->_node->_position.end;
-      Token token = readTokenSkipNewline(file, selector);
-      if (!token) {
-        LambdaPattern_dispose(lambda);
-        return NULL;
-      }
-      if (!checkToken(token, TT_Symbol, ",")) {
-        Token_dispose(token);
-        break;
-      } else {
-        selector = token->_raw.end;
-        Token_dispose(token);
-      }
-      arg = readExpression(file, selector);
-    }
-    disableCommaTail();
-    popContext(current);
-    if (getAstError().error) {
-      LambdaPattern_dispose(lambda);
-      return NULL;
-    }
-    token = readTokenSkipNewline(file, selector);
+    LambdaPattern_dispose(lambda);
+    return NULL;
+  }
+  selector = token->_raw.end;
+  Token_dispose(token);
+  Context *current = pushContext();
+  enableCommaTail();
+  Expression arg = readExpression(file, selector);
+  while (arg) {
+    List_insert_tail(lambda->_args, arg);
+    selector = arg->_node->_position.end;
+    Token token = readTokenSkipNewline(file, selector);
     if (!token) {
       LambdaPattern_dispose(lambda);
       return NULL;
     }
-    if (!checkToken(token, TT_Symbol, ")")) {
+    if (!checkToken(token, TT_Symbol, ",")) {
       Token_dispose(token);
-      LambdaPattern_dispose(lambda);
-      Error error = {"Unexcept token:missing token ')'",
-                     getLocation(file, selector)};
-      setAstError(error);
-      return NULL;
+      break;
     } else {
       selector = token->_raw.end;
       Token_dispose(token);
     }
+    arg = readExpression(file, selector);
+  }
+  disableCommaTail();
+  popContext(current);
+  if (getAstError().error) {
+    LambdaPattern_dispose(lambda);
+    return NULL;
+  }
+  token = readTokenSkipNewline(file, selector);
+  if (!token) {
+    LambdaPattern_dispose(lambda);
+    return NULL;
+  }
+  if (!checkToken(token, TT_Symbol, ")")) {
+    Token_dispose(token);
+    LambdaPattern_dispose(lambda);
+    Error error = {"Unexcept token:missing token ')'",
+                   getLocation(file, selector)};
+    setAstError(error);
+    return NULL;
+  } else {
+    selector = token->_raw.end;
+    Token_dispose(token);
   }
   token = readTokenSkipComment(file, selector);
   if (!token) {

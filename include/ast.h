@@ -35,9 +35,22 @@ typedef struct s_Error {
   cstring error;
   Location location;
 } Error;
+typedef struct s_BlockFrame {
+  cstring _start;
+  cstring _end;
+} *BlockFrame;
 
+typedef struct s_TokenContext {
+  List frames;
+  BlockFrame current;
+  int enableRegex;
+  Error error;
+} *TokenContext;
 struct s_SourceFile;
 typedef struct s_SourceFile *SourceFile;
+
+TokenContext pushTokenContext();
+void popTokenContext(TokenContext tctx);
 
 SourceFile SourceFile_read(cstring filename);
 void SourceFile_dispose(SourceFile sf);
@@ -108,6 +121,9 @@ typedef struct s_FunctionPattern *FunctionPattern;
 struct s_ObjectProperty;
 typedef struct s_ObjectProperty *ObjectProperty;
 
+struct s_TemplatePattern;
+typedef struct s_TemplatePattern *TemplatePattern;
+
 typedef enum e_NodeType {
   // Program
   NT_Interpreter,
@@ -157,7 +173,6 @@ typedef enum e_NodeType {
   NT_CallExpression,
   NT_OptionalCallExpression,
   NT_OptionalComputeExpression,
-  NT_TemplateExpression,
   NT_AwaitExpression,
   //--Expression
 
@@ -166,6 +181,7 @@ typedef enum e_NodeType {
   NT_ArrayPattern,
   NT_FunctionPattern,
   NT_LambdaPattern,
+  NT_TemplatePattern,
   //--Pattern
 } NodeType;
 
@@ -184,8 +200,14 @@ typedef union u_Pattern {
   ObjectPattern _object;
   LambdaPattern _lambda;
   FunctionPattern _function;
+  TemplatePattern _template;
 } Pattern;
 
+struct s_TemplatePattern {
+  List _strings;
+  List _parts;
+  Identifier _tag;
+};
 struct s_LambdaPattern {
   List _args;
   Statement _body;
@@ -210,6 +232,9 @@ struct s_FunctionPattern {
   Expression _name;
   BlockStatement _body;
   int _async;
+  int _generator;
+  int _getter;
+  int _setter;
 };
 
 struct s_Expression {
@@ -330,6 +355,9 @@ Expression readComputeExpression(SourceFile file, cstring source);
 Expression readLiteralExpression(SourceFile file, cstring source);
 Expression readLambdaPattern(SourceFile file, cstring selector);
 Expression readFunctionPattern(SourceFile file, cstring source);
+Expression readArrayExpression(SourceFile file, cstring source);
+Expression readObjectExpression(SourceFile file, cstring source);
+Expression readTemplateExpression(SourceFile file, cstring source);
 
 int isLiteralToken(Token token);
 
@@ -338,6 +366,15 @@ void LambdaPattern_dispose(LambdaPattern pattern);
 
 FunctionPattern FunctionPattern_create();
 void FunctionPattern_dispose(FunctionPattern pattern);
+
+ArrayPattern ArrayPattern_create();
+void ArrayPattern_dispose(ArrayPattern pattern);
+
+ObjectProperty ObjectProperty_create();
+void ObjectPattern_dispose(ObjectPattern pattern);
+
+TemplatePattern TemplatePattern_create();
+void TemplatePattern_dispose(TemplatePattern pattern);
 
 struct s_Context;
 typedef struct s_Context Context;
