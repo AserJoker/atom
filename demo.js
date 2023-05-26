@@ -1,1 +1,1 @@
-a=`aaa${bbb}ccc${ddd}eee`
+a@b

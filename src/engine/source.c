@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "source.h"
 #include "list.h"
 #include "strings.h"
@@ -63,23 +64,37 @@ void SourceFile_dispose(SourceFile sf) {
 
 Location getLocation(SourceFile file, cstring source) {
   Location loc;
+  cstring selector = source;
+  while (selector > file->_source &&
+         (*selector == '\n' || *selector == '\r' || *selector == '\0')) {
+    selector--;
+  }
   loc._filename = file->_filename;
   uint32_t index = 0;
-  if (!*source) {
-    loc._position._line = List_size(file->_lines);
-    List_Node last = List_last(List_tail(file->_lines));
-    SourceLine line = (SourceLine)List_get(last);
-    loc._position._column = line->_end - line->_begin;
-    return loc;
-  }
   for (List_Node it = List_head(file->_lines); it != List_tail(file->_lines);
        it = List_next(it)) {
     SourceLine line = List_get(it);
-    if (source >= line->_raw.begin && source < line->_raw.end) {
-      loc._position._line = index;
-      loc._position._column = source - line->_raw.begin;
-      while (loc._position._column == '\r') {
-        loc._position._column--;
+    if (selector >= line->_raw.begin && selector < line->_raw.end) {
+      loc._position._line = index + 1;
+      int column = 0;
+      cstring c_selector = line->_raw.begin;
+      int isUTF8 = 0;
+      while (c_selector != selector) {
+        c_selector++;
+        column++;
+        if (c_selector > line->_raw.begin) {
+          if ((*c_selector < 0 && *(c_selector - 1) < 0)) {
+            column--;
+            isUTF8 = 1;
+          }
+        }
+      }
+      if (isUTF8) {
+        column++;
+      }
+      loc._position._column = column + 1;
+      if (!*source || *source == '\n' || *source == '\r') {
+        loc._position._column++;
       }
       break;
     }

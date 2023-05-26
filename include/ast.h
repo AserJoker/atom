@@ -1,68 +1,24 @@
 #pragma once
 #include "json.h"
-#include "source.h"
-#include "strings.h"
+#include "tokenizer.h"
+struct s_AstContext;
+typedef struct s_AstContext *AstContext;
 
-struct s_Token;
-typedef struct s_Token *Token;
-
-typedef enum e_TokenType {
-  TT_Number,
-  TT_BigInt,
-  TT_String,
-  TT_Keyword,
-  TT_Symbol,
-  TT_Identifier,
-  TT_Regex,
-  TT_Comment,
-  TT_Eof,
-  TT_Template,
-  TT_TemplateStart,
-  TT_TemplatePart,
-  TT_TemplateEnd,
-  TT_Newline,
-  TT_Interpreter,
-  TT_Init
-} TokenType;
-
-struct s_Token {
-  Location _location;
-  strings _raw;
-  TokenType _type;
+struct s_AstContext {
+  TokenContext tContext;
 };
 
-typedef struct s_Error {
-  cstring error;
-  Location location;
-} Error;
-typedef struct s_BlockFrame {
-  cstring _start;
-  cstring _end;
-} *BlockFrame;
+struct s_AstNode;
+typedef struct s_AstNode *AstNode;
 
-typedef struct s_TokenContext {
-  List frames;
-  BlockFrame current;
-  int enableRegex;
-  Error error;
-} *TokenContext;
-struct s_SourceFile;
-typedef struct s_SourceFile *SourceFile;
+struct s_Program;
+typedef struct s_Program *Program;
 
-TokenContext pushTokenContext();
-void popTokenContext(TokenContext tctx);
+struct s_Statement;
+typedef struct s_Statement *Statement;
 
-SourceFile SourceFile_read(cstring filename);
-void SourceFile_dispose(SourceFile sf);
-Token readToken(SourceFile file, cstring source);
-Token readTokenSkipComment(SourceFile file, cstring source);
-Token readTokenSkipNewline(SourceFile file, cstring source);
-void Token_dispose(Token token);
-void initTokenizerContext();
-void uninitTokenizerContext();
-Error getTokenizerError();
-void enableReadRegex();
-void disableReadRegex();
+struct s_Expression;
+typedef struct s_Expression *Expression;
 
 struct s_Identifier;
 typedef struct s_Identifier *Identifier;
@@ -70,313 +26,140 @@ typedef struct s_Identifier *Identifier;
 struct s_Literal;
 typedef struct s_Literal *Literal;
 
-struct s_ExpressionStatement;
-typedef struct s_ExpressionStatement *ExpressionStatement;
-
-struct s_BlockStatement;
-typedef struct s_BlockStatement *BlockStatement;
-
-struct s_ImportAttribute;
-typedef struct s_ImportAttribute *ImportAttribute;
-
-struct s_ImportSpecifier;
-typedef struct s_ImportSpecifier *ImportSpecifier;
-
-struct s_ImportStatement;
-typedef struct s_ImportStatement *ImportStatement;
-
-struct s_ExpressionStatement;
-typedef struct s_ExpressionStatement *ExpressionStatement;
-
-struct s_Statement;
-typedef struct s_Statement *Statement;
-
-struct s_AstNode;
-typedef struct s_AstNode *AstNode;
-
-struct s_Interpreter;
-typedef struct s_Interpreter *Interpreter;
-
-struct s_Directive;
-typedef struct s_Directive *Directive;
-
-struct s_Program;
-typedef struct s_Program *Program;
-
-struct s_Expression;
-typedef struct s_Expression *Expression;
-
-struct s_ArrayPattern;
-typedef struct s_ArrayPattern *ArrayPattern;
-
-struct s_ObjectPattern;
-typedef struct s_ObjectPattern *ObjectPattern;
-
-struct s_LambdaPattern;
-typedef struct s_LambdaPattern *LambdaPattern;
-
-struct s_FunctionPattern;
-typedef struct s_FunctionPattern *FunctionPattern;
-
-struct s_ObjectProperty;
-typedef struct s_ObjectProperty *ObjectProperty;
-
-struct s_TemplatePattern;
-typedef struct s_TemplatePattern *TemplatePattern;
-
 typedef enum e_NodeType {
-  // Program
-  NT_Interpreter,
-  NT_Directive,
   NT_Program,
-  //--Program
+  // statement
+  NT_BlockStatement,
+  NT_EmptyStatement,
+  NT_ExpressionStatement,
+
+  // expression
+  NT_BinaryExpression,
+  NT_LiteralExpression,
+  NT_IdentifierExpression,
+  NT_BracketExpression,
+
+  // literal
+  NT_StringLiteral,
+  NT_NumberLiteral,
+  NT_BooleanLiteral,
+  NT_NullLiteral,
+  NT_UndefinedLiteral,
 
   // Identifier
   NT_Identifier,
-  // --Identifier
 
   // Literal
-  NT_StringLiteral,
-  NT_NumericLiteral,
-  NT_BooelanLiteral,
-  NT_NullLiteral,
-  NT_UndefinedLiteral,
-  NT_RegExLiteral,
-  NT_BigIntLiteral,
-  //--Literal
-
-  // Import
-  NT_ImportSpecifier,
-  NT_ImportDefaultSpecifier,
-  NT_ImportNamespaceSpecifier,
-  NT_ImportAttribute,
-  NT_ImportStatement,
-  //--Import
-
-  // Block
-  NT_BlockStatement,
-  // --Block
-
-  // Empty
-  NT_EmptyStatement,
-  //--Empty
-
-  // Expression
-  NT_ExpressionStatement,
-
-  NT_BinaryExpression,
-  NT_ComputeExpression,
-  NT_BracketExpression,
-  NT_LiteralExpression,
-  NT_IdentifierExpression,
-
-  NT_CallExpression,
-  NT_OptionalCallExpression,
-  NT_OptionalComputeExpression,
-  NT_AwaitExpression,
-  //--Expression
-
-  // Pattern
-  NT_ObjectPattern,
-  NT_ArrayPattern,
-  NT_FunctionPattern,
-  NT_LambdaPattern,
-  NT_TemplatePattern,
-  //--Pattern
+  NT_Literal
 } NodeType;
 
 struct s_AstNode {
-  NodeType _type;
-  strings _position;
-};
-
-struct s_Identifier {
-  AstNode _node;
-  Token _raw;
-};
-
-typedef union u_Pattern {
-  ArrayPattern _array;
-  ObjectPattern _object;
-  LambdaPattern _lambda;
-  FunctionPattern _function;
-  TemplatePattern _template;
-} Pattern;
-
-struct s_TemplatePattern {
-  List _strings;
-  List _parts;
-  Identifier _tag;
-};
-struct s_LambdaPattern {
-  List _args;
-  Statement _body;
-  int _async;
-};
-
-struct s_ObjectProperty {
-  Expression _key;
-  Expression _value;
-};
-
-struct s_ObjectPattern {
-  List _properties; // ObjectProperty
-};
-
-struct s_ArrayPattern {
-  List _items; // Expression
-};
-
-struct s_FunctionPattern {
-  List _args;
-  Expression _name;
-  BlockStatement _body;
-  int _async;
-  int _generator;
-  int _getter;
-  int _setter;
-};
-
-struct s_Expression {
-  AstNode _node;
-  Expression _left;
-  Expression _right;
-  Token _operator;
-  Identifier _identifier;
-  Literal _literal;
-  Pattern _pattern;
-  int _level;
-};
-
-struct s_ExpressionStatement {
-  AstNode _node;
-  Expression _expression;
-};
-
-struct s_BlockStatement {
-  AstNode _node;
-  List _body;
-};
-
-struct s_Literal {
-  AstNode _node;
-  Token _raw;
-};
-
-struct s_ImportAttribute {
-  AstNode _node;
-  Identifier _key;
-  Literal _value;
-};
-
-struct s_ImportSpecifier {
-  AstNode _node;
-  Identifier _local;
-  Identifier _imported;
-};
-
-struct s_ImportStatement {
-  AstNode _node;
-  Literal _source;
-  List _specifiers; // ImportSpecifier[]
-  List _assertions; // ImportAttribute[]
+  strings position;
+  NodeType type;
 };
 
 struct s_Statement {
-  AstNode _node;
-};
-struct s_Interpreter {
-  AstNode _node;
-  strings _interpreter;
+  AstNode node;
+  union {
+    struct {
+      List body;
+    } block;
+    struct {
+      Expression expression;
+    } expression;
+  };
 };
 
-struct s_Directive {
-  AstNode _node;
-  strings _directive;
+struct s_Expression {
+  int level;
+  AstNode node;
+  union {
+    struct {
+      Expression left;
+      Expression right;
+      Token operator;
+    } binary;
+    struct {
+      Expression expression;
+    } bracket;
+    Identifier identifier;
+    Literal literal;
+  };
+};
+
+struct s_Identifier {
+  AstNode node;
+  Token raw;
+};
+
+struct s_Literal {
+  AstNode node;
+  Token raw;
 };
 
 struct s_Program {
-  AstNode _node;
-  Interpreter _interpreter;
-  List _directives; // Directive[]
-  List _body;       // Statement[]
+  AstNode node;
+  List body;
 };
+
+AstContext pushAstContext();
+void popAstContext(AstContext ctx);
 
 AstNode AstNode_create();
 void AstNode_dispose(AstNode node);
 
+Program Program_create();
 void Program_dispose(Program program);
 Program readProgram(SourceFile file, cstring source);
 
-Statement readStatement(SourceFile file, cstring source);
+Program parse(SourceFile file);
+
+Statement Statement_create();
 void Statement_dispose(Statement statement);
+Statement readStatement(SourceFile file, cstring source);
 
-BlockStatement readBlockStatement(SourceFile file, cstring source);
-void BlockStatement_dispose(BlockStatement blockStatement);
+Statement BlockStatement_create();
+void BlockStatement_dispose(Statement statement);
+Statement readBlockStatement(SourceFile file, cstring source);
 
-ImportStatement readImportStatement(SourceFile file, cstring source);
-void ImportStatement_dispose(ImportStatement import_s);
-
-Literal readLiteral(SourceFile file, cstring source);
-void Literal_dispose(Literal literal);
-
-Identifier readIdentifier(SourceFile file, cstring source);
-void Identifier_dispose(Identifier identifier);
-
-Statement readEmptyStatement(SourceFile file, cstring source);
+Statement EmptyStatement_create();
 void EmptyStatement_dispose(Statement statement);
+Statement readEmptyStatement(SourceFile file, cstring source);
 
-ExpressionStatement readExpressionStatement(SourceFile file, cstring source);
-void ExpressionStatement_dispose(ExpressionStatement expression_s);
-
-int checkToken(Token token, TokenType tt, cstring str);
-cstring skipToken(SourceFile file, cstring source);
-
-void enableTailCheck();
-void disableTailCheck();
-int isTailCheckEnable();
-void enableCommaTail();
-void disableCommaTail();
-int isCommaTail();
-
-AstNode parse(SourceFile file);
-JSON_Value JSON_fromProgram(Program program);
-
-void setAstError(Error error);
-Error getAstError();
+Statement ExpressionStatement_create();
+void ExpressionStatement_dispose(Statement statement);
+Statement readExpressionStatement(SourceFile file, cstring source);
 
 Expression Expression_create();
 void Expression_dispose(Expression expression);
+
 Expression readExpression(SourceFile file, cstring source);
 
 Expression readIdentifierExpression(SourceFile file, cstring source);
-Expression readBracketExpression(SourceFile file, cstring selector);
-Expression readComputeExpression(SourceFile file, cstring source);
-Expression readLiteralExpression(SourceFile file, cstring source);
-Expression readLambdaPattern(SourceFile file, cstring selector);
-Expression readFunctionPattern(SourceFile file, cstring source);
-Expression readArrayExpression(SourceFile file, cstring source);
-Expression readObjectExpression(SourceFile file, cstring source);
-Expression readTemplateExpression(SourceFile file, cstring source);
+Expression readBracketExpression(SourceFile file, cstring source);
 
-int isLiteralToken(Token token);
+void BinaryExpression_dispose(Expression expression);
+void LiteralExpression_dispose(Expression expression);
+void IdentifierExpression_dispose(Expression expression);
+void BracketExpression_dispose(Expression expression);
 
-LambdaPattern LambdaPattern_create();
-void LambdaPattern_dispose(LambdaPattern pattern);
+Identifier Identifier_create();
+Identifier readIdentifier(SourceFile file, cstring source);
+void Identifier_dispose(Identifier identifier);
 
-FunctionPattern FunctionPattern_create();
-void FunctionPattern_dispose(FunctionPattern pattern);
+Literal Literal_create();
+Literal readLiteral(SourceFile file, cstring source);
+void Literal_dispose(Literal identifier);
 
-ArrayPattern ArrayPattern_create();
-void ArrayPattern_dispose(ArrayPattern pattern);
-
-ObjectProperty ObjectProperty_create();
-void ObjectPattern_dispose(ObjectPattern pattern);
-
-TemplatePattern TemplatePattern_create();
-void TemplatePattern_dispose(TemplatePattern pattern);
-
-struct s_Context;
-typedef struct s_Context Context;
-Context *pushContext();
-void popContext(Context *current);
+JSON_Value JSON_fromProgram(Program program);
+JSON_Value JSON_fromStatement(Statement statement);
+JSON_Value JSON_fromBlockStatement(Statement statement);
+JSON_Value JSON_fromEmptyStatement(Statement statement);
+JSON_Value JSON_fromExpressionStatement(Statement statement);
+JSON_Value JSON_fromExpression(Expression expression);
+JSON_Value JSON_fromBinaryExpression(Expression expression);
+JSON_Value JSON_fromBracketExpression(Expression expression);
+JSON_Value JSON_fromIdentifierExpression(Expression expression);
+JSON_Value JSON_fromLiteralExpression(Expression expression);
+JSON_Value JSON_fromIdentifier(Identifier identifier);
+JSON_Value JSON_fromLiteral(Literal literal);

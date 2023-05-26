@@ -1,42 +1,35 @@
 {
   "type": "Program",
-  "directives": [],
-  "statements": [
+  "body": [
     {
       "type": "ExpressionStatement",
       "expression": {
         "type": "BinaryExpression",
-        "operator": "=",
+        "operator": "+",
         "left": {
-          "type": "IdentifierExpression",
-          "identifier": {
-            "type": "Identifier",
-            "identifier": "a"
+          "type": "LiteralExpression",
+          "literal": {
+            "type": "literal",
+            "raw": "2"
           }
         },
         "right": {
-          "type": "TemplatePattern",
-          "strings": [
-            "`aaa${",
-            "}ccc${",
-            "}eee`"
-          ],
-          "parts": [
-            {
-              "type": "IdentifierExpression",
-              "identifier": {
-                "type": "Identifier",
-                "identifier": "bbb"
-              }
-            },
-            {
-              "type": "IdentifierExpression",
-              "identifier": {
-                "type": "Identifier",
-                "identifier": "ddd"
-              }
+          "type": "BinaryExpression",
+          "operator": ".",
+          "left": {
+            "type": "LiteralExpression",
+            "literal": {
+              "type": "literal",
+              "raw": "\"1\""
             }
-          ]
+          },
+          "right": {
+            "type": "IdentifierExpression",
+            "identifier": {
+              "type": "Identifier",
+              "raw": "length"
+            }
+          }
         }
       }
     }

@@ -1,487 +1,400 @@
-#include "ast.h"
-#include "list.h"
-#include "source.h"
-#include "strings.h"
-#include <stdio.h>
-#include <string.h>
+#include "tokenizer.h"
+static TokenContext g_context = NULL;
 
-static TokenContext ctx = 0;
+static cstring g_keywords[] = {
+    "await",  "async",    "break",    "case",       "catch",  "class",
+    "const",  "continue", "debugger", "default",    "delete", "do",
+    "else",   "export",   "extends",  "finally",    "for",    "function",
+    "if",     "import",   "in",       "instanceof", "let",    "new",
+    "return", "static",   "super",    "switch",     "this",   "throw",
+    "try",    "typeof",   "var",      "void",       "while",  "with",
+    "yield",  0};
 
-static const char *keywords[] = {
-    "abstract",  "arguments",    "async",    "await",    "boolean",
-    "break",     "byte",         "case",     "catch",    "char",
-    "class",     "const",        "continue", "debugger", "default",
-    "delete",    "do",           "double",   "else",     "enum",
-    "eval",      "export",       "extends",  "false",    "final",
-    "finally",   "float",        "for",      "function", "goto",
-    "if",        "implements",   "import",   "in",       "instanceof",
-    "int",       "interface",    "let",      "long",     "native",
-    "new",       "null",         "package",  "private",  "protected",
-    "public",    "return",       "short",    "static",   "super",
-    "switch",    "synchronized", "this",     "throw",    "throws",
-    "transient", "true",         "try",      "typeof",   "var",
-    "void",      "volatile",     "while",    "with",     "yield",
-    "from",      "as",           "assert",   NULL};
+static cstring g_symbols[] = {
+    "===", "!==", "...", "==", "!=", "<=", ">=", "++", "--", "+=", "-=", "|=",
+    "&=",  "=>",  "*=",  "/=", "%=", "&&", "||", "?.", "+",  "-",  "*",  "/",
+    "%",   "!",   "(",   ")",  "[",  "]",  "{",  "}",  "|",  "&",  ";",  ":",
+    "<",   ">",   ",",   ".",  "?",  "@",  "#",  "=",  0};
 
-static const cstring symbols[] = {
-    "===", "!==", "==", "?.", "...", ">=", "<=", "!=", "&&", "||",
-    "++",  "--",  "+=", "-=", "**",  "/=", "*=", "&=", "|=", "%=",
-    "<<",  ">>",  "??", "?.", "=>",  "+",  "-",  "*",  "/",  "%",
-    "&",   "|",   "!",  "~",  ";",   ",",  ".",  ">",  "<",  "=",
-    "{",   "}",   "[",  "]",  "(",   ")",  "@",  "?",  ":",  NULL};
-
-static BlockFrame BlockFrame_create() {
-  BlockFrame bf = (BlockFrame)Buffer_alloc(sizeof(struct s_BlockFrame));
-  bf->_start = NULL;
-  bf->_end = NULL;
-  return bf;
+TokenContext pushTokenContext() {
+  TokenContext result = g_context;
+  g_context = (TokenContext)Buffer_alloc(sizeof(struct s_TokenContext));
+  g_context->isRegexEnable = 0;
+  g_context->isTemplateEnable = 0;
+  return result;
 }
-static void BlockFrame_dispose(BlockFrame bf) { Buffer_free(bf); }
-
-Token Token_create() {
-  Token token = (Token)Buffer_alloc(sizeof(struct s_Token));
-  token->_location._position._column = 0;
-  token->_location._position._line = 0;
-  token->_raw.begin = 0;
-  token->_raw.end = 0;
-  token->_location._filename = NULL;
-  token->_type = TT_Init;
-  return token;
+void popTokenContext(TokenContext tctx) {
+  if (g_context) {
+    Buffer_free(g_context);
+  }
+  g_context = tctx;
 }
 
 void Token_dispose(Token token) { Buffer_free(token); }
-
-static cstring skipSpace(cstring source) {
-  while (*source) {
-    if (*source == ' ' || *source == '\t') {
-      source++;
-    } else {
-      break;
-    }
-  }
-  return source;
-}
-
-static Token readHex(SourceFile file, cstring source) {
-  cstring selector = source + 2;
-  while (*selector) {
-    if ((*selector >= '0' && *selector <= '9') ||
-        (*selector >= 'a' && *selector <= 'f') ||
-        (*selector >= 'A' && *selector <= 'F')) {
-      selector++;
-    } else {
-      break;
-    }
-  }
-  Token token = Token_create();
-  token->_type = TT_Number;
-  token->_location = getLocation(file, source);
-  token->_raw.begin = source;
-  token->_raw.end = selector;
+Token Token_create() {
+  Token token = (Token)Buffer_alloc(sizeof(struct s_Token));
+  token->raw.begin = 0;
+  token->raw.end = 0;
+  token->type = TT_Eof;
   return token;
 }
 
-static Token readNumber(SourceFile file, cstring source) {
-  if (*source == '0' && (*(source + 1) == 'x' || *(source + 1) == 'X')) {
-    return readHex(file, source);
+static Token readEofToken(SourceFile file, cstring source) {
+  if (!*source) {
+    Token token = Token_create();
+    token->raw.begin = source;
+    token->raw.end = source + 1;
+    token->type = TT_Eof;
+    return token;
   }
-  Token token = Token_create();
-  cstring selector = source;
-  int decFlag = 0;
-  while (*selector) {
-    if (*selector >= '0' && *selector <= '9') {
-      selector++;
-    } else if (*selector == '.') {
-      if (!decFlag) {
-        decFlag = 1;
-        selector++;
-      } else {
-        break;
-      }
-    } else {
-      break;
-    }
-  }
-  token->_location = getLocation(file, source);
-  token->_raw.begin = source;
-  token->_raw.end = selector;
-  token->_type = TT_Number;
-  if (*selector == 'n' && !decFlag) {
-    token->_type = TT_BigInt;
-    token->_raw.end++;
-  }
-  return token;
-}
-static Token readIdentifierToken(SourceFile file, cstring source) {
-  cstring selector = source;
-  while (*selector) {
-    if ((*selector >= 'a' && *selector <= 'z') ||
-        (*selector >= 'A' && *selector <= 'Z') ||
-        (*selector >= '0' && *selector <= '9') || *selector == '_' ||
-        *selector == '$' || (*selector == '#' && selector == source)) {
-      selector++;
-    } else {
-      break;
-    }
-  }
-  Token token = Token_create();
-  token->_type = TT_Identifier;
-  token->_location = getLocation(file, source);
-  token->_raw.begin = source;
-  token->_raw.end = selector;
-  int index = 0;
-  for (; keywords[index] != 0; index++) {
-    if (strings_is(token->_raw, (const cstring)keywords[index])) {
-      token->_type = TT_Keyword;
-      break;
-    }
-  }
-  return token;
-}
-static Token readTemplatePartOrEnd(SourceFile file, cstring source) {
-  cstring selector = source;
-  while (*selector) {
-    if (*selector == '{' && *(selector - 1) == '$') {
-      break;
-    } else if (*selector == '`') {
-      List_remove(ctx->frames, List_head(ctx->frames));
-      ctx->current = (BlockFrame)List_get(List_head(ctx->frames));
-      break;
-    } else {
-      selector++;
-    }
-  }
-  if (!*selector) {
-    ctx->error.error = "Unterminated template literal.";
-    ctx->error.location = getLocation(file, selector);
-    return NULL;
-  }
-  Token token = Token_create();
-  token->_location = getLocation(file, source);
-  token->_raw.begin = source;
-  token->_raw.end = selector + 1;
-  if (*selector == '`') {
-    token->_type = TT_TemplateEnd;
-  } else {
-    token->_type = TT_TemplatePart;
-  }
-  return token;
-}
-static Token readSymbol(SourceFile file, cstring source) {
-  cstring selector = source;
-  if (*selector == '}') {
-    if (ctx->current && strcmp(ctx->current->_start, "${") == 0) {
-      return readTemplatePartOrEnd(file, source);
-    } else {
-      List_remove(ctx->frames, List_head(ctx->frames));
-      ctx->current = (BlockFrame)List_get(List_head(ctx->frames));
-    }
-  }
-  if (*selector == '{') {
-    BlockFrame bf = BlockFrame_create();
-    bf->_start = "{";
-    bf->_end = "}";
-    List_insert_head(ctx->frames, bf);
-  }
-  cstring symbol = NULL;
-  for (int index = 0; symbols[index] != NULL; index++) {
-    symbol = symbols[index];
-    selector = source;
-    while (*selector != 0) {
-      if (*symbol == '\0') {
-        break;
-      }
-      if (*symbol != *selector) {
-        break;
-      } else {
-        symbol++;
-        selector++;
-      }
-    }
-    if (!*symbol) {
-      Token token = Token_create();
-      token->_location = getLocation(file, source);
-      token->_type = TT_Symbol;
-      token->_raw.begin = source;
-      token->_raw.end = selector;
-      return token;
-    }
-  }
-  ctx->error.error = "Invalid character.";
-  ctx->error.location = getLocation(file, selector);
   return NULL;
 }
-static Token readRegex(SourceFile file, cstring source) {
-  cstring selector = source + 1;
-  int inString = 0;
-  while (*selector) {
-    if (*selector == '\"' && *(selector - 1) != '\\') {
-      inString = !inString;
+
+static Token readHexNumberToken(SourceFile file, cstring source) {
+  if (*source == '0' && (*(source + 1) == 'x' || *(source + 1) == 'X')) {
+    cstring selector = source + 2;
+    while (*selector) {
+      if ((*selector >= '0' && *selector <= '9') ||
+          (*selector >= 'a' && *selector <= 'f') ||
+          (*selector >= 'A' && *selector <= 'F')) {
+        selector++;
+      } else {
+        break;
+      }
     }
-    if (*selector == '/' && *(selector - 1) != '\\' && !inString) {
-      selector++;
-      while (*selector) {
-        if (*selector == 'i' || *selector == 'g' || *selector == 'm' ||
-            *selector == 's') {
-          selector++;
+    Token token = Token_create();
+    token->raw.begin = source;
+    token->raw.end = selector;
+    token->type = TT_Number;
+    return token;
+  }
+  return NULL;
+}
+
+static Token readDecNumberToken(SourceFile file, cstring source) {
+  if (*source >= '0' && *source <= '9') {
+    cstring selector = source;
+    int float_flag = 0;
+    while (*selector) {
+      if (*selector >= '0' && *selector <= '9') {
+        selector++;
+      } else if (*selector == '.') {
+        if (!float_flag) {
+          float_flag = 1;
         } else {
           break;
         }
+      } else {
+        break;
       }
+    }
+    Token token = Token_create();
+    token->raw.begin = source;
+    if (!float_flag && *selector == 'n') {
+      selector++;
+      token->raw.end = selector;
+      token->type = TT_BigInt;
+    } else {
+      token->raw.end = selector;
+      token->type = TT_Number;
+    }
+    return token;
+  }
+  return NULL;
+}
+
+static Token readNumberToken(SourceFile file, cstring source) {
+  if (*source >= '0' && *source <= '9') {
+    if (*source == '0' && (*(source + 1) == 'x' || *(source + 1) == 'X')) {
+      return readHexNumberToken(file, source);
+    } else {
+      return readDecNumberToken(file, source);
+    }
+  }
+  return NULL;
+}
+
+static Token readStringToken(SourceFile file, cstring source) {
+  if (*source == '\"' || *source == '\'') {
+    cstring selector = source + 1;
+    while (*selector && *selector != '\r' && *selector != '\n') {
+      if (*selector == *source && *(selector - 1) != '\\') {
+        selector++;
+        break;
+      }
+      selector++;
+    }
+    if (*(selector - 1) == *source) {
+      Token token = Token_create();
+      token->raw.begin = source;
+      token->raw.end = selector;
+      token->type = TT_String;
+      return token;
+    } else {
+      ErrorStack_push(Error_init("Unterminated string literal.",
+                                 getLocation(file, selector), NULL));
+    }
+  }
+  return NULL;
+}
+
+Token readIdentifierToken(SourceFile file, cstring source) {
+  if ((*source >= 'a' && *source <= 'z') ||
+      (*source >= 'A' && *source <= 'Z') || *source == '$' || *source == '@') {
+    cstring selector = source;
+    while (*selector) {
+      if ((*selector >= 'a' && *selector <= 'z') ||
+          (*selector >= 'A' && *selector <= 'Z') || *selector == '$') {
+        selector++;
+      } else {
+        break;
+      }
+    }
+    Token token = Token_create();
+    token->type = TT_Identifier;
+    token->raw.begin = source;
+    token->raw.end = selector;
+    for (int index = 0; g_keywords[index] != 0; index++) {
+      if (strings_is(token->raw, g_keywords[index])) {
+        token->type = TT_Keyword;
+        break;
+      }
+    }
+    return token;
+  }
+  return NULL;
+}
+
+Token readCommentToken(SourceFile file, cstring source) {
+  if (*source == '/' && *(source + 1) == '/') {
+    cstring selector = source;
+    while (*selector) {
+      if (*selector == '\r' || *selector == '\n') {
+        break;
+      }
+    }
+    Token token = Token_create();
+    token->raw.begin = source;
+    token->raw.end = selector;
+    token->type = TT_Comment;
+    return token;
+  }
+  if (*source == '/' && *(source + 1) == '*') {
+    cstring selector = source + 2;
+    int newline_flag = 0;
+    for (;;) {
+      if (!*selector) {
+        ErrorStack_push(
+            Error_init("'*/' expected.", getLocation(file, selector), NULL));
+        return NULL;
+      } else if (*selector == '/' && *(selector - 1) == '*') {
+        selector++;
+        break;
+      } else if (*selector == '\n' || *selector == '\r') {
+        selector++;
+        newline_flag = 1;
+      } else {
+        selector++;
+      }
+    }
+    Token token = Token_create();
+    token->raw.begin = source;
+    token->raw.end = selector;
+    if (newline_flag) {
+      token->type = TT_MultiLineComment;
+    } else {
+      token->type = TT_Comment;
+    }
+  }
+  return NULL;
+}
+
+Token readRegexToken(SourceFile file, cstring source) {
+  if (*source == '/') {
+    cstring selector = source + 1;
+    while (*selector) {
+      if (*selector == '/' && *(selector - 1) != '\\') {
+        selector++;
+        break;
+      } else {
+        selector++;
+      }
+    }
+    while (*selector == 'g' || *selector == 'i' || *selector == 'm' ||
+           *selector == 'y') {
+      selector++;
+    }
+    Token token = Token_create();
+    token->raw.begin = source;
+    token->raw.end = selector;
+    token->type = TT_Regex;
+    return token;
+  }
+  return NULL;
+}
+
+Token readSymbolToken(SourceFile file, cstring source) {
+  int index = 0;
+  cstring selector = source;
+  for (; g_symbols[index] != 0; index++) {
+    cstring s = g_symbols[index];
+    selector = source;
+    while (*s) {
+      if (*selector != *s) {
+        break;
+      }
+      selector++;
+      s++;
+    }
+    if (!*s) {
       break;
     }
-    selector++;
   }
-  Token token = Token_create();
-  token->_type = TT_Regex;
-  token->_location = getLocation(file, source);
-  token->_raw.begin = source;
-  token->_raw.end = selector;
-  return token;
+  if (g_symbols[index]) {
+    Token token = Token_create();
+    token->raw.begin = source;
+    token->raw.end = selector;
+    token->type = TT_Symbol;
+    return token;
+  }
+  return NULL;
 }
-static Token readComment(SourceFile file, cstring source) {
-  cstring selector = source;
-  if (*(selector + 1) == '/') {
-    while (*selector != '\0') {
-      if (*selector == '\n') {
-        break;
-      } else {
-        selector++;
-      }
+
+Token readNewlineToken(SourceFile file, cstring source) {
+  if (*source == '\r' || *source == '\n') {
+    cstring selector = source;
+    while (*selector == '\r' || *selector == '\n') {
+      selector++;
     }
-  } else {
-    while (*selector != '\0') {
-      if (*selector == '/' && *(selector - 1) == '*') {
-        break;
-      } else {
+    Token token = Token_create();
+    token->raw.begin = source;
+    token->raw.end = selector;
+    token->type = TT_Newline;
+    return token;
+  }
+  return NULL;
+}
+
+Token readTemplateToken(SourceFile file, cstring source) {
+  if (*source == '`') {
+    cstring selector = source;
+    while (*selector) {
+      if (*selector == '`' && *(selector - 1) != '\\') {
         selector++;
+        break;
       }
+      if (*selector == '{' && *(selector - 1) == '$' &&
+          *(selector - 2) != '\\') {
+        selector++;
+        break;
+      }
+      selector++;
     }
     if (!*selector) {
-      ctx->error.error = "'*/' expected.";
-      ctx->error.location = getLocation(file, selector);
+      ErrorStack_push(Error_init("Unterminated template literal.",
+                                 getLocation(file, selector), NULL));
       return NULL;
-    } else {
-      selector++;
     }
-  }
-  Token token = Token_create();
-  token->_type = TT_Comment;
-  token->_location = getLocation(file, source);
-  token->_raw.begin = source;
-  token->_raw.end = selector;
-  return token;
-}
-Token readEof(SourceFile file, cstring source) {
-  Token token = Token_create();
-  token->_type = TT_Eof;
-  token->_raw.begin = source;
-  token->_raw.end = source;
-  token->_location = getLocation(file, source);
-  return token;
-}
-Token readString(SourceFile file, cstring source) {
-  cstring selector = source + 1;
-  while (*selector && *selector != '\n') {
-    if (*selector == *source && *(selector - 1) != '\\') {
-      break;
+    Token token = Token_create();
+    token->raw.begin = source;
+    token->raw.end = selector;
+    if (*(selector - 1) == '`') {
+      token->type = TT_Template;
     } else {
-      selector++;
+      token->type = TT_TemplateStart;
     }
+    return token;
   }
-  if (!*selector || *selector == '\n') {
-    ctx->error.error = "Unterminated string literal.";
-    ctx->error.location = getLocation(file, selector);
-    return NULL;
-  }
-  Token token = Token_create();
-  token->_location = getLocation(file, source);
-  token->_type = TT_String;
-  token->_raw.begin = source;
-  token->_raw.end = selector + 1;
-  return token;
-}
-Token readTemplate(SourceFile file, cstring source) {
-  cstring selector = source + 1;
-  while (*selector) {
-    if (*selector == '`' && *(selector - 1) != '\\') {
-      break;
-    } else if (*selector == '{' && *(selector - 1) == '$') {
-      BlockFrame bf = BlockFrame_create();
-      bf->_start = "${";
-      bf->_end = "}";
-      List_insert_head(ctx->frames, bf);
-      ctx->current = bf;
-      break;
-    } else {
-      selector++;
-    }
-  }
-  if (!*selector) {
-    ctx->error.error = "Unterminated template literal.";
-    ctx->error.location = getLocation(file, selector);
-    return NULL;
-  }
-  Token token = Token_create();
-  token->_raw.begin = source;
-  token->_raw.end = selector + 1;
-  token->_location = getLocation(file, source);
-  if (*selector == '`') {
-    token->_type = TT_Template;
-  } else {
-    token->_type = TT_TemplateStart;
-  }
-  return token;
+  return NULL;
 }
 
-Token readNewline(SourceFile file, cstring source) {
-  cstring selector = source;
-  while (*selector) {
-    if (*selector != '\n' && *selector != '\r') {
-      break;
-    }
-    selector++;
-  }
-  Token token = Token_create();
-  token->_type = TT_Newline;
-  token->_raw.begin = source;
-  token->_raw.end = selector;
-  token->_location = getLocation(file, source);
-  return token;
-}
-
-Token readInterepter(SourceFile file, cstring source) {
-  cstring selector = source;
-  if (*source == '#' && *(source + 1) == '!' && source == file->_source) {
+Token readTemplatePartOrEndToken(SourceFile file, cstring source) {
+  if (*source == '}') {
+    cstring selector = source;
     while (*selector) {
-      if (*selector == '\n' || *selector == '\r') {
+      if (*selector == '`' && *(selector - 1) != '\\') {
+        selector++;
+        break;
+      }
+      if (*selector == '{' && *(selector - 1) == '$' &&
+          *(selector - 2) != '\\') {
+        selector++;
         break;
       }
       selector++;
     }
+    if (!*selector) {
+      ErrorStack_push(Error_init("Unterminated template literal.",
+                                 getLocation(file, selector), NULL));
+      return NULL;
+    }
+    Token token = Token_create();
+    token->raw.begin = source;
+    token->raw.end = selector;
+    if (*(selector - 1) == '`') {
+      token->type = TT_TemplateEnd;
+    } else {
+      token->type = TT_TemplatePart;
+    }
+    return token;
   }
-  Token token = Token_create();
-  token->_type = TT_Interpreter;
-  token->_raw.begin = source;
-  token->_raw.end = selector;
-  token->_location = getLocation(file, source);
-  return token;
+  return NULL;
 }
+
+void enableReadRegex() { g_context->isRegexEnable = 1; }
+void disableReadRegex() { g_context->isRegexEnable = 0; }
+void enableReadTemplate() { g_context->isTemplateEnable = 1; };
+void disableReadTemplate() { g_context->isTemplateEnable = 0; };
 
 Token readToken(SourceFile file, cstring source) {
-  source = skipSpace(source);
-  if (*source == 0) {
-    return readEof(file, source);
+  while (*source == ' ' || *source == '\t') {
+    source++;
   }
-  if (*source == '#' && *(source + 1) == '!' && source == file->_source) {
-    return readInterepter(file, source);
+  if (*source == '\0') {
+    return readEofToken(file, source);
+  } else if (*source == '\r' || *source == '\n') {
+    return readNewlineToken(file, source);
   } else if (*source >= '0' && *source <= '9') {
-    return readNumber(file, source);
-  } else if ((*source >= 'a' && *source <= 'z') ||
-             (*source >= 'A' && *source <= 'Z') || *source == '_' ||
-             *source == '$' || *source == '#') {
-    return readIdentifierToken(file, source);
-  } else if ((*source == '/' && source[1] == '/') ||
-             (*source == '/' && source[1] == '*')) {
-    return readComment(file, source);
-  } else if (*source == '/' && ctx->enableRegex) {
-    disableReadRegex();
-    return readRegex(file, source);
+    return readNumberToken(file, source);
   } else if (*source == '\"' || *source == '\'') {
-    return readString(file, source);
+    return readStringToken(file, source);
+  } else if ((*source >= 'a' && *source <= 'z') ||
+             (*source >= 'A' && *source <= 'Z') || *source == '$' ||
+             *source == '_') {
+    return readIdentifierToken(file, source);
+  } else if (*source == '/' && (*(source + 1) == '/' || *(source + 1) == '*')) {
+    return readCommentToken(file, source);
+  } else if (*source == '/' && g_context->isRegexEnable) {
+    return readRegexToken(file, source);
   } else if (*source == '`') {
-    return readTemplate(file, source);
-  } else if (*source == '\n' || *source == '\r') {
-    return readNewline(file, source);
+    return readTemplateToken(file, source);
+  } else if (*source == '}' && g_context->isTemplateEnable) {
+    return readTemplatePartOrEndToken(file, source);
   } else {
-    return readSymbol(file, source);
+    return readSymbolToken(file, source);
   }
-}
-
-void initTokenizerContext() {
-  List_Option opt = {1, (Buffer_Free)BlockFrame_dispose};
-  ctx->frames = List_create(opt);
-  BlockFrame bf = BlockFrame_create();
-  List_insert_head(ctx->frames, bf);
-  ctx->current = bf;
-  bf->_start = "";
-  bf->_end = "";
-  ctx->error.error = NULL;
-}
-void uninitTokenizerContext() { List_dispose(ctx->frames); }
-Error getTokenizerError() { return ctx->error; }
-void enableReadRegex() { ctx->enableRegex = 1; }
-void disableReadRegex() { ctx->enableRegex = 0; }
-
-int checkToken(Token token, TokenType tt, cstring str) {
-  return token->_type == tt && strings_is(token->_raw, str);
-}
-
-cstring skipToken(SourceFile file, cstring source) {
-  Token token = readTokenSkipNewline(file, source);
-  if (!token) {
-    ctx->error = getTokenizerError();
-    return NULL;
-  }
-  cstring selector = token->_raw.end;
-  Token_dispose(token);
-  return selector;
 }
 Token readTokenSkipComment(SourceFile file, cstring source) {
   cstring selector = source;
   Token token = readToken(file, selector);
-  while (token && token->_type == TT_Comment) {
-    cstring it = token->_raw.begin;
-    int isNewline = 0;
-    while (it != token->_raw.end) {
-      if (*it == '\n' || *it == '\r') {
-        isNewline = 1;
-        break;
-      }
-    }
-    if (isNewline) {
-      token->_type = TT_Newline;
-      break;
-    }
-    selector = token->_raw.end;
+  while (token && token->type == TT_Comment) {
+    selector = token->raw.end;
     Token_dispose(token);
     token = readToken(file, selector);
   }
-  if (!token) {
-    ctx->error = getTokenizerError();
-  }
   return token;
 }
-
 Token readTokenSkipNewline(SourceFile file, cstring source) {
   cstring selector = source;
   Token token = readTokenSkipComment(file, selector);
-  while (token && token->_type == TT_Newline) {
-    selector = token->_raw.end;
+  if (token &&
+      (token->type == TT_MultiLineComment || token->type == TT_Newline)) {
+    selector = token->raw.end;
     Token_dispose(token);
     token = readTokenSkipComment(file, selector);
   }
-  if (!token) {
-    ctx->error = getTokenizerError();
-  }
   return token;
 }
-
-TokenContext pushTokenContext() {
-  TokenContext result = ctx;
-  ctx = (TokenContext)Buffer_alloc(sizeof(struct s_TokenContext));
-  initTokenizerContext();
-  return result;
-}
-void popTokenContext(TokenContext tctx) {
-  if (tctx) {
-    if (!tctx->error.error) {
-      if (ctx) {
-        tctx->error = ctx->error;
-      }
-    }
-  }
-  uninitTokenizerContext();
-  Buffer_free(ctx);
-  ctx = tctx;
+int Token_check(Token token, ATOM_TokenType tt, cstring source) {
+  return token->type == tt && strings_is(token->raw, source);
 }
