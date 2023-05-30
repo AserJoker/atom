@@ -9,7 +9,7 @@ JSON_Value JSON_fromList(List list, ToJSON toJSON) {
   int index = 0;
   for (List_Node node = List_head(list); node != List_tail(list);
        node = List_next(node)) {
-    JSON_setIndex(arr, index, toJSON(List_get(node)));
+    JSON_setIndex(arr, index++, toJSON(List_get(node)));
   }
   return arr;
 }
@@ -120,7 +120,7 @@ void JSON_setIndex(JSON_Value obj, int32_t index, JSON_Value value) {
   if (index == 0) {
     if (obj->children) {
       value->next = obj->children->next;
-      obj->children = NULL;
+      obj->children->next = NULL;
       JSON_dispose(obj->children);
     }
     obj->children = value;

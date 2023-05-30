@@ -5,29 +5,59 @@
       "type": "ExpressionStatement",
       "expression": {
         "type": "BinaryExpression",
-        "operator": "+",
-        "left": {
-          "type": "LiteralExpression",
-          "literal": {
-            "type": "literal",
-            "raw": "2"
-          }
-        },
+        "operator": "!",
         "right": {
-          "type": "BinaryExpression",
-          "operator": ".",
+          "type": "ComputeExpression",
           "left": {
-            "type": "LiteralExpression",
-            "literal": {
-              "type": "literal",
-              "raw": "\"1\""
-            }
-          },
-          "right": {
             "type": "IdentifierExpression",
             "identifier": {
               "type": "Identifier",
-              "raw": "length"
+              "raw": "a"
+            }
+          },
+          "right": {
+            "type": "BinaryExpression",
+            "operator": ".",
+            "left": {
+              "type": "IdentifierExpression",
+              "identifier": {
+                "type": "Identifier",
+                "raw": "a"
+              }
+            },
+            "right": {
+              "type": "TemplateExpression",
+              "template": {
+                "type": "Template",
+                "tag": {
+                  "type": "IdentifierExpression",
+                  "identifier": {
+                    "type": "Identifier",
+                    "raw": "b"
+                  }
+                },
+                "datas": [
+                  "`aaa${",
+                  "}bbbb${",
+                  "}`"
+                ],
+                "parts": [
+                  {
+                    "type": "LiteralExpression",
+                    "literal": {
+                      "type": "literal",
+                      "raw": "123"
+                    }
+                  },
+                  {
+                    "type": "IdentifierExpression",
+                    "identifier": {
+                      "type": "Identifier",
+                      "raw": "ccc"
+                    }
+                  }
+                ]
+              }
             }
           }
         }

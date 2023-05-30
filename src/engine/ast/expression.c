@@ -61,162 +61,23 @@ void Expression_dispose(Expression expression) {
   if (expression->node->type == NT_BracketExpression) {
     return BracketExpression_dispose(expression);
   }
-}
-void BinaryExpression_dispose(Expression expression) {
-  if (expression->binary.left) {
-    Expression_dispose(expression->binary.left);
+  if (expression->node->type == NT_ComputeExpression ||
+      expression->node->type == NT_OptionalComputeExpression) {
+    return ComputeExpression_dispose(expression);
   }
-  if (expression->binary.right) {
-    Expression_dispose(expression->binary.right);
+  if (expression->node->type == NT_LambdaExpression) {
+    return LambdaExpression_dispose(expression);
   }
-  if (expression->binary.operator) {
-    Token_dispose(expression->binary.operator);
+  if (expression->node->type == NT_FunctionExpression) {
+    return FunctionExpression_dispose(expression);
   }
-  AstNode_dispose(expression->node);
-  Buffer_free(expression);
-}
-void LiteralExpression_dispose(Expression expression) {
-  Literal_dispose(expression->literal);
-  AstNode_dispose(expression->node);
-  Buffer_free(expression);
-}
-void IdentifierExpression_dispose(Expression expression) {
-  Identifier_dispose(expression->identifier);
-  AstNode_dispose(expression->node);
-  Buffer_free(expression);
-}
-void Literal_dispose(Literal literal) {
-  Token_dispose(literal->raw);
-  AstNode_dispose(literal->node);
-  Buffer_free(literal);
-}
-Literal Literal_create() {
-  Literal literal = (Literal)Buffer_alloc(sizeof(struct s_Literal));
-  literal->node = AstNode_create();
-  literal->node->type = NT_Literal;
-  literal->node->position.begin = 0;
-  literal->node->position.end = 0;
-  literal->raw = NULL;
-  return literal;
-}
-void Identifier_dispose(Identifier identifier) {
-  Token_dispose(identifier->raw);
-  AstNode_dispose(identifier->node);
-  Buffer_free(identifier);
-}
-Identifier Identifier_create() {
-  Identifier identifier = (Identifier)Buffer_alloc(sizeof(struct s_Identifier));
-  identifier->raw = NULL;
-  identifier->node = AstNode_create();
-  identifier->node->type = NT_Identifier;
-  return identifier;
-}
-
-Identifier readIdentifier(SourceFile file, cstring source) {
-  cstring selector = source;
-  Token token = readTokenSkipNewline(file, selector);
-  if (!token) {
-    return NULL;
+  if (expression->node->type == NT_CallExpression ||
+      expression->node->type == NT_OptionalCallExpression) {
+    return CallExpression_dispose(expression);
   }
-  if (token->type != TT_Identifier) {
-    Token_dispose(token);
-    return NULL;
+  if (expression->node->type == NT_TemplateExpression) {
+    return TemplateExpression_dispose(expression);
   }
-  Identifier identifier = Identifier_create();
-  identifier->raw = token;
-  identifier->node->position = token->raw;
-  return identifier;
-}
-
-int isLiteralToken(Token token) {
-  if (token->type == TT_String || token->type == TT_Number ||
-      token->type == TT_BigInt || token->type == TT_Regex) {
-    return 1;
-  }
-  if (Token_check(token, TT_Keyword, "true") ||
-      Token_check(token, TT_Keyword, "false") ||
-      Token_check(token, TT_Keyword, "null") ||
-      Token_check(token, TT_Keyword, "undefined")) {
-    return 1;
-  }
-  return 0;
-}
-Literal readLiteral(SourceFile file, cstring source) {
-  cstring selector = source;
-  Token token = readTokenSkipNewline(file, selector);
-  if (!token) {
-    return NULL;
-  }
-  if (!isLiteralToken(token)) {
-    Token_dispose(token);
-    return NULL;
-  }
-  Literal literal = Literal_create();
-  literal->raw = token;
-  literal->node->type = NT_Literal;
-  literal->node->position = token->raw;
-  return literal;
-}
-
-Expression readIdentifierExpression(SourceFile file, cstring source) {
-  Identifier identifier = readIdentifier(file, source);
-  if (!identifier) {
-    return NULL;
-  }
-  Expression expr = Expression_create();
-  expr->node->type = NT_IdentifierExpression;
-  expr->node->position = identifier->node->position;
-  expr->identifier = identifier;
-  return expr;
-}
-void BracketExpression_dispose(Expression expression) {
-  if (expression->bracket.expression) {
-    Expression_dispose(expression->bracket.expression);
-  }
-  AstNode_dispose(expression->node);
-  Buffer_free(expression);
-}
-
-Expression readBracketExpression(SourceFile file, cstring source) {
-  cstring selector = source;
-  Token token = readTokenSkipNewline(file, selector);
-  if (!token) {
-    return NULL;
-  }
-  if (!Token_check(token, TT_Symbol, "(")) {
-    Token_dispose(token);
-    return NULL;
-  }
-  selector = token->raw.end;
-  Token_dispose(token);
-  AstContext current = pushAstContext();
-  Expression expression = readExpression(file, selector);
-  popAstContext(current);
-  if (!expression) {
-    return NULL;
-  }
-  selector = expression->node->position.end;
-  token = readTokenSkipNewline(file, selector);
-  if (!token) {
-    Expression_dispose(expression);
-    return NULL;
-  }
-  if (!Token_check(token, TT_Symbol, ")")) {
-    Token_dispose(token);
-    Expression_dispose(expression);
-    ErrorStack_push(Error_init("Except ')' after expression",
-                               getLocation(file, selector), NULL));
-    return NULL;
-  }
-  selector = token->raw.end;
-  Token_dispose(token);
-  Expression bracket_expr = Expression_create();
-  bracket_expr->level = -2;
-  bracket_expr->node->type = NT_BracketExpression;
-  bracket_expr->node->position.begin = source;
-  bracket_expr->node->position.end = selector;
-  bracket_expr->bracket.expression = expression;
-  return bracket_expr;
 }
 
 void insertBinaryExpression(Expression *root, Expression current) {
@@ -237,17 +98,31 @@ void insertBinaryExpression(Expression *root, Expression current) {
   }
 }
 
-Expression readLiteralExpression(SourceFile file, cstring source) {
-  Literal literal = readLiteral(file, source);
-  if (!literal) {
-    return NULL;
+Token findPair(SourceFile file, cstring start, cstring end, cstring source) {
+  int index = 1;
+  cstring selector = source;
+  while (*selector) {
+    Token token = readTokenSkipNewline(file, selector);
+    if (!token) {
+      return NULL;
+    }
+    if (strings_is(token->raw, end)) {
+      index--;
+      if (!index) {
+        return token;
+      }
+    }
+    if (strings_is(token->raw, start)) {
+      index++;
+    }
+    selector = token->raw.end;
+    Token_dispose(token);
   }
-  Expression literal_expr = Expression_create();
-  literal_expr->level = -2;
-  literal_expr->literal = literal;
-  literal_expr->node->type = NT_LiteralExpression;
-  literal_expr->node->position = literal->node->position;
-  return literal_expr;
+  if (!*selector) {
+    ErrorStack_push(Error_init("Except ')' after expression",
+                               getLocation(file, selector), NULL));
+  }
+  return NULL;
 }
 
 Expression readExpression(SourceFile file, cstring source) {
@@ -266,8 +141,8 @@ Expression readExpression(SourceFile file, cstring source) {
       if (expr && !current) {
         if (token->type == TT_Symbol) {
           if (strings_contains(token->raw, updateOperators)) {
-            Token_dispose(token);
-            break;
+            Token_dispose(token); // a+b => a+b;
+            break;                // ++a => a++;
           }
         }
       }
@@ -276,10 +151,13 @@ Expression readExpression(SourceFile file, cstring source) {
       Token_dispose(token);
       break;
     }
+    if (isCommaTail() && Token_check(token, TT_Symbol, ",")) {
+      Token_dispose(token);
+      break;
+    }
     if (current || !expr) {
       // resolve value
       if (token->type == TT_Identifier) {
-        // TODO: template string tag
         Token_dispose(token);
         Expression identifier_expr = readIdentifierExpression(file, selector);
         if (!identifier_expr) {
@@ -307,16 +185,114 @@ Expression readExpression(SourceFile file, cstring source) {
         }
       } else if (token->type == TT_Symbol) {
         if (Token_check(token, TT_Symbol, "(")) {
+          Token pair = findPair(file, "(", ")", token->raw.end);
           Token_dispose(token);
-          Expression bracket_expr = readBracketExpression(file, selector);
-          if (!bracket_expr) {
-            return NULL;
+          if (!pair) {
+            goto failed;
           }
-          selector = bracket_expr->node->position.end;
-          if (!expr) {
-            expr = bracket_expr;
+          cstring lambda_selector = pair->raw.end;
+          Token_dispose(pair);
+          token = readTokenSkipNewline(file, lambda_selector);
+          if (!token) {
+            goto failed;
+          }
+          if (Token_check(token, TT_Symbol, "=>")) {
+            Token_dispose(token);
+            Expression lambda_expr = readLambdaExpression(file, selector);
+            if (!lambda_expr) {
+              goto failed;
+            }
+            selector = lambda_expr->node->position.end;
+            if (!expr) {
+              expr = lambda_expr;
+            } else {
+              current->binary.right = lambda_expr;
+              current = NULL;
+            }
           } else {
-            current->binary.right = bracket_expr;
+            Token_dispose(token);
+            Expression bracket_expr = readBracketExpression(file, selector);
+            if (!bracket_expr) {
+              goto failed;
+            }
+            selector = bracket_expr->node->position.end;
+            if (!expr) {
+              expr = bracket_expr;
+            } else {
+              current->binary.right = bracket_expr;
+              current = NULL;
+            }
+          }
+        } else if (Token_check(token, TT_Symbol, "[")) {
+          // TODO: array pattern
+        } else if (Token_check(token, TT_Symbol, "{")) {
+          // TODO: object pattern
+        } else if (strings_contains(token->raw, unaryOperators)) {
+          Expression unary_expr = Expression_create();
+          unary_expr->node->type = NT_BinaryExpression;
+          unary_expr->level = -1;
+          unary_expr->binary.operator= token;
+          selector = token->raw.end;
+          if (!expr) {
+            expr = unary_expr;
+          } else {
+            current->binary.right = unary_expr;
+          }
+          current = unary_expr;
+        } else if (token->type == TT_Template ||
+                   token->type == TT_TemplateStart) {
+          Token_dispose(token);
+          Expression template_expr = readTemplateExpression(file, selector);
+          if (!template_expr) {
+            goto failed;
+          }
+          if (!expr) {
+            expr = template_expr;
+          } else {
+            current->binary.right = template_expr;
+          }
+          current = NULL;
+        } else {
+          Token_dispose(token);
+          ErrorStack_push(
+              Error_init("Unexcept token.", getLocation(file, selector), NULL));
+          goto failed;
+        }
+      } else if (token->type == TT_Keyword) {
+        if (Token_check(token, TT_Keyword, "function")) {
+          Token_dispose(token);
+          Expression function_expr = readFunctionExpression(file, selector);
+          if (!function_expr) {
+            goto failed;
+          }
+          selector = function_expr->node->position.end;
+          if (!expr) {
+            expr = function_expr;
+          } else {
+            current->binary.right = function_expr;
+            current = NULL;
+          }
+        } else if (Token_check(token, TT_Keyword, "async")) {
+          Token next = readTokenSkipNewline(file, token->raw.end);
+          Token_dispose(token);
+          if (!next) {
+            goto failed;
+          }
+          Expression current_expr = NULL;
+          if (Token_check(next, TT_Symbol, "(")) {
+            current_expr = readLambdaExpression(file, selector);
+          } else if (Token_check(next, TT_Keyword, "function")) {
+            current_expr = readFunctionExpression(file, selector);
+          }
+          Token_dispose(next);
+          if (!current_expr) {
+            goto failed;
+          }
+          selector = current_expr->node->position.end;
+          if (!expr) {
+            expr = current_expr;
+          } else {
+            current->binary.right = current_expr;
             current = NULL;
           }
         } else {
@@ -324,6 +300,20 @@ Expression readExpression(SourceFile file, cstring source) {
           ErrorStack_push(
               Error_init("Unexcept token.", getLocation(file, selector), NULL));
           goto failed;
+        }
+      } else if (token->type == TT_Template ||
+                 token->type == TT_TemplateStart) {
+        Token_dispose(token);
+        Expression template_expr = readTemplateExpression(file, selector);
+        if (!template_expr) {
+          goto failed;
+        }
+        selector = template_expr->node->position.end;
+        if (!expr) {
+          expr = template_expr;
+        } else {
+          current->binary.right = template_expr;
+          current = NULL;
         }
       } else {
         Token_dispose(token);
@@ -340,19 +330,69 @@ Expression readExpression(SourceFile file, cstring source) {
           binary_expr->level = -1;
           binary_expr->binary.operator= token;
           insertBinaryExpression(&expr, binary_expr);
+          current = NULL;
           selector = token->raw.end;
-        } else if (strings_is(token->raw, ".")) {
-          Expression binary_expr = Expression_create();
-          binary_expr->node->type = NT_BinaryExpression;
-          binary_expr->level = -1;
-          binary_expr->binary.operator= token;
-          insertBinaryExpression(&expr, binary_expr);
-          current = binary_expr;
-          selector = token->raw.end;
+        } else if (strings_is(token->raw, ".") ||
+                   strings_is(token->raw, "?.")) {
+          Token next = readTokenSkipNewline(file, token->raw.end);
+          if (!next) {
+            Token_dispose(token);
+            goto failed;
+          }
+          if (strings_is(token->raw, "?.")) {
+            if (Token_check(next, TT_Symbol, "(")) {
+              selector = token->raw.end;
+              Token_dispose(token);
+              Token_dispose(next);
+              Expression call_expr = readCallExpression(file, selector);
+              if (!call_expr) {
+                goto failed;
+              }
+              call_expr->node->type = NT_OptionalCallExpression;
+              insertBinaryExpression(&expr, call_expr);
+              current = NULL;
+              selector = call_expr->node->position.end;
+            } else if (Token_check(next, TT_Symbol, "[")) {
+              selector = token->raw.end;
+              Token_dispose(token);
+              Token_dispose(next);
+              Expression compute_expr = readComputeExpression(file, selector);
+              if (!compute_expr) {
+                goto failed;
+              }
+              compute_expr->node->type = NT_OptionalComputeExpression;
+              insertBinaryExpression(&expr, compute_expr);
+              current = NULL;
+              selector = compute_expr->node->position.end;
+            }
+          } else {
+            Token_dispose(next);
+            Expression binary_expr = Expression_create();
+            binary_expr->node->type = NT_BinaryExpression;
+            binary_expr->level = -1;
+            binary_expr->binary.operator= token;
+            insertBinaryExpression(&expr, binary_expr);
+            current = binary_expr;
+            selector = token->raw.end;
+          }
         } else if (strings_is(token->raw, "(")) {
-          // TODO: function call
+          Token_dispose(token);
+          Expression call_expr = readCallExpression(file, selector);
+          if (!call_expr) {
+            goto failed;
+          }
+          insertBinaryExpression(&expr, call_expr);
+          current = NULL;
+          selector = call_expr->node->position.end;
         } else if (strings_is(token->raw, "[")) {
-          // TODO: compute member
+          Token_dispose(token);
+          Expression compute_expr = readComputeExpression(file, selector);
+          if (!compute_expr) {
+            goto failed;
+          }
+          insertBinaryExpression(&expr, compute_expr);
+          current = NULL;
+          selector = compute_expr->node->position.end;
         } else {
           int level = 0;
           for (; opts[level] != 0; level++) {
@@ -372,6 +412,29 @@ Expression readExpression(SourceFile file, cstring source) {
             Token_dispose(token);
             break;
           }
+        }
+      } else if (token->type == TT_Template ||
+                 token->type == TT_TemplateStart) {
+        Token_dispose(token);
+        Expression template_expr = readTemplateExpression(file, selector);
+        if (!template_expr) {
+          goto failed;
+        }
+        selector = template_expr->node->position.end;
+        if (template_expr->level >= expr->level) {
+          template_expr->template->tag = expr;
+          expr = template_expr;
+
+        } else {
+          Expression iterator = expr;
+          while (iterator->binary.right->level > template_expr->level) {
+            iterator = iterator->binary.right;
+            if (!iterator->binary.right) {
+              break;
+            }
+          }
+          template_expr->template->tag = iterator->binary.right;
+          iterator->binary.right = template_expr;
         }
       } else {
         Token_dispose(token);

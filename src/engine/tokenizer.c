@@ -277,8 +277,8 @@ Token readNewlineToken(SourceFile file, cstring source) {
 
 Token readTemplateToken(SourceFile file, cstring source) {
   if (*source == '`') {
-    cstring selector = source;
-    while (*selector) {
+    cstring selector = source + 1;
+    for (;;) {
       if (*selector == '`' && *(selector - 1) != '\\') {
         selector++;
         break;
@@ -288,12 +288,12 @@ Token readTemplateToken(SourceFile file, cstring source) {
         selector++;
         break;
       }
+      if (!*selector) {
+        ErrorStack_push(Error_init("Unterminated template literal.",
+                                   getLocation(file, selector), NULL));
+        return NULL;
+      }
       selector++;
-    }
-    if (!*selector) {
-      ErrorStack_push(Error_init("Unterminated template literal.",
-                                 getLocation(file, selector), NULL));
-      return NULL;
     }
     Token token = Token_create();
     token->raw.begin = source;
@@ -311,22 +311,18 @@ Token readTemplateToken(SourceFile file, cstring source) {
 Token readTemplatePartOrEndToken(SourceFile file, cstring source) {
   if (*source == '}') {
     cstring selector = source;
-    while (*selector) {
-      if (*selector == '`' && *(selector - 1) != '\\') {
+    for (;;) {
+      if (*selector == '`' && *(selector - 1) != '\\' ||
+          (*selector == '{' && *(selector - 1) == '$' &&
+           *(selector - 2) != '\\')) {
         selector++;
         break;
-      }
-      if (*selector == '{' && *(selector - 1) == '$' &&
-          *(selector - 2) != '\\') {
-        selector++;
-        break;
+      } else if (!*selector) {
+        ErrorStack_push(Error_init("Unterminated template literal.",
+                                   getLocation(file, selector), NULL));
+        return NULL;
       }
       selector++;
-    }
-    if (!*selector) {
-      ErrorStack_push(Error_init("Unterminated template literal.",
-                                 getLocation(file, selector), NULL));
-      return NULL;
     }
     Token token = Token_create();
     token->raw.begin = source;
