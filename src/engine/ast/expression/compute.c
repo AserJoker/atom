@@ -31,7 +31,9 @@ Expression readComputeExpression(SourceFile file, cstring source) {
   }
   selector = token->raw.end;
   Token_dispose(token);
+  AstContext current = pushAstContext();
   Expression value = readExpression(file, selector);
+  popAstContext(current);
   if (!value) {
     return NULL;
   }

@@ -1,1 +1,1 @@
-++`${abbc}`.length;
+++[a, b, c].length;

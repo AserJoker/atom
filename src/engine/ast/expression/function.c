@@ -63,7 +63,6 @@ Function readFunction(SourceFile file, cstring source) {
   }
   Token_dispose(token);
 
-  
   token = readTokenSkipNewline(file, selector);
   if (!token) {
     goto failed;
@@ -77,15 +76,14 @@ Function readFunction(SourceFile file, cstring source) {
   selector = token->raw.end;
   Token_dispose(token);
 
-  
   token = readTokenSkipNewline(file, selector);
   if (!Token_check(token, TT_Symbol, ")")) {
     Token_dispose(token);
     AstContext current = pushAstContext();
     enableCommaTail();
     Expression arg = readExpression(file, selector);
+    popAstContext(current);
     if (!arg) {
-      popAstContext(current);
       goto failed;
     }
     for (;;) {
@@ -101,19 +99,19 @@ Function readFunction(SourceFile file, cstring source) {
       } else if (Token_check(token, TT_Symbol, ")")) {
         break;
       } else {
-        popAstContext(current);
         Token_dispose(token);
         ErrorStack_push(Error_init("Unexcept token. missing token ')'",
                                    getLocation(file, selector), NULL));
         goto failed;
       }
+      AstContext current = pushAstContext();
+      enableCommaTail();
       arg = readExpression(file, selector);
+      popAstContext(current);
       if (!arg) {
         goto failed;
       }
     }
-    disableCommaTail();
-    popAstContext(current);
   }
   selector = token->raw.end;
   Token_dispose(token);

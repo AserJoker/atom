@@ -5,60 +5,41 @@
       "type": "ExpressionStatement",
       "expression": {
         "type": "BinaryExpression",
-        "operator": "!",
+        "operator": ".",
+        "left": {
+          "type": "ArrayPattern",
+          "array": {
+            "type": "Array",
+            "items": [
+              {
+                "type": "IdentifierExpression",
+                "identifier": {
+                  "type": "Identifier",
+                  "raw": "a"
+                }
+              },
+              {
+                "type": "IdentifierExpression",
+                "identifier": {
+                  "type": "Identifier",
+                  "raw": "b"
+                }
+              },
+              {
+                "type": "IdentifierExpression",
+                "identifier": {
+                  "type": "Identifier",
+                  "raw": "c"
+                }
+              }
+            ]
+          }
+        },
         "right": {
-          "type": "ComputeExpression",
-          "left": {
-            "type": "IdentifierExpression",
-            "identifier": {
-              "type": "Identifier",
-              "raw": "a"
-            }
-          },
-          "right": {
-            "type": "BinaryExpression",
-            "operator": ".",
-            "left": {
-              "type": "IdentifierExpression",
-              "identifier": {
-                "type": "Identifier",
-                "raw": "a"
-              }
-            },
-            "right": {
-              "type": "TemplateExpression",
-              "template": {
-                "type": "Template",
-                "tag": {
-                  "type": "IdentifierExpression",
-                  "identifier": {
-                    "type": "Identifier",
-                    "raw": "b"
-                  }
-                },
-                "datas": [
-                  "`aaa${",
-                  "}bbbb${",
-                  "}`"
-                ],
-                "parts": [
-                  {
-                    "type": "LiteralExpression",
-                    "literal": {
-                      "type": "literal",
-                      "raw": "123"
-                    }
-                  },
-                  {
-                    "type": "IdentifierExpression",
-                    "identifier": {
-                      "type": "Identifier",
-                      "raw": "ccc"
-                    }
-                  }
-                ]
-              }
-            }
+          "type": "IdentifierExpression",
+          "identifier": {
+            "type": "Identifier",
+            "raw": "length"
           }
         }
       }

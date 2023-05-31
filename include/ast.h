@@ -36,6 +36,15 @@ typedef struct s_Function *Function;
 struct s_Template;
 typedef struct s_Template *Template;
 
+struct s_Array;
+typedef struct s_Array *Array;
+
+struct s_ObjectProperty;
+typedef struct s_ObjectProperty *ObjectProperty;
+
+struct s_Object;
+typedef struct s_Object *Object;
+
 typedef enum e_NodeType {
   NT_Program,
   // statement
@@ -55,6 +64,9 @@ typedef enum e_NodeType {
   NT_OptionalCallExpression,
   NT_OptionalComputeExpression,
   NT_TemplateExpression,
+  NT_AwaitExpression,
+  NT_ArrayPattern,
+  NT_ObjectPattern,
 
   // Template
   NT_Template,
@@ -68,6 +80,14 @@ typedef enum e_NodeType {
   // Lambda and function
   NT_Lambda,
   NT_Function,
+  NT_MemberFunction,
+
+  // Array
+  NT_Array,
+
+  // Object
+  NT_ObjectProperty,
+  NT_Object
 } NodeType;
 
 struct s_AstNode {
@@ -108,11 +128,17 @@ struct s_Expression {
     struct {
       Expression expression;
     } bracket;
+    struct {
+      Expression nil;
+      Expression expression;
+    } await;
     Identifier identifier;
     Literal literal;
     Lambda lambda;
     Function function;
     Template template;
+    Array array;
+    Object object;
   };
 };
 
@@ -147,10 +173,25 @@ struct s_Function {
 };
 
 struct s_Template {
-  Expression tag;
   AstNode node;
+  Expression tag;
   List datas;
   List parts;
+};
+
+struct s_Array {
+  AstNode node;
+  List items;
+};
+
+struct s_ObjectProperty {
+  AstNode node;
+  Expression key;
+  Expression value;
+};
+struct s_Object {
+  AstNode node;
+  List properties;
 };
 
 AstContext pushAstContext();
@@ -197,6 +238,10 @@ Expression readLambdaExpression(SourceFile file, cstring source);
 Expression readFunctionExpression(SourceFile file, cstring source);
 Expression readCallExpression(SourceFile file, cstring source);
 Expression readTemplateExpression(SourceFile file, cstring source);
+Expression readAsyncExpression(SourceFile file, cstring source);
+Expression readAwaitExpression(SourceFile file, cstring source);
+Expression readArrayPattern(SourceFile file, cstring source);
+Expression readObjectPattern(SourceFile file, cstring source);
 
 void BinaryExpression_dispose(Expression expression);
 void LiteralExpression_dispose(Expression expression);
@@ -207,6 +252,9 @@ void LambdaExpression_dispose(Expression expr);
 void FunctionExpression_dispose(Expression expr);
 void CallExpression_dispose(Expression expression);
 void TemplateExpression_dispose(Expression expression);
+void AwaitExpression_dispose(Expression expression);
+void ArrayPattern_dispose(Expression expression);
+void ObjectPattern_dispose(Expression expression);
 
 Identifier Identifier_create();
 Identifier readIdentifier(SourceFile file, cstring source);
@@ -229,6 +277,14 @@ Template Template_create();
 Template readTemplate(SourceFile file, cstring source);
 void Template_dispose(Template template);
 
+Array Array_create();
+Array readArray(SourceFile file, cstring source);
+void Array_dispose(Array array);
+
+Object Object_create();
+Object readObject(SourceFile file, cstring source);
+void Object_dispose(Object obj);
+
 JSON_Value JSON_fromProgram(Program program);
 JSON_Value JSON_fromStatement(Statement statement);
 JSON_Value JSON_fromBlockStatement(Statement statement);
@@ -246,9 +302,15 @@ JSON_Value JSON_fromCallExpression(Expression expression);
 JSON_Value JSON_fromOptionalCallExpression(Expression expression);
 JSON_Value JSON_fromOptionalComputeExpression(Expression expression);
 JSON_Value JSON_fromTemplateExpression(Expression expression);
+JSON_Value JSON_fromAwaitExpression(Expression expression);
+JSON_Value JSON_fromArrayPattern(Expression expression);
+JSON_Value JSON_fromObjectPattern(Expression expression);
 
 JSON_Value JSON_fromIdentifier(Identifier identifier);
 JSON_Value JSON_fromLiteral(Literal literal);
 JSON_Value JSON_fromLambda(Lambda lambda);
 JSON_Value JSON_fromFunction(Function lambda);
 JSON_Value JSON_fromTemplate(Template template);
+JSON_Value JSON_fromArray(Array array);
+JSON_Value JSON_fromObject(Object object);
+JSON_Value JSON_fromObjectProperty(ObjectProperty object);

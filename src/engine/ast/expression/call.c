@@ -35,6 +35,10 @@ Expression readCallExpression(SourceFile file, cstring source) {
     AstContext current = pushAstContext();
     enableCommaTail();
     Expression arg = readExpression(file, selector);
+    popAstContext(current);
+    if (!arg) {
+      goto failed;
+    }
     for (;;) {
       List_insert_tail(call_expr->call.args, arg);
       selector = arg->node->position.end;
@@ -45,18 +49,22 @@ Expression readCallExpression(SourceFile file, cstring source) {
       if (Token_check(token, TT_Symbol, ",")) {
         selector = token->raw.end;
         Token_dispose(token);
+        AstContext current = pushAstContext();
+        enableCommaTail();
         arg = readExpression(file, selector);
+        popAstContext(current);
+        if (!arg) {
+          goto failed;
+        }
       } else if (Token_check(token, TT_Symbol, ")")) {
         break;
       } else {
-        popAstContext(current);
         Token_dispose(token);
         ErrorStack_push(Error_init("Unexcept token.missing token ')'",
                                    getLocation(file, selector), NULL));
         goto failed;
       }
     }
-    popAstContext(current);
   }
   selector = token->raw.end;
   Token_dispose(token);

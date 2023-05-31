@@ -43,6 +43,7 @@ Lambda readLambda(SourceFile file, cstring source) {
     AstContext ctx = pushAstContext();
     enableCommaTail();
     Expression arg = readExpression(file, selector);
+    popAstContext(ctx);
     for (;;) {
       List_insert_tail(lambda->args, arg);
       selector = arg->node->position.end;
@@ -53,7 +54,13 @@ Lambda readLambda(SourceFile file, cstring source) {
       if (Token_check(token, TT_Symbol, ",")) {
         selector = token->raw.end;
         Token_dispose(token);
+        AstContext ctx = pushAstContext();
+        enableCommaTail();
         arg = readExpression(file, selector);
+        popAstContext(ctx);
+        if (!arg) {
+          goto failed;
+        }
       } else if (Token_check(token, TT_Symbol, ")")) {
         break;
       } else {
@@ -63,8 +70,6 @@ Lambda readLambda(SourceFile file, cstring source) {
         goto failed;
       }
     }
-    disableCommaTail();
-    popAstContext(ctx);
   }
   selector = token->raw.end;
   Token_dispose(token);

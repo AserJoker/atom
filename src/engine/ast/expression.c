@@ -78,6 +78,12 @@ void Expression_dispose(Expression expression) {
   if (expression->node->type == NT_TemplateExpression) {
     return TemplateExpression_dispose(expression);
   }
+  if (expression->node->type == NT_AwaitExpression) {
+    return AwaitExpression_dispose(expression);
+  }
+  if (expression->node->type == NT_ArrayPattern) {
+    return ArrayPattern_dispose(expression);
+  }
 }
 
 void insertBinaryExpression(Expression *root, Expression current) {
@@ -224,9 +230,22 @@ Expression readExpression(SourceFile file, cstring source) {
             }
           }
         } else if (Token_check(token, TT_Symbol, "[")) {
-          // TODO: array pattern
+          Token_dispose(token);
+          Expression array_expr = readArrayPattern(file, selector);
+          if (!array_expr) {
+            goto failed;
+          }
+          selector = array_expr->node->position.end;
+          if (!expr) {
+            expr = array_expr;
+          } else {
+            current->binary.right = array_expr;
+            current = NULL;
+          }
         } else if (Token_check(token, TT_Symbol, "{")) {
           // TODO: object pattern
+        } else if (Token_check(token, TT_Symbol, "@")) {
+          // TODO: decorator (class pattern)
         } else if (strings_contains(token->raw, unaryOperators)) {
           Expression unary_expr = Expression_create();
           unary_expr->node->type = NT_BinaryExpression;
@@ -273,18 +292,7 @@ Expression readExpression(SourceFile file, cstring source) {
             current = NULL;
           }
         } else if (Token_check(token, TT_Keyword, "async")) {
-          Token next = readTokenSkipNewline(file, token->raw.end);
-          Token_dispose(token);
-          if (!next) {
-            goto failed;
-          }
-          Expression current_expr = NULL;
-          if (Token_check(next, TT_Symbol, "(")) {
-            current_expr = readLambdaExpression(file, selector);
-          } else if (Token_check(next, TT_Keyword, "function")) {
-            current_expr = readFunctionExpression(file, selector);
-          }
-          Token_dispose(next);
+          Expression current_expr = readAsyncExpression(file, selector);
           if (!current_expr) {
             goto failed;
           }
@@ -295,6 +303,23 @@ Expression readExpression(SourceFile file, cstring source) {
             current->binary.right = current_expr;
             current = NULL;
           }
+        } else if (Token_check(token, TT_Keyword, "await")) {
+          Expression current_expr = readAwaitExpression(file, selector);
+          if (!current_expr) {
+            goto failed;
+          }
+          selector = token->raw.end;
+          Token_dispose(token);
+          if (!expr) {
+            expr = current_expr;
+          } else {
+            current->binary.right = current_expr;
+          }
+          current = current_expr;
+        } else if (Token_check(token, TT_Keyword, "new")) {
+          // TODO: new expression
+        } else if (Token_check(token, TT_Keyword, "class")) {
+          // TODO: class pattern
         } else {
           Token_dispose(token);
           ErrorStack_push(
@@ -369,7 +394,7 @@ Expression readExpression(SourceFile file, cstring source) {
             Token_dispose(next);
             Expression binary_expr = Expression_create();
             binary_expr->node->type = NT_BinaryExpression;
-            binary_expr->level = -1;
+            binary_expr->level = -2;
             binary_expr->binary.operator= token;
             insertBinaryExpression(&expr, binary_expr);
             current = binary_expr;

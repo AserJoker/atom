@@ -54,6 +54,12 @@ JSON_Value JSON_fromExpression(Expression expression) {
   if (expression->node->type == NT_TemplateExpression) {
     return JSON_fromTemplateExpression(expression);
   }
+  if (expression->node->type == NT_AwaitExpression) {
+    return JSON_fromAwaitExpression(expression);
+  }
+  if (expression->node->type == NT_ArrayPattern) {
+    return JSON_fromArrayPattern(expression);
+  }
   return JSON_createNull();
 }
 JSON_Value JSON_fromBinaryExpression(Expression expression) {
@@ -141,6 +147,13 @@ JSON_Value JSON_fromOptionalCallExpression(Expression expression) {
       JSON_fromList(expression->call.args, (ToJSON)JSON_fromExpression));
   return obj;
 }
+JSON_Value JSON_fromAwaitExpression(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("AwaitExpression"));
+  JSON_setField(obj, "expression",
+                JSON_fromExpression(expression->await.expression));
+  return obj;
+}
 JSON_Value JSON_fromFunction(Function function) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Function"));
@@ -200,6 +213,21 @@ JSON_Value JSON_fromTemplateExpression(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("TemplateExpression"));
   JSON_setField(obj, "template", JSON_fromTemplate(expression->template));
+  return obj;
+}
+
+JSON_Value JSON_fromArrayPattern(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("ArrayPattern"));
+  JSON_setField(obj, "array", JSON_fromArray(expression->array));
+  return obj;
+}
+
+JSON_Value JSON_fromArray(Array array) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Array"));
+  JSON_setField(obj, "items",
+                JSON_fromList(array->items, (ToJSON)JSON_fromExpression));
   return obj;
 }
 
