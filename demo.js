@@ -1,1 +1,3 @@
-++[a, b, c].length;
+a = {
+  get ["data"]() {},
+};

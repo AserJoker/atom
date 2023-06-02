@@ -49,7 +49,76 @@ void ObjectPattern_dispose(Expression expression) {
 }
 ObjectProperty readObjectPreperty(SourceFile file, cstring source) {
   Token token = readTokenSkipNewline(file, source);
-  
+  if (!token) {
+    return NULL;
+  }
+  ObjectProperty property = ObjectProperty_create();
+  cstring selector = source;
+  if (token->type == TT_Identifier) {
+    selector = token->raw.end;
+    Token_dispose(token);
+    token = readTokenSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (Token_check(token, TT_Symbol, ":")) {
+      selector = token->raw.end;
+      Token_dispose(token);
+      Expression key = readIdentifierExpression(file, source);
+      if (!key) {
+        goto failed;
+      }
+      property->key = key;
+      AstContext ctx = pushAstContext();
+      enableCommaTail();
+      Expression value = readExpression(file, selector);
+      popAstContext(ctx);
+      if (!value) {
+        goto failed;
+      }
+      property->value = value;
+      selector = value->node->position.end;
+    } else if (Token_check(token, TT_Symbol, ",") ||
+               Token_check(token, TT_Symbol, "}")) {
+      Token_dispose(token);
+      Expression value = readIdentifierExpression(file, source);
+      if (!value) {
+        goto failed;
+      }
+      property->value = value;
+      selector = property->value->node->position.end;
+    } else if (Token_check(token, TT_Symbol, "(")) {
+      Token_dispose(token);
+      Function value = readFunctionDefinition(NULL, file, source);
+      Expression expr = Expression_create();
+      expr->level = -2;
+      expr->function = value;
+      expr->node->type = NT_FunctionExpression;
+      property->value = expr;
+      selector = value->node->position.end;
+    } else {
+      Token_dispose(token);
+      ErrorStack_push(
+          Error_init("Unexcept token.", getLocation(file, selector), NULL));
+      goto failed;
+    }
+  } else if (Token_check(token, TT_Symbol, "[")) {
+  } else if (Token_check(token, TT_Symbol, "...")) {
+  } else if (Token_check(token, TT_Keyword, "async")) {
+  } else if (Token_check(token, TT_Keyword, "get")) {
+  } else if (Token_check(token, TT_Keyword, "set")) {
+  } else {
+    Token_dispose(token);
+    ErrorStack_push(
+        Error_init("Unexcept token.", getLocation(file, selector), NULL));
+    goto failed;
+  }
+  property->node->position.begin = source;
+  property->node->position.end = selector;
+  return property;
+failed:
+  ObjectProperty_dispose(property);
+  return NULL;
 }
 
 Object readObject(SourceFile file, cstring source) {
@@ -86,12 +155,24 @@ Object readObject(SourceFile file, cstring source) {
       if (Token_check(token, TT_Symbol, ",")) {
         selector = token->raw.end;
         Token_dispose(token);
+        token = readTokenSkipNewline(file, selector);
+        if (!token) {
+          goto failed;
+        }
+        if (Token_check(token, TT_Symbol, "}")) {
+          break;
+        }
+        Token_dispose(token);
       } else if (Token_check(token, TT_Symbol, "}")) {
         break;
       } else {
         Token_dispose(token);
         ErrorStack_push(Error_init("Unexception token.missing token '}'",
                                    getLocation(file, selector), NULL));
+        goto failed;
+      }
+      property = readObjectPreperty(file, selector);
+      if (!property) {
         goto failed;
       }
     }

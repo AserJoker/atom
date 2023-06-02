@@ -13,7 +13,7 @@ Function Function_create() {
 void Function_dispose(Function function) {
   List_dispose(function->args);
   if (function->name) {
-    Identifier_dispose(function->name);
+    Expression_dispose(function->name);
   }
   if (function->body) {
     Statement_dispose(function->body);
@@ -21,6 +21,107 @@ void Function_dispose(Function function) {
   AstNode_dispose(function->node);
   Buffer_free(function);
 }
+Function readFunctionDefinition(Function func, SourceFile file,
+                                cstring source) {
+  Function fn = func;
+  if (!fn) {
+    fn = Function_create();
+  }
+  cstring selector = source;
+  // try read name
+  Token token = readTokenSkipNewline(file, selector);
+  if (token->type == TT_Identifier) {
+    fn->name = readIdentifierExpression(file, selector);
+    selector = token->raw.end;
+  } else if (Token_check(token, TT_Symbol, "[")) {
+    selector = token->raw.end;
+    Token_dispose(token);
+    AstContext ctx = pushAstContext();
+    Expression name = readExpression(file, selector);
+    popAstContext(ctx);
+    if (!name) {
+      goto failed;
+    }
+    fn->name = name;
+    selector = name->node->position.end;
+    token = readTokenSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (!Token_check(token, TT_Symbol, "]")) {
+      Token_dispose(token);
+      goto failed;
+    }
+    selector = token->raw.end;
+  }
+  Token_dispose(token);
+
+  token = readTokenSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (!Token_check(token, TT_Symbol, "(")) {
+    Token_dispose(token);
+    ErrorStack_push(Error_init("Unexcept token. missing token '('",
+                               getLocation(file, selector), NULL));
+    goto failed;
+  }
+  selector = token->raw.end;
+  Token_dispose(token);
+
+  token = readTokenSkipNewline(file, selector);
+  if (!Token_check(token, TT_Symbol, ")")) {
+    Token_dispose(token);
+    AstContext current = pushAstContext();
+    enableCommaTail();
+    Expression arg = readExpression(file, selector);
+    popAstContext(current);
+    if (!arg) {
+      goto failed;
+    }
+    for (;;) {
+      List_insert_tail(fn->args, arg);
+      selector = arg->node->position.end;
+      token = readTokenSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+      if (Token_check(token, TT_Symbol, ",")) {
+        selector = token->raw.end;
+        Token_dispose(token);
+      } else if (Token_check(token, TT_Symbol, ")")) {
+        break;
+      } else {
+        Token_dispose(token);
+        ErrorStack_push(Error_init("Unexcept token. missing token ')'",
+                                   getLocation(file, selector), NULL));
+        goto failed;
+      }
+      AstContext current = pushAstContext();
+      enableCommaTail();
+      arg = readExpression(file, selector);
+      popAstContext(current);
+      if (!arg) {
+        goto failed;
+      }
+    }
+  }
+  selector = token->raw.end;
+  Token_dispose(token);
+  Statement body = readBlockStatement(file, selector);
+  if (!body) {
+    goto failed;
+  }
+  selector = body->node->position.end;
+  fn->body = body;
+  fn->node->position.begin = source;
+  fn->node->position.end = selector;
+  return fn;
+failed:
+  Function_dispose(fn);
+  return NULL;
+}
+
 Function readFunction(SourceFile file, cstring source) {
   Token token = readTokenSkipNewline(file, source);
   if (!token) {
@@ -54,76 +155,7 @@ Function readFunction(SourceFile file, cstring source) {
   }
   selector = token->raw.end;
   Token_dispose(token);
-
-  // try read name
-  token = readTokenSkipNewline(file, selector);
-  if (token->type == TT_Identifier) {
-    func->name = readIdentifier(file, selector);
-    selector = token->raw.end;
-  }
-  Token_dispose(token);
-
-  token = readTokenSkipNewline(file, selector);
-  if (!token) {
-    goto failed;
-  }
-  if (!Token_check(token, TT_Symbol, "(")) {
-    Token_dispose(token);
-    ErrorStack_push(Error_init("Unexcept token. missing token '('",
-                               getLocation(file, selector), NULL));
-    goto failed;
-  }
-  selector = token->raw.end;
-  Token_dispose(token);
-
-  token = readTokenSkipNewline(file, selector);
-  if (!Token_check(token, TT_Symbol, ")")) {
-    Token_dispose(token);
-    AstContext current = pushAstContext();
-    enableCommaTail();
-    Expression arg = readExpression(file, selector);
-    popAstContext(current);
-    if (!arg) {
-      goto failed;
-    }
-    for (;;) {
-      List_insert_tail(func->args, arg);
-      selector = arg->node->position.end;
-      token = readTokenSkipNewline(file, selector);
-      if (!token) {
-        goto failed;
-      }
-      if (Token_check(token, TT_Symbol, ",")) {
-        selector = token->raw.end;
-        Token_dispose(token);
-      } else if (Token_check(token, TT_Symbol, ")")) {
-        break;
-      } else {
-        Token_dispose(token);
-        ErrorStack_push(Error_init("Unexcept token. missing token ')'",
-                                   getLocation(file, selector), NULL));
-        goto failed;
-      }
-      AstContext current = pushAstContext();
-      enableCommaTail();
-      arg = readExpression(file, selector);
-      popAstContext(current);
-      if (!arg) {
-        goto failed;
-      }
-    }
-  }
-  selector = token->raw.end;
-  Token_dispose(token);
-  Statement body = readBlockStatement(file, selector);
-  if (!body) {
-    goto failed;
-  }
-  selector = body->node->position.end;
-  func->body = body;
-  func->node->position.begin = source;
-  func->node->position.end = selector;
-  return func;
+  return readFunctionDefinition(func, file, selector);
 failed:
   Function_dispose(func);
   return NULL;

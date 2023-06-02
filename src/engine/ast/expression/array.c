@@ -64,6 +64,14 @@ Array readArray(SourceFile file, cstring source) {
       if (Token_check(token, TT_Symbol, ",")) {
         selector = token->raw.end;
         Token_dispose(token);
+        token = readTokenSkipNewline(file, selector);
+        if (!token) {
+          goto failed;
+        }
+        if (Token_check(token, TT_Symbol, "]")) {
+          break;
+        }
+        Token_dispose(token);
       } else if (Token_check(token, TT_Symbol, "]")) {
         break;
       } else {

@@ -84,6 +84,9 @@ void Expression_dispose(Expression expression) {
   if (expression->node->type == NT_ArrayPattern) {
     return ArrayPattern_dispose(expression);
   }
+  if (expression->node->type == NT_ObjectPattern) {
+    return ObjectPattern_dispose(expression);
+  }
 }
 
 void insertBinaryExpression(Expression *root, Expression current) {
@@ -243,7 +246,18 @@ Expression readExpression(SourceFile file, cstring source) {
             current = NULL;
           }
         } else if (Token_check(token, TT_Symbol, "{")) {
-          // TODO: object pattern
+          Token_dispose(token);
+          Expression object_expr = readObjectPattern(file, selector);
+          if (!object_expr) {
+            goto failed;
+          }
+          selector = object_expr->node->position.end;
+          if (!expr) {
+            expr = object_expr;
+          } else {
+            current->binary.right = object_expr;
+            current = NULL;
+          }
         } else if (Token_check(token, TT_Symbol, "@")) {
           // TODO: decorator (class pattern)
         } else if (strings_contains(token->raw, unaryOperators)) {

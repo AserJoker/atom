@@ -80,13 +80,14 @@ typedef enum e_NodeType {
   // Lambda and function
   NT_Lambda,
   NT_Function,
-  NT_MemberFunction,
 
   // Array
   NT_Array,
 
   // Object
   NT_ObjectProperty,
+  NT_Getter,
+  NT_Setter,
   NT_Object
 } NodeType;
 
@@ -167,7 +168,7 @@ struct s_Lambda {
 struct s_Function {
   AstNode node;
   List args;
-  Identifier name;
+  Expression name;
   Statement body;
   int async;
 };
@@ -242,6 +243,7 @@ Expression readAsyncExpression(SourceFile file, cstring source);
 Expression readAwaitExpression(SourceFile file, cstring source);
 Expression readArrayPattern(SourceFile file, cstring source);
 Expression readObjectPattern(SourceFile file, cstring source);
+Function readFunctionDefinition(Function func, SourceFile file, cstring source);
 
 void BinaryExpression_dispose(Expression expression);
 void LiteralExpression_dispose(Expression expression);

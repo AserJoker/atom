@@ -60,6 +60,9 @@ JSON_Value JSON_fromExpression(Expression expression) {
   if (expression->node->type == NT_ArrayPattern) {
     return JSON_fromArrayPattern(expression);
   }
+  if (expression->node->type == NT_ObjectPattern) {
+    return JSON_fromObjectPattern(expression);
+  }
   return JSON_createNull();
 }
 JSON_Value JSON_fromBinaryExpression(Expression expression) {
@@ -158,7 +161,7 @@ JSON_Value JSON_fromFunction(Function function) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Function"));
   if (function->name) {
-    JSON_setField(obj, "name", JSON_fromIdentifier(function->name));
+    JSON_setField(obj, "name", JSON_fromExpression(function->name));
   }
   JSON_setField(obj, "args",
                 JSON_fromList(function->args, (ToJSON)JSON_fromExpression));
@@ -228,6 +231,32 @@ JSON_Value JSON_fromArray(Array array) {
   JSON_setField(obj, "type", JSON_createString("Array"));
   JSON_setField(obj, "items",
                 JSON_fromList(array->items, (ToJSON)JSON_fromExpression));
+  return obj;
+}
+
+JSON_Value JSON_fromObjectPattern(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("ObjectPattern"));
+  JSON_setField(obj, "object", JSON_fromObject(expression->object));
+  return obj;
+}
+
+JSON_Value JSON_fromObject(Object object) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Object"));
+  JSON_setField(
+      obj, "properties",
+      JSON_fromList(object->properties, (ToJSON)JSON_fromObjectProperty));
+  return obj;
+}
+
+JSON_Value JSON_fromObjectProperty(ObjectProperty property) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("ObjectProperty"));
+  if (property->key) {
+    JSON_setField(obj, "key", JSON_fromExpression(property->key));
+  }
+  JSON_setField(obj, "value", JSON_fromExpression(property->value));
   return obj;
 }
 
