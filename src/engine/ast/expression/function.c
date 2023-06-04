@@ -42,7 +42,11 @@ Function readFunctionDefinition(Function func, SourceFile file,
     if (!name) {
       goto failed;
     }
-    fn->name = name;
+    Expression compute = Expression_create();
+    compute->compute.right = name;
+    compute->node->type = NT_ComputeExpression;
+    compute->node->position = name->node->position;
+    fn->name = compute;
     selector = name->node->position.end;
     token = readTokenSkipNewline(file, selector);
     if (!token) {

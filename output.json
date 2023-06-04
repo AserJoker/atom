@@ -14,67 +14,13 @@
           }
         },
         "right": {
-          "type": "ObjectPattern",
-          "object": {
-            "type": "Object",
-            "properties": [
-              {
-                "type": "ObjectProperty",
-                "value": {
-                  "type": "FunctionExpression",
-                  "function": {
-                    "type": "Function",
-                    "name": {
-                      "type": "IdentifierExpression",
-                      "identifier": {
-                        "type": "Identifier",
-                        "raw": "a"
-                      }
-                    },
-                    "args": [],
-                    "body": {
-                      "type": "BlockStatement",
-                      "body": [
-                        {
-                          "type": "ExpressionStatement",
-                          "expression": {
-                            "type": "CallExpression",
-                            "callee": {
-                              "type": "BinaryExpression",
-                              "operator": ".",
-                              "left": {
-                                "type": "IdentifierExpression",
-                                "identifier": {
-                                  "type": "Identifier",
-                                  "raw": "console"
-                                }
-                              },
-                              "right": {
-                                "type": "IdentifierExpression",
-                                "identifier": {
-                                  "type": "Identifier",
-                                  "raw": "log"
-                                }
-                              }
-                            },
-                            "args": [
-                              {
-                                "type": "LiteralExpression",
-                                "literal": {
-                                  "type": "literal",
-                                  "raw": "\"\""
-                                }
-                              }
-                            ]
-                          }
-                        }
-                      ]
-                    },
-                    "async": false
-                  }
-                }
-              }
-            ]
+          "type": "NewExpression",
+          "expression": {
+            "type": "IdentifierExpression",
+            "identifier": {
+              "type": "Identifier",
+              "raw": "Data"
+            }
           }
         }
       }

@@ -45,6 +45,15 @@ typedef struct s_ObjectProperty *ObjectProperty;
 struct s_Object;
 typedef struct s_Object *Object;
 
+struct s_StaticBlock;
+typedef struct s_StaticBlock *StaticBlock;
+
+struct s_ClassProperty;
+typedef struct s_ClassProperty *ClassProperty;
+
+struct s_Class;
+typedef struct s_Class *Class;
+
 typedef enum e_NodeType {
   NT_Program,
   // statement
@@ -65,8 +74,11 @@ typedef enum e_NodeType {
   NT_OptionalComputeExpression,
   NT_TemplateExpression,
   NT_AwaitExpression,
+  NT_NewExpression,
+  NT_DeleteExpression,
   NT_ArrayPattern,
   NT_ObjectPattern,
+  NT_ClassPattern,
 
   // Template
   NT_Template,
@@ -88,7 +100,13 @@ typedef enum e_NodeType {
   NT_ObjectProperty,
   NT_Getter,
   NT_Setter,
-  NT_Object
+  NT_Object,
+
+  // Class
+  NT_Class,
+  NT_ClassProperty,
+  NT_StaticBlock,
+  NT_Private,
 } NodeType;
 
 struct s_AstNode {
@@ -132,7 +150,7 @@ struct s_Expression {
     struct {
       Expression nil;
       Expression expression;
-    } await;
+    } await, newexpr, deleteexpr;
     Identifier identifier;
     Literal literal;
     Lambda lambda;
@@ -195,6 +213,27 @@ struct s_Object {
   List properties;
 };
 
+struct s_Class {
+  AstNode node;
+  List decorators;
+  List properties;
+};
+
+struct s_ClassProperty {
+  AstNode node;
+  List decorators;
+  union {
+    struct {
+      Expression key;
+      Expression init;
+    } field;
+    List staticblock;
+    Identifier privite;
+    Function method;
+    Class clazz;
+  };
+};
+
 AstContext pushAstContext();
 void popAstContext(AstContext ctx);
 int isCommaTail();
@@ -241,8 +280,12 @@ Expression readCallExpression(SourceFile file, cstring source);
 Expression readTemplateExpression(SourceFile file, cstring source);
 Expression readAsyncExpression(SourceFile file, cstring source);
 Expression readAwaitExpression(SourceFile file, cstring source);
+Expression readNewExpression(SourceFile file, cstring source);
 Expression readArrayPattern(SourceFile file, cstring source);
 Expression readObjectPattern(SourceFile file, cstring source);
+Expression readDeleteExpression(SourceFile file, cstring source);
+Expression readClassPattern(SourceFile file, cstring source);
+
 Function readFunctionDefinition(Function func, SourceFile file, cstring source);
 
 void BinaryExpression_dispose(Expression expression);
@@ -257,6 +300,9 @@ void TemplateExpression_dispose(Expression expression);
 void AwaitExpression_dispose(Expression expression);
 void ArrayPattern_dispose(Expression expression);
 void ObjectPattern_dispose(Expression expression);
+void NewExpression_dispose(Expression expr);
+void DeleteExpression_dispose(Expression expr);
+void ClassPattern_dispose(Expression expr);
 
 Identifier Identifier_create();
 Identifier readIdentifier(SourceFile file, cstring source);
@@ -305,8 +351,11 @@ JSON_Value JSON_fromOptionalCallExpression(Expression expression);
 JSON_Value JSON_fromOptionalComputeExpression(Expression expression);
 JSON_Value JSON_fromTemplateExpression(Expression expression);
 JSON_Value JSON_fromAwaitExpression(Expression expression);
+JSON_Value JSON_fromNewExpression(Expression expression);
+JSON_Value JSON_fromDeleteExpression(Expression expression);
 JSON_Value JSON_fromArrayPattern(Expression expression);
 JSON_Value JSON_fromObjectPattern(Expression expression);
+JSON_Value JSON_fromClassPattern(Expression expression);
 
 JSON_Value JSON_fromIdentifier(Identifier identifier);
 JSON_Value JSON_fromLiteral(Literal literal);

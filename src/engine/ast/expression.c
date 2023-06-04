@@ -87,6 +87,15 @@ void Expression_dispose(Expression expression) {
   if (expression->node->type == NT_ObjectPattern) {
     return ObjectPattern_dispose(expression);
   }
+  if (expression->node->type == NT_NewExpression) {
+    return NewExpression_dispose(expression);
+  }
+  if (expression->node->type == NT_DeleteExpression) {
+    return DeleteExpression_dispose(expression);
+  }
+  if (expression->node->type == NT_ClassPattern) {
+    return ClassPattern_dispose(expression);
+  }
 }
 
 void insertBinaryExpression(Expression *root, Expression current) {
@@ -259,7 +268,18 @@ Expression readExpression(SourceFile file, cstring source) {
             current = NULL;
           }
         } else if (Token_check(token, TT_Symbol, "@")) {
-          // TODO: decorator (class pattern)
+          Token_dispose(token);
+          Expression class_expr = readClassPattern(file, selector);
+          if (!class_expr) {
+            goto failed;
+          }
+          selector = class_expr->node->position.end;
+          if (!expr) {
+            expr = class_expr;
+          } else {
+            current->binary.right = class_expr;
+            current = NULL;
+          }
         } else if (strings_contains(token->raw, unaryOperators)) {
           Expression unary_expr = Expression_create();
           unary_expr->node->type = NT_BinaryExpression;
@@ -331,9 +351,44 @@ Expression readExpression(SourceFile file, cstring source) {
           }
           current = current_expr;
         } else if (Token_check(token, TT_Keyword, "new")) {
-          // TODO: new expression
+          Expression current_expr = readNewExpression(file, selector);
+          if (!current_expr) {
+            goto failed;
+          }
+          selector = token->raw.end;
+          Token_dispose(token);
+          if (!expr) {
+            expr = current_expr;
+          } else {
+            current->binary.right = current_expr;
+          }
+          current = current_expr;
+        } else if (Token_check(token, TT_Keyword, "delete")) {
+          Expression current_expr = readDeleteExpression(file, selector);
+          if (!current_expr) {
+            goto failed;
+          }
+          selector = token->raw.end;
+          Token_dispose(token);
+          if (!expr) {
+            expr = current_expr;
+          } else {
+            current->binary.right = current_expr;
+          }
+          current = current_expr;
         } else if (Token_check(token, TT_Keyword, "class")) {
-          // TODO: class pattern
+          Token_dispose(token);
+          Expression class_expr = readClassPattern(file, selector);
+          if (!class_expr) {
+            goto failed;
+          }
+          selector = class_expr->node->position.end;
+          if (!expr) {
+            expr = class_expr;
+          } else {
+            current->binary.right = class_expr;
+            current = NULL;
+          }
         } else {
           Token_dispose(token);
           ErrorStack_push(

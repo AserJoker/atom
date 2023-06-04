@@ -63,6 +63,12 @@ JSON_Value JSON_fromExpression(Expression expression) {
   if (expression->node->type == NT_ObjectPattern) {
     return JSON_fromObjectPattern(expression);
   }
+  if (expression->node->type == NT_NewExpression) {
+    return JSON_fromNewExpression(expression);
+  }
+  if (expression->node->type == NT_DeleteExpression) {
+    return JSON_fromDeleteExpression(expression);
+  }
   return JSON_createNull();
 }
 JSON_Value JSON_fromBinaryExpression(Expression expression) {
@@ -157,9 +163,30 @@ JSON_Value JSON_fromAwaitExpression(Expression expression) {
                 JSON_fromExpression(expression->await.expression));
   return obj;
 }
+
+JSON_Value JSON_fromNewExpression(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("NewExpression"));
+  JSON_setField(obj, "expression",
+                JSON_fromExpression(expression->newexpr.expression));
+  return obj;
+}
+JSON_Value JSON_fromDeleteExpression(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("DeleteExpression"));
+  JSON_setField(obj, "expression",
+                JSON_fromExpression(expression->deleteexpr.expression));
+  return obj;
+}
 JSON_Value JSON_fromFunction(Function function) {
   JSON_Value obj = JSON_createObject();
-  JSON_setField(obj, "type", JSON_createString("Function"));
+  if (function->node->type == NT_Function) {
+    JSON_setField(obj, "type", JSON_createString("Function"));
+  } else if (function->node->type == NT_Getter) {
+    JSON_setField(obj, "type", JSON_createString("Getter"));
+  } else if (function->node->type == NT_Setter) {
+    JSON_setField(obj, "type", JSON_createString("Setter"));
+  }
   if (function->name) {
     JSON_setField(obj, "name", JSON_fromExpression(function->name));
   }
