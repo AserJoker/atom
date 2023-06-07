@@ -6,7 +6,7 @@ typedef struct s_AstContext *AstContext;
 
 struct s_AstContext {
   TokenContext tContext;
-  int isCommaTail;
+  int maxLevel;
 };
 
 struct s_AstNode;
@@ -76,6 +76,8 @@ typedef enum e_NodeType {
   NT_AwaitExpression,
   NT_NewExpression,
   NT_DeleteExpression,
+  NT_ThisExpression,
+  NT_SuperExpression,
   NT_ArrayPattern,
   NT_ObjectPattern,
   NT_ClassPattern,
@@ -158,6 +160,7 @@ struct s_Expression {
     Template template;
     Array array;
     Object object;
+    Class clazz;
   };
 };
 
@@ -215,8 +218,10 @@ struct s_Object {
 
 struct s_Class {
   AstNode node;
+  Identifier name;
   List decorators;
   List properties;
+  Expression extends;
 };
 
 struct s_ClassProperty {
@@ -225,20 +230,23 @@ struct s_ClassProperty {
   union {
     struct {
       Expression key;
-      Expression init;
+      union {
+        Expression compute;
+        Expression init;
+      };
+      int static_;
+      int private_;
     } field;
-    List staticblock;
-    Identifier privite;
-    Function method;
-    Class clazz;
+    Statement staticblock;
   };
 };
 
 AstContext pushAstContext();
 void popAstContext(AstContext ctx);
-int isCommaTail();
 void enableCommaTail();
 void disableCommaTail();
+void setMaxOperatorLevel(int max);
+int getMaxOperatorLevel();
 
 AstNode AstNode_create();
 void AstNode_dispose(AstNode node);
@@ -333,6 +341,10 @@ Object Object_create();
 Object readObject(SourceFile file, cstring source);
 void Object_dispose(Object obj);
 
+Class Class_create();
+Class readClass(SourceFile file, cstring source);
+void Class_dispose(Class clazz);
+
 JSON_Value JSON_fromProgram(Program program);
 JSON_Value JSON_fromStatement(Statement statement);
 JSON_Value JSON_fromBlockStatement(Statement statement);
@@ -356,6 +368,9 @@ JSON_Value JSON_fromDeleteExpression(Expression expression);
 JSON_Value JSON_fromArrayPattern(Expression expression);
 JSON_Value JSON_fromObjectPattern(Expression expression);
 JSON_Value JSON_fromClassPattern(Expression expression);
+JSON_Value JSON_fromPrivateExpression(Expression expression);
+JSON_Value JSON_fromThisExpression(Expression expression);
+JSON_Value JSON_fromSuperExpression(Expression expression);
 
 JSON_Value JSON_fromIdentifier(Identifier identifier);
 JSON_Value JSON_fromLiteral(Literal literal);
@@ -365,3 +380,5 @@ JSON_Value JSON_fromTemplate(Template template);
 JSON_Value JSON_fromArray(Array array);
 JSON_Value JSON_fromObject(Object object);
 JSON_Value JSON_fromObjectProperty(ObjectProperty object);
+JSON_Value JSON_fromClass(Class clazz);
+JSON_Value JSON_fromClassProperty(ClassProperty property);

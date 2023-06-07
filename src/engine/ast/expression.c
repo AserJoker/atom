@@ -96,6 +96,14 @@ void Expression_dispose(Expression expression) {
   if (expression->node->type == NT_ClassPattern) {
     return ClassPattern_dispose(expression);
   }
+  if (expression->node->type == NT_ThisExpression ||
+      expression->node->type == NT_SuperExpression) {
+    AstNode_dispose(expression->node);
+    Buffer_free(expression);
+  }
+  if (expression->node->type == NT_Private) {
+    BinaryExpression_dispose(expression);
+  }
 }
 
 void insertBinaryExpression(Expression *root, Expression current) {
@@ -169,13 +177,21 @@ Expression readExpression(SourceFile file, cstring source) {
       Token_dispose(token);
       break;
     }
-    if (isCommaTail() && Token_check(token, TT_Symbol, ",")) {
-      Token_dispose(token);
-      break;
-    }
     if (current || !expr) {
       // resolve value
-      if (token->type == TT_Identifier) {
+      if (Token_check(token, TT_Symbol, "#")) {
+        Expression expression = Expression_create();
+        expression->level = -2;
+        expression->node->type = NT_Private;
+        if (!expr) {
+          expr = expression;
+        } else {
+          current->binary.right = expression;
+        }
+        current = expression;
+        selector = token->raw.end;
+        Token_dispose(token);
+      } else if (token->type == TT_Identifier) {
         Token_dispose(token);
         Expression identifier_expr = readIdentifierExpression(file, selector);
         if (!identifier_expr) {
@@ -186,6 +202,32 @@ Expression readExpression(SourceFile file, cstring source) {
           expr = identifier_expr;
         } else {
           current->binary.right = identifier_expr;
+          current = NULL;
+        }
+      } else if (Token_check(token, TT_Keyword, "this")) {
+        selector = token->raw.end;
+        Token_dispose(token);
+        Expression this_expr = Expression_create();
+        this_expr->node->type = NT_ThisExpression;
+        this_expr->node->position.begin = source;
+        this_expr->node->position.end = selector;
+        if (!expr) {
+          expr = this_expr;
+        } else {
+          current->binary.right = this_expr;
+          current = NULL;
+        }
+      } else if (Token_check(token, TT_Keyword, "super")) {
+        selector = token->raw.end;
+        Token_dispose(token);
+        Expression super_expr = Expression_create();
+        super_expr->node->type = NT_SuperExpression;
+        super_expr->node->position.begin = source;
+        super_expr->node->position.end = selector;
+        if (!expr) {
+          expr = super_expr;
+        } else {
+          current->binary.right = super_expr;
           current = NULL;
         }
       } else if (isLiteralToken(token)) {
@@ -487,6 +529,45 @@ Expression readExpression(SourceFile file, cstring source) {
           insertBinaryExpression(&expr, compute_expr);
           current = NULL;
           selector = compute_expr->node->position.end;
+        } else if (Token_check(token, TT_Symbol, "?")) {
+          Expression triple_expr = Expression_create();
+          triple_expr->binary.operator= token;
+          selector = token->raw.end;
+          triple_expr->binary.right = Expression_create();
+          triple_expr->binary.right->node->type = NT_BinaryExpression;
+          Expression truth = readExpression(file, selector);
+          if (!truth) {
+            Expression_dispose(triple_expr);
+            goto failed;
+          }
+          triple_expr->binary.right->binary.left = truth;
+          selector = truth->node->position.end;
+          token = readTokenSkipNewline(file, selector);
+          if (!token) {
+            Expression_dispose(triple_expr);
+            goto failed;
+          }
+          if (!Token_check(token, TT_Symbol, ":")) {
+            Expression_dispose(triple_expr);
+            ErrorStack_push(Error_init("Unexcept token.missing token ':'",
+                                       getLocation(file, selector), NULL));
+            goto failed;
+          }
+          selector = token->raw.end;
+          triple_expr->binary.right->binary.operator= token;
+          Expression falsely = readExpression(file, selector);
+          if (!falsely) {
+            Expression_dispose(triple_expr);
+            goto failed;
+          }
+          triple_expr->binary.right->binary.right = falsely;
+          selector = falsely->node->position.end;
+          insertBinaryExpression(&expr, triple_expr);
+          current = NULL;
+          triple_expr->node->position.begin = source;
+          triple_expr->node->position.end = selector;
+          triple_expr->level = -2;
+          triple_expr->node->type = NT_BinaryExpression;
         } else {
           int level = 0;
           for (; opts[level] != 0; level++) {
@@ -495,6 +576,12 @@ Expression readExpression(SourceFile file, cstring source) {
             }
           }
           if (opts[level]) {
+            if (getMaxOperatorLevel() != -1) {
+              if (level > getMaxOperatorLevel()) {
+                Token_dispose(token);
+                break;
+              }
+            }
             Expression binary_expr = Expression_create();
             binary_expr->node->type = NT_BinaryExpression;
             binary_expr->level = level;

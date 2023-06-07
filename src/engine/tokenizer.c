@@ -383,7 +383,7 @@ Token readTokenSkipComment(SourceFile file, cstring source) {
 Token readTokenSkipNewline(SourceFile file, cstring source) {
   cstring selector = source;
   Token token = readTokenSkipComment(file, selector);
-  if (token &&
+  while (token &&
       (token->type == TT_MultiLineComment || token->type == TT_Newline)) {
     selector = token->raw.end;
     Token_dispose(token);

@@ -10,17 +10,65 @@
           "type": "IdentifierExpression",
           "identifier": {
             "type": "Identifier",
-            "raw": "a"
+            "raw": "c"
           }
         },
         "right": {
-          "type": "NewExpression",
-          "expression": {
+          "type": "BinaryExpression",
+          "operator": "?",
+          "left": {
             "type": "IdentifierExpression",
             "identifier": {
               "type": "Identifier",
-              "raw": "Data"
+              "raw": "a"
             }
+          },
+          "right": {
+            "type": "BinaryExpression",
+            "operator": ":",
+            "left": {
+              "type": "BinaryExpression",
+              "operator": "+",
+              "left": {
+                "type": "IdentifierExpression",
+                "identifier": {
+                  "type": "Identifier",
+                  "raw": "b"
+                }
+              },
+              "right": {
+                "type": "LiteralExpression",
+                "literal": {
+                  "type": "literal",
+                  "raw": "1"
+                }
+              }
+            },
+            "right": {
+              "type": "BinaryExpression",
+              "operator": "++",
+              "left": {
+                "type": "IdentifierExpression",
+                "identifier": {
+                  "type": "Identifier",
+                  "raw": "c"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "ExpressionStatement",
+      "expression": {
+        "type": "BinaryExpression",
+        "operator": "++",
+        "left": {
+          "type": "IdentifierExpression",
+          "identifier": {
+            "type": "Identifier",
+            "raw": "c"
           }
         }
       }

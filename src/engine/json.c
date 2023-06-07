@@ -69,14 +69,48 @@ JSON_Value JSON_fromExpression(Expression expression) {
   if (expression->node->type == NT_DeleteExpression) {
     return JSON_fromDeleteExpression(expression);
   }
+  if (expression->node->type == NT_ClassPattern) {
+    return JSON_fromClassPattern(expression);
+  }
+  if (expression->node->type == NT_Private) {
+    return JSON_fromPrivateExpression(expression);
+  }
+  if (expression->node->type == NT_ThisExpression) {
+    return JSON_fromThisExpression(expression);
+  }
+  if (expression->node->type == NT_SuperExpression) {
+    return JSON_fromSuperExpression(expression);
+  }
   return JSON_createNull();
 }
+JSON_Value JSON_fromThisExpression(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("ThisExpression"));
+  return obj;
+}
+JSON_Value JSON_fromSuperExpression(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("SuperExpression"));
+  return obj;
+}
+
 JSON_Value JSON_fromBinaryExpression(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("BinaryExpression"));
   cstring s_operator = cstring_from(expression->binary.operator->raw);
   JSON_setField(obj, "operator", JSON_createString(s_operator));
   Buffer_free(s_operator);
+  if (expression->binary.left) {
+    JSON_setField(obj, "left", JSON_fromExpression(expression->binary.left));
+  }
+  if (expression->binary.right) {
+    JSON_setField(obj, "right", JSON_fromExpression(expression->binary.right));
+  }
+  return obj;
+}
+JSON_Value JSON_fromPrivateExpression(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Private"));
   if (expression->binary.left) {
     JSON_setField(obj, "left", JSON_fromExpression(expression->binary.left));
   }
@@ -305,5 +339,46 @@ JSON_Value JSON_fromProgram(Program program) {
   JSON_setField(obj, "type", JSON_createString("Program"));
   JSON_setField(obj, "body",
                 JSON_fromList(program->body, (ToJSON)JSON_fromStatement));
+  return obj;
+}
+
+JSON_Value JSON_fromClassPattern(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("ClassPattern"));
+  JSON_setField(obj, "clazz", JSON_fromClass(expression->clazz));
+  return obj;
+}
+JSON_Value JSON_fromClass(Class clazz) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Class"));
+  if (clazz->name) {
+    JSON_setField(obj, "name", JSON_fromIdentifier(clazz->name));
+  }
+  if (clazz->extends) {
+    JSON_setField(obj, "extends", JSON_fromExpression(clazz->extends));
+  }
+  JSON_setField(obj, "decorators",
+                JSON_fromList(clazz->decorators, (ToJSON)JSON_fromExpression));
+  JSON_setField(
+      obj, "properties",
+      JSON_fromList(clazz->properties, (ToJSON)JSON_fromClassProperty));
+  return obj;
+}
+JSON_Value JSON_fromClassProperty(ClassProperty property) {
+  JSON_Value obj = JSON_createObject();
+  if (property->node->type == NT_ClassProperty) {
+    JSON_setField(obj, "type", JSON_createString("ClassProperty"));
+    if (property->field.init) {
+      JSON_setField(obj, "init", JSON_fromExpression(property->field.init));
+    }
+    if (property->field.key) {
+      JSON_setField(obj, "key", JSON_fromExpression(property->field.key));
+    }
+    JSON_setField(
+        obj, "decorators",
+        JSON_fromList(property->decorators, (ToJSON)JSON_fromExpression));
+    JSON_setField(obj, "private", JSON_createBoolean(property->field.private_));
+    JSON_setField(obj, "static", JSON_createBoolean(property->field.static_));
+  }
   return obj;
 }
