@@ -36,7 +36,7 @@ void Error_print(Error error) {
   }
 }
 
-void ErrorStack_dispose() {
+void ErrorStack_dispose(void) {
   List_dispose(g_stack->errors);
   Buffer_free(g_stack);
   g_stack = NULL;

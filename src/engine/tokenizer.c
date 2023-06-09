@@ -140,11 +140,12 @@ static Token readStringToken(SourceFile file, cstring source) {
 
 Token readIdentifierToken(SourceFile file, cstring source) {
   if ((*source >= 'a' && *source <= 'z') ||
-      (*source >= 'A' && *source <= 'Z') || *source == '$' || *source == '@') {
+      (*source >= 'A' && *source <= 'Z') || *source == '$' || *source == '_') {
     cstring selector = source;
     while (*selector) {
       if ((*selector >= 'a' && *selector <= 'z') ||
-          (*selector >= 'A' && *selector <= 'Z') || *selector == '$') {
+          (*selector >= 'A' && *selector <= 'Z') || *selector == '$' ||
+          *selector == '_') {
         selector++;
       } else {
         break;
@@ -384,7 +385,7 @@ Token readTokenSkipNewline(SourceFile file, cstring source) {
   cstring selector = source;
   Token token = readTokenSkipComment(file, selector);
   while (token &&
-      (token->type == TT_MultiLineComment || token->type == TT_Newline)) {
+         (token->type == TT_MultiLineComment || token->type == TT_Newline)) {
     selector = token->raw.end;
     Token_dispose(token);
     token = readTokenSkipComment(file, selector);

@@ -170,6 +170,39 @@ ClassProperty readClassProperty(SourceFile file, cstring source) {
       property->field.init = init;
       selector = init->node->position.end;
     }
+  } else if (Token_check(token, TT_Keyword, "get") ||
+             Token_check(token, TT_Keyword, "set")) {
+    selector = token->raw.end;
+    NodeType nt = NT_Getter;
+    if (Token_check(token, TT_Keyword, "set")) {
+      nt = NT_Setter;
+    }
+    Token_dispose(token);
+    token = readTokenSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (Token_check(token, TT_Symbol, "#")) {
+      selector = token->raw.end;
+      Token_dispose(token);
+      property->field.private_ = 1;
+      token = readTokenSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+    }
+    Token_dispose(token);
+    Function fn = readFunctionDefinition(NULL, file, selector);
+    if (!fn) {
+      goto failed;
+    }
+    fn->node->type = nt;
+    Expression expr = Expression_create();
+    expr->node->type = NT_FunctionExpression;
+    expr->function = fn;
+    expr->node->position = fn->node->position;
+    property->field.init = expr;
+    selector = fn->node->position.end;
   } else {
     Token_dispose(token);
     ErrorStack_push(
@@ -193,6 +226,7 @@ Class Class_create() {
   List_Option opt_prop = {1, (Buffer_Free)ClassProperty_dispose};
   clazz->properties = List_create(opt_prop);
   clazz->name = NULL;
+  clazz->extends = NULL;
   return clazz;
 }
 

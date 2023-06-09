@@ -1,6 +1,7 @@
 #include "ast.h"
 void EmptyStatement_dispose(Statement statement) {
-  Statement_dispose(statement);
+  AstNode_dispose(statement->node);
+  Buffer_free(statement);
 }
 Statement EmptyStatement_create() {
   Statement statement = Statement_create();

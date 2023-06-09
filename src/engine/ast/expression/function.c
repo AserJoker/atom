@@ -30,6 +30,9 @@ Function readFunctionDefinition(Function func, SourceFile file,
   cstring selector = source;
   // try read name
   Token token = readTokenSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
   if (token->type == TT_Identifier) {
     fn->name = readIdentifierExpression(file, selector);
     selector = token->raw.end;
@@ -158,6 +161,17 @@ Function readFunction(SourceFile file, cstring source) {
     goto failed;
   }
   selector = token->raw.end;
+  Token_dispose(token);
+  token = readTokenSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (Token_check(token, TT_Symbol, "*")) {
+    selector = token->raw.end;
+    func->generator = 1;
+  } else {
+    func->generator = 0;
+  }
   Token_dispose(token);
   return readFunctionDefinition(func, file, selector);
 failed:

@@ -228,6 +228,7 @@ JSON_Value JSON_fromFunction(Function function) {
                 JSON_fromList(function->args, (ToJSON)JSON_fromExpression));
   JSON_setField(obj, "body", JSON_fromStatement(function->body));
   JSON_setField(obj, "async", JSON_createBoolean(function->async));
+  JSON_setField(obj, "generator", JSON_createBoolean(function->generator));
   return obj;
 }
 JSON_Value JSON_fromIdentifier(Identifier identifier) {
@@ -331,6 +332,18 @@ JSON_Value JSON_fromStatement(Statement statement) {
   if (statement->node->type == NT_ExpressionStatement) {
     return JSON_fromExpressionStatement(statement);
   }
+  if (statement->node->type == NT_ReturnStatement) {
+    return JSON_fromReturnStatement(statement);
+  }
+  if (statement->node->type == NT_DefinitionSatement) {
+    return JSON_fromDefinitionStatement(statement);
+  }
+  if (statement->node->type == NT_ExportStatement) {
+    return JSON_fromExportStatement(statement);
+  }
+  if (statement->node->type == NT_YieldStatement) {
+    return JSON_fromYieldStatement(statement);
+  }
   return JSON_createNull();
 }
 
@@ -379,6 +392,48 @@ JSON_Value JSON_fromClassProperty(ClassProperty property) {
         JSON_fromList(property->decorators, (ToJSON)JSON_fromExpression));
     JSON_setField(obj, "private", JSON_createBoolean(property->field.private_));
     JSON_setField(obj, "static", JSON_createBoolean(property->field.static_));
+  }
+  return obj;
+}
+JSON_Value JSON_fromReturnStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("ReturnStatement"));
+  if (statement->return_.expression) {
+    JSON_setField(obj, "value",
+                  JSON_fromExpression(statement->return_.expression));
+  } else {
+    JSON_setField(obj, "value", JSON_createNull());
+  }
+  return obj;
+}
+JSON_Value JSON_fromDefinitionStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("DefinitionStatement"));
+  JSON_setField(obj, "define",
+                JSON_fromExpression(statement->return_.expression));
+  if (statement->definition.type == DT_VAR) {
+    JSON_setField(obj, "define_type", JSON_createString("var"));
+  } else if (statement->definition.type == DT_CONST) {
+    JSON_setField(obj, "define_type", JSON_createString("const"));
+  } else if (statement->definition.type == DT_LET) {
+    JSON_setField(obj, "define_type", JSON_createString("let"));
+  }
+  return obj;
+}
+JSON_Value JSON_fromExportStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("ExportStatement"));
+  JSON_setField(obj, "value", JSON_fromStatement(statement->export_.statement));
+  return obj;
+}
+JSON_Value JSON_fromYieldStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("YieldStatement"));
+  if (statement->yield_.expression) {
+    JSON_setField(obj, "value",
+                  JSON_fromExpression(statement->yield_.expression));
+  } else {
+    JSON_setField(obj, "value", JSON_createNull());
   }
   return obj;
 }

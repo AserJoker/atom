@@ -1,2 +1,3 @@
-c = a ? b + 1 : c++
-c ++
+for (const a of data) {
+  
+}

@@ -2,73 +2,48 @@
   "type": "Program",
   "body": [
     {
-      "type": "ExpressionStatement",
-      "expression": {
-        "type": "BinaryExpression",
-        "operator": "=",
-        "left": {
-          "type": "IdentifierExpression",
-          "identifier": {
-            "type": "Identifier",
-            "raw": "c"
-          }
-        },
-        "right": {
-          "type": "BinaryExpression",
-          "operator": "?",
-          "left": {
-            "type": "IdentifierExpression",
-            "identifier": {
-              "type": "Identifier",
-              "raw": "a"
-            }
-          },
-          "right": {
-            "type": "BinaryExpression",
-            "operator": ":",
-            "left": {
-              "type": "BinaryExpression",
-              "operator": "+",
-              "left": {
-                "type": "IdentifierExpression",
-                "identifier": {
-                  "type": "Identifier",
-                  "raw": "b"
-                }
-              },
-              "right": {
-                "type": "LiteralExpression",
-                "literal": {
-                  "type": "literal",
-                  "raw": "1"
-                }
+      "type": "ExportStatement",
+      "value": {
+        "type": "ExpressionStatement",
+        "expression": {
+          "type": "FunctionExpression",
+          "function": {
+            "type": "Function",
+            "name": {
+              "type": "IdentifierExpression",
+              "identifier": {
+                "type": "Identifier",
+                "raw": "fn"
               }
             },
-            "right": {
-              "type": "BinaryExpression",
-              "operator": "++",
-              "left": {
-                "type": "IdentifierExpression",
-                "identifier": {
-                  "type": "Identifier",
-                  "raw": "c"
+            "args": [],
+            "body": {
+              "type": "BlockStatement",
+              "body": [
+                {
+                  "type": "YieldStatement",
+                  "value": {
+                    "type": "LiteralExpression",
+                    "literal": {
+                      "type": "literal",
+                      "raw": "123"
+                    }
+                  }
+                },
+                {
+                  "type": "ReturnStatement",
+                  "value": {
+                    "type": "LiteralExpression",
+                    "literal": {
+                      "type": "literal",
+                      "raw": "123"
+                    }
+                  }
                 }
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "type": "ExpressionStatement",
-      "expression": {
-        "type": "BinaryExpression",
-        "operator": "++",
-        "left": {
-          "type": "IdentifierExpression",
-          "identifier": {
-            "type": "Identifier",
-            "raw": "c"
+              ]
+            },
+            "async": false,
+            "generator": true
           }
         }
       }

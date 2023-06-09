@@ -60,6 +60,10 @@ typedef enum e_NodeType {
   NT_BlockStatement,
   NT_EmptyStatement,
   NT_ExpressionStatement,
+  NT_ReturnStatement,
+  NT_DefinitionSatement,
+  NT_ExportStatement,
+  NT_YieldStatement,
 
   // expression
   NT_BinaryExpression,
@@ -110,6 +114,7 @@ typedef enum e_NodeType {
   NT_StaticBlock,
   NT_Private,
 } NodeType;
+typedef enum e_DefineType { DT_CONST, DT_VAR, DT_LET } DefineType;
 
 struct s_AstNode {
   strings position;
@@ -124,7 +129,16 @@ struct s_Statement {
     } block;
     struct {
       Expression expression;
-    } expression;
+    } expression, return_,yield_;
+
+    struct {
+      Expression expression;
+      DefineType type;
+    } definition;
+
+    struct {
+      Statement statement;
+    } export_;
   };
 };
 
@@ -137,6 +151,7 @@ struct s_Expression {
       Expression right;
       Token operator;
     } binary;
+
     struct {
       Expression left;
       Expression right;
@@ -146,13 +161,16 @@ struct s_Expression {
       Expression callee;
       List args;
     } call;
+
     struct {
       Expression expression;
     } bracket;
+
     struct {
       Expression nil;
       Expression expression;
     } await, newexpr, deleteexpr;
+
     Identifier identifier;
     Literal literal;
     Lambda lambda;
@@ -192,6 +210,7 @@ struct s_Function {
   Expression name;
   Statement body;
   int async;
+  int generator;
 };
 
 struct s_Template {
@@ -273,6 +292,22 @@ Statement ExpressionStatement_create();
 void ExpressionStatement_dispose(Statement statement);
 Statement readExpressionStatement(SourceFile file, cstring source);
 
+Statement ReturnStatement_create();
+void ReturnStatement_dispose(Statement statement);
+Statement readReturnStatement(SourceFile file, cstring source);
+
+Statement DefinitionStatement_create();
+Statement readDefinitionStatement(SourceFile file, cstring source);
+void DefinitionStatement_dispose(Statement statement);
+
+Statement ExportStatement_create();
+Statement readExportStatement(SourceFile file, cstring source);
+void ExportStatement_dispose(Statement statement);
+
+Statement YieldStatement_create();
+Statement readYieldStatement(SourceFile file, cstring source);
+void YieldStatement_dispose(Statement statement);
+
 Expression Expression_create();
 void Expression_dispose(Expression expression);
 
@@ -350,6 +385,10 @@ JSON_Value JSON_fromStatement(Statement statement);
 JSON_Value JSON_fromBlockStatement(Statement statement);
 JSON_Value JSON_fromEmptyStatement(Statement statement);
 JSON_Value JSON_fromExpressionStatement(Statement statement);
+JSON_Value JSON_fromReturnStatement(Statement statement);
+JSON_Value JSON_fromDefinitionStatement(Statement statement);
+JSON_Value JSON_fromExportStatement(Statement statement);
+JSON_Value JSON_fromYieldStatement(Statement expression);
 JSON_Value JSON_fromExpression(Expression expression);
 JSON_Value JSON_fromBinaryExpression(Expression expression);
 JSON_Value JSON_fromBracketExpression(Expression expression);
