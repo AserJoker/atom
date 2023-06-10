@@ -1,3 +1,1 @@
-for (const a of data) {
-  
-}
+const a=a=>a+1

@@ -2,51 +2,44 @@
   "type": "Program",
   "body": [
     {
-      "type": "ExportStatement",
-      "value": {
-        "type": "ExpressionStatement",
-        "expression": {
-          "type": "FunctionExpression",
-          "function": {
-            "type": "Function",
-            "name": {
-              "type": "IdentifierExpression",
-              "identifier": {
-                "type": "Identifier",
-                "raw": "fn"
+      "type": "DefinitionStatement",
+      "define": {
+        "type": "BinaryExpression",
+        "operator": "=",
+        "left": {
+          "type": "IdentifierExpression",
+          "identifier": { "type": "Identifier", "raw": "a" }
+        },
+        "right": {
+          "type": "LambdaExpression",
+          "lambda": {
+            "type": "Lambda",
+            "args": [
+              {
+                "type": "IdentifierExpression",
+                "identifier": { "type": "Identifier", "raw": "a" }
+              }
+            ],
+            "body": {
+              "type": "ExpressionStatement",
+              "expression": {
+                "type": "BinaryExpression",
+                "operator": "+",
+                "left": {
+                  "type": "IdentifierExpression",
+                  "identifier": { "type": "Identifier", "raw": "a" }
+                },
+                "right": {
+                  "type": "LiteralExpression",
+                  "literal": { "type": "literal", "raw": "1" }
+                }
               }
             },
-            "args": [],
-            "body": {
-              "type": "BlockStatement",
-              "body": [
-                {
-                  "type": "YieldStatement",
-                  "value": {
-                    "type": "LiteralExpression",
-                    "literal": {
-                      "type": "literal",
-                      "raw": "123"
-                    }
-                  }
-                },
-                {
-                  "type": "ReturnStatement",
-                  "value": {
-                    "type": "LiteralExpression",
-                    "literal": {
-                      "type": "literal",
-                      "raw": "123"
-                    }
-                  }
-                }
-              ]
-            },
-            "async": false,
-            "generator": true
+            "async": false
           }
         }
-      }
+      },
+      "define_type": "const"
     }
   ]
 }

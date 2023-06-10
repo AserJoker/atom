@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "tokenizer.h"
 typedef struct s_OperatorSet {
   cstring *operators;
 } s_OperatorSet;
@@ -192,16 +193,31 @@ Expression readExpression(SourceFile file, cstring source) {
         selector = token->raw.end;
         Token_dispose(token);
       } else if (token->type == TT_Identifier) {
-        Token_dispose(token);
-        Expression identifier_expr = readIdentifierExpression(file, selector);
-        if (!identifier_expr) {
+        Token next = readTokenSkipNewline(file, token->raw.end);
+        if (!next) {
+          Token_dispose(token);
           goto failed;
         }
-        selector = identifier_expr->identifier->node->position.end;
-        if (!expr) {
-          expr = identifier_expr;
+        Token_dispose(token);
+        Expression value_expr = NULL;
+        if (Token_check(next, TT_Symbol, "=>")) {
+          Token_dispose(next);
+          value_expr = readLambdaExpression(file, selector);
+          if (!value_expr) {
+            goto failed;
+          }
         } else {
-          current->binary.right = identifier_expr;
+          Token_dispose(next);
+          value_expr = readIdentifierExpression(file, selector);
+          if (!value_expr) {
+            goto failed;
+          }
+        }
+        selector = value_expr->identifier->node->position.end;
+        if (!expr) {
+          expr = value_expr;
+        } else {
+          current->binary.right = value_expr;
           current = NULL;
         }
       } else if (Token_check(token, TT_Keyword, "this")) {

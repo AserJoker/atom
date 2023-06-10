@@ -1,4 +1,6 @@
 #include "ast.h"
+#include "list.h"
+#include "tokenizer.h"
 Lambda Lambda_create() {
   Lambda lambda = (Lambda)Buffer_alloc(sizeof(struct s_Lambda));
   List_Option opt = {1, (Buffer_Free)Expression_dispose};
@@ -24,55 +26,65 @@ Lambda readLambda(SourceFile file, cstring source) {
   if (!token) {
     return NULL;
   }
-  if (!Token_check(token, TT_Symbol, "(")) {
-    ErrorStack_push(
-        Error_init("Exception token.", getLocation(file, source), NULL));
-    Token_dispose(token);
-    return NULL;
-  }
-  cstring selector = token->raw.end;
-  Token_dispose(token);
   Lambda lambda = Lambda_create();
-  token = readTokenSkipNewline(file, selector);
-  if (!token) {
+  cstring selector = source;
+  if (token->type == TT_Identifier) {
     Token_dispose(token);
-    goto failed;
-  }
-  if (!Token_check(token, TT_Symbol, ")")) {
+    Expression arg = readIdentifierExpression(file, selector);
+    if (!arg) {
+      goto failed;
+    }
+    selector = arg->node->position.end;
+    List_insert_tail(lambda->args, arg);
+  } else {
+    if (!Token_check(token, TT_Symbol, "(")) {
+      ErrorStack_push(
+          Error_init("Exception token.", getLocation(file, source), NULL));
+      Token_dispose(token);
+      goto failed;
+    }
+    selector = token->raw.end;
     Token_dispose(token);
-    AstContext ctx = pushAstContext();
-    enableCommaTail();
-    Expression arg = readExpression(file, selector);
-    popAstContext(ctx);
-    for (;;) {
-      List_insert_tail(lambda->args, arg);
-      selector = arg->node->position.end;
-      token = readTokenSkipNewline(file, selector);
-      if (!token) {
-        goto failed;
-      }
-      if (Token_check(token, TT_Symbol, ",")) {
-        selector = token->raw.end;
-        Token_dispose(token);
-        AstContext ctx = pushAstContext();
-        enableCommaTail();
-        arg = readExpression(file, selector);
-        popAstContext(ctx);
-        if (!arg) {
+    token = readTokenSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (!Token_check(token, TT_Symbol, ")")) {
+      Token_dispose(token);
+      AstContext ctx = pushAstContext();
+      enableCommaTail();
+      Expression arg = readExpression(file, selector);
+      popAstContext(ctx);
+      for (;;) {
+        List_insert_tail(lambda->args, arg);
+        selector = arg->node->position.end;
+        token = readTokenSkipNewline(file, selector);
+        if (!token) {
           goto failed;
         }
-      } else if (Token_check(token, TT_Symbol, ")")) {
-        break;
-      } else {
-        Token_dispose(token);
-        ErrorStack_push(
-            Error_init("Unexcept token.", getLocation(file, selector), NULL));
-        goto failed;
+        if (Token_check(token, TT_Symbol, ",")) {
+          selector = token->raw.end;
+          Token_dispose(token);
+          AstContext ctx = pushAstContext();
+          enableCommaTail();
+          arg = readExpression(file, selector);
+          popAstContext(ctx);
+          if (!arg) {
+            goto failed;
+          }
+        } else if (Token_check(token, TT_Symbol, ")")) {
+          break;
+        } else {
+          Token_dispose(token);
+          ErrorStack_push(
+              Error_init("Unexcept token.", getLocation(file, selector), NULL));
+          goto failed;
+        }
       }
     }
+    selector = token->raw.end;
+    Token_dispose(token);
   }
-  selector = token->raw.end;
-  Token_dispose(token);
   token = readTokenSkipNewline(file, selector);
   if (!token) {
     goto failed;
