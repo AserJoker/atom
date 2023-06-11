@@ -1,4 +1,11 @@
 #include "tokenizer.h"
+#include "error.h"
+
+struct s_TokenContext {
+  int isRegexEnable;
+  int isTemplateEnable;
+};
+
 static TokenContext g_context = NULL;
 
 static cstring g_keywords[] = {
@@ -131,14 +138,14 @@ static Token readStringToken(SourceFile file, cstring source) {
       token->type = TT_String;
       return token;
     } else {
-      ErrorStack_push(Error_init("Unterminated string literal.",
-                                 getLocation(file, selector), NULL));
+      setError(Error_create("Unterminated string literal.",
+                            getLocation(file, selector), NULL));
     }
   }
   return NULL;
 }
 
-Token readIdentifierToken(SourceFile file, cstring source) {
+static Token readIdentifierToken(SourceFile file, cstring source) {
   if ((*source >= 'a' && *source <= 'z') ||
       (*source >= 'A' && *source <= 'Z') || *source == '$' || *source == '_') {
     cstring selector = source;
@@ -166,7 +173,7 @@ Token readIdentifierToken(SourceFile file, cstring source) {
   return NULL;
 }
 
-Token readCommentToken(SourceFile file, cstring source) {
+static Token readCommentToken(SourceFile file, cstring source) {
   if (*source == '/' && *(source + 1) == '/') {
     cstring selector = source;
     while (*selector) {
@@ -185,8 +192,8 @@ Token readCommentToken(SourceFile file, cstring source) {
     int newline_flag = 0;
     for (;;) {
       if (!*selector) {
-        ErrorStack_push(
-            Error_init("'*/' expected.", getLocation(file, selector), NULL));
+        setError(
+            Error_create("'*/' expected.", getLocation(file, selector), NULL));
         return NULL;
       } else if (*selector == '/' && *(selector - 1) == '*') {
         selector++;
@@ -210,7 +217,7 @@ Token readCommentToken(SourceFile file, cstring source) {
   return NULL;
 }
 
-Token readRegexToken(SourceFile file, cstring source) {
+static Token readRegexToken(SourceFile file, cstring source) {
   if (*source == '/') {
     cstring selector = source + 1;
     while (*selector) {
@@ -234,7 +241,7 @@ Token readRegexToken(SourceFile file, cstring source) {
   return NULL;
 }
 
-Token readSymbolToken(SourceFile file, cstring source) {
+static Token readSymbolToken(SourceFile file, cstring source) {
   int index = 0;
   cstring selector = source;
   for (; g_symbols[index] != 0; index++) {
@@ -261,7 +268,7 @@ Token readSymbolToken(SourceFile file, cstring source) {
   return NULL;
 }
 
-Token readNewlineToken(SourceFile file, cstring source) {
+static Token readNewlineToken(SourceFile file, cstring source) {
   if (*source == '\r' || *source == '\n') {
     cstring selector = source;
     while (*selector == '\r' || *selector == '\n') {
@@ -276,7 +283,7 @@ Token readNewlineToken(SourceFile file, cstring source) {
   return NULL;
 }
 
-Token readTemplateToken(SourceFile file, cstring source) {
+static Token readTemplateToken(SourceFile file, cstring source) {
   if (*source == '`') {
     cstring selector = source + 1;
     for (;;) {
@@ -290,8 +297,8 @@ Token readTemplateToken(SourceFile file, cstring source) {
         break;
       }
       if (!*selector) {
-        ErrorStack_push(Error_init("Unterminated template literal.",
-                                   getLocation(file, selector), NULL));
+        setError(Error_create("Unterminated template literal.",
+                              getLocation(file, selector), NULL));
         return NULL;
       }
       selector++;
@@ -309,7 +316,7 @@ Token readTemplateToken(SourceFile file, cstring source) {
   return NULL;
 }
 
-Token readTemplatePartOrEndToken(SourceFile file, cstring source) {
+static Token readTemplatePartOrEndToken(SourceFile file, cstring source) {
   if (*source == '}') {
     cstring selector = source;
     for (;;) {
@@ -319,8 +326,8 @@ Token readTemplatePartOrEndToken(SourceFile file, cstring source) {
         selector++;
         break;
       } else if (!*selector) {
-        ErrorStack_push(Error_init("Unterminated template literal.",
-                                   getLocation(file, selector), NULL));
+        setError(Error_create("Unterminated template literal.",
+                              getLocation(file, selector), NULL));
         return NULL;
       }
       selector++;

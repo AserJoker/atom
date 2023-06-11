@@ -21,7 +21,7 @@ struct s_JSON_Value {
   cstring key;
   JSON_Value next;
   JSON_Value children;
-  JSON_TYPE type; // 0=NULL,1=string,2=double,3=boolean,4=object,5=array
+  JSON_TYPE type;
 };
 
 JSON_Value JSON_createDouble(double val);

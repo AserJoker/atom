@@ -5,7 +5,7 @@ typedef struct s_stirngs {
   cstring begin;
   cstring end;
 } strings;
-Buffer Buffer_fromString(cstring source);
+Buffer cstring_toBuffer(cstring source);
 cstring cstring_from(strings source);
 cstring cstring_concat(cstring str, ...);
 cstring cstring_join(cstring args[]);

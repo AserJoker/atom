@@ -173,12 +173,12 @@ cstring JSON_stringlify_array(JSON_Value val) {
   List_Option opt = {1, Buffer_free};
   List parts = List_create(opt);
   uint32_t len = 0;
-  List_insert_tail(parts, Buffer_fromString("["));
+  List_insert_tail(parts, cstring_toBuffer("["));
   len++;
   JSON_Value c = val->children;
   while (c) {
     if (len != 1) {
-      List_insert_tail(parts, Buffer_fromString(","));
+      List_insert_tail(parts, cstring_toBuffer(","));
       len++;
     }
     cstring s_item = JSON_stringlify(c);
@@ -186,7 +186,7 @@ cstring JSON_stringlify_array(JSON_Value val) {
     len += strlen(s_item);
     c = c->next;
   }
-  List_insert_tail(parts, Buffer_fromString("]"));
+  List_insert_tail(parts, cstring_toBuffer("]"));
   len++;
 
   cstring result = (cstring)Buffer_alloc(len + 1);
@@ -207,29 +207,29 @@ cstring JSON_stringlify_object(JSON_Value val) {
   List_Option opt = {1, Buffer_free};
   List parts = List_create(opt);
   uint32_t len = 0;
-  List_insert_tail(parts, Buffer_fromString("{"));
+  List_insert_tail(parts, cstring_toBuffer("{"));
   len++;
   JSON_Value c = val->children;
   while (c) {
     if (len != 1) {
-      List_insert_tail(parts, Buffer_fromString(","));
+      List_insert_tail(parts, cstring_toBuffer(","));
       len++;
     }
-    List_insert_tail(parts, Buffer_fromString("\""));
+    List_insert_tail(parts, cstring_toBuffer("\""));
     len++;
-    cstring s_key = (cstring)Buffer_fromString(c->key);
+    cstring s_key = (cstring)cstring_toBuffer(c->key);
     List_insert_tail(parts, s_key);
     len += strlen(s_key);
-    List_insert_tail(parts, Buffer_fromString("\""));
+    List_insert_tail(parts, cstring_toBuffer("\""));
     len++;
-    List_insert_tail(parts, Buffer_fromString(":"));
+    List_insert_tail(parts, cstring_toBuffer(":"));
     len++;
     cstring s_item = JSON_stringlify(c);
     List_insert_tail(parts, s_item);
     len += strlen(s_item);
     c = c->next;
   }
-  List_insert_tail(parts, Buffer_fromString("}"));
+  List_insert_tail(parts, cstring_toBuffer("}"));
   len++;
 
   cstring result = (cstring)Buffer_alloc(len + 1);
@@ -249,13 +249,13 @@ cstring JSON_stringlify_object(JSON_Value val) {
 cstring JSON_stringlify(JSON_Value val) {
   switch (val->type) {
   case JSON_NULL:
-    return (cstring)Buffer_fromString("null");
+    return (cstring)cstring_toBuffer("null");
   case JSON_STRING:
     return JSON_stringlify_string(val);
   case JSON_DOUBLE:
     return JSON_stringlify_double(val);
   case JSON_BOOLEAN:
-    return (cstring)Buffer_fromString(val->d.b ? "true" : "false");
+    return (cstring)cstring_toBuffer(val->d.b ? "true" : "false");
   case JSON_OBJECT:
     return JSON_stringlify_object(val);
   case JSON_ARRAY:

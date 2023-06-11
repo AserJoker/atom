@@ -2,10 +2,7 @@
 #include "error.h"
 #include "source.h"
 
-struct s_TokenContext;
 typedef struct s_TokenContext *TokenContext;
-
-struct s_Token;
 typedef struct s_Token *Token;
 
 typedef enum e_TokenType {
@@ -31,10 +28,7 @@ struct s_Token {
   strings raw;
 };
 
-struct s_TokenContext {
-  int isRegexEnable;
-  int isTemplateEnable;
-};
+
 
 TokenContext pushTokenContext();
 void popTokenContext(TokenContext ctx);

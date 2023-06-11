@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <string.h>
 
-Buffer Buffer_fromString(cstring source) {
+Buffer cstring_toBuffer(cstring source) {
   return Buffer_from(strlen(source) + 1, source);
 }
 

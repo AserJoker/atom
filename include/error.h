@@ -9,12 +9,8 @@ struct s_Error {
   Error cause;
 };
 
-Error Error_create();
+Error Error_create(cstring message, Location location, Error cause);
 void Error_dispose(Error error);
-Error Error_init(cstring message, Location location, Error cause);
-void Error_print(Error error);
-
-void ErrorStack_init();
-void ErrorStack_print();
-void ErrorStack_push(Error error);
-int ErrorStack_empty();
+void setError(Error error);
+Error getError();
+void printError(Error error);
