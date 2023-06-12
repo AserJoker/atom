@@ -3,7 +3,7 @@
 static Error globalError = NULL;
 Error Error_create(cstring message, Location location, Error cause) {
   Error error = (Error)Buffer_alloc(sizeof(struct s_Error));
-  error->message = cstring_concat(message);
+  error->message = (cstring)cstring_toBuffer(message);
   error->location = location;
   error->cause = cause;
   return error;
@@ -24,4 +24,8 @@ void printError(Error error) {
     printf("caused by:\n");
     printError(error->cause);
   }
+}
+
+void pushError(cstring message, Location location) {
+  setError(Error_create(message, location, globalError));
 }

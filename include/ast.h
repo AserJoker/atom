@@ -1,5 +1,6 @@
 #pragma once
 #include "source.h"
+
 typedef struct s_AstNode *AstNode;
 typedef enum e_NodeType {
   NT_Unknown,
@@ -12,5 +13,5 @@ AstNode AstNode_create();
 void AstNode_dispose(AstNode node);
 struct s_AstNode {
   NodeType type;
-  Location location;
+  strings position;
 };

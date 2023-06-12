@@ -2,26 +2,63 @@
 #include "buffer.h"
 #include <stdio.h>
 #include <stdlib.h>
-static uint32_t g_memory_alloced = 0;
-Buffer Debug_alloc(size_t size) {
-  void *data = malloc(size + sizeof(uint32_t));
-  // printf("[DEBUG] : alloc memory with size: %lld, address is 0x%llx\n", size,
-  //        (uintptr_t)((uint32_t *)data + 1));
-  *(uint32_t *)data = size;
-  g_memory_alloced += size;
-  return (uint32_t *)data + 1;
+typedef struct s_DebugFrame *DebugFrame;
+struct s_DebugFrame {
+  void *handler;
+  size_t size;
+  const char *filename;
+  int line;
+  DebugFrame next;
+};
+
+static DebugFrame frame = NULL;
+
+Buffer Debug_alloc(size_t size, const char *filename, int line) {
+  void *data = malloc(size);
+  DebugFrame f = (DebugFrame)malloc(sizeof(struct s_DebugFrame));
+  f->filename = filename;
+  f->line = line;
+  f->handler = data;
+  f->size = size;
+  f->next = NULL;
+  if (!frame) {
+    frame = f;
+  } else {
+    DebugFrame tmp = frame;
+    while (tmp->next) {
+      tmp = tmp->next;
+    }
+    tmp->next = f;
+  }
+  return data;
 }
 void Debug_free(Buffer buf) {
-  uint32_t size = *((uint32_t *)buf - 1);
-  // fprintf(stderr, "[DEBUG] : free memory with address: 0x%llx, size
-  // is:%lld\n",
-  //         (uintptr_t)buf, size);
-  free((uint32_t *)buf - 1);
-  g_memory_alloced -= size;
+  if (frame->handler == buf) {
+    DebugFrame tmp = frame;
+    frame = frame->next;
+    free(tmp);
+  } else {
+    DebugFrame f = frame;
+    while (f->next) {
+      if (f->next->handler == buf) {
+        break;
+      }
+      f = f->next;
+    }
+    DebugFrame tmp = f->next;
+    f->next = f->next->next;
+    free(tmp);
+  }
+  free(buf);
 }
 void Debug_check() {
-  if (g_memory_alloced != 0) {
-    printf("[DEBUG] : !!memory leak!! size: %u", g_memory_alloced);
+  while (frame) {
+    DebugFrame f = frame;
+    frame = frame->next;
+    printf("[Debug] memory leak: addr is 0x%llx,size is %llu,define at %s:%d\n",
+           (ptrdiff_t)f->handler, f->size, f->filename, f->line);
+    free(f->handler);
+    free(f);
   }
 }
 void Debug_init() {

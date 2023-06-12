@@ -1,6 +1,74 @@
 #include "expression.h"
 #include "ast.h"
 #include "tokenizer.h"
+
+static ExpressionContext ctx = NULL;
+
+static ExpressionContext ExpressionContext_create() {
+  ExpressionContext ctx =
+      (ExpressionContext)Buffer_alloc(sizeof(struct s_ExpressionContext));
+  ctx->current = NULL;
+  ctx->root = NULL;
+  ctx->maxlevel = -1;
+  ctx->token_ctx = NULL;
+  return ctx;
+}
+
+ExpressionContext pushExpressionContext() {
+  ExpressionContext result = ctx;
+  ctx = ExpressionContext_create();
+  ctx->token_ctx = pushTokenContext();
+  return result;
+}
+
+void popExpressionContext(ExpressionContext ectx) {
+  popTokenContext(ctx->token_ctx);
+  Buffer_free(ctx);
+  ctx = ectx;
+}
+
+int isExpressionComplete() { return ctx->root && !ctx->current; }
+
+void insertExpression(Expression expr) {
+  if (!ctx->root) {
+    ctx->root = expr;
+  } else {
+    if (ctx->current) {
+      ctx->current->binary.right = expr;
+    } else {
+      if (ctx->root->level <= expr->level) {
+        expr->binary.left = ctx->root;
+        ctx->root = expr;
+      } else {
+        Expression iterator = ctx->root;
+        while (iterator->binary.right->level > expr->level) {
+          iterator = iterator->binary.right;
+        }
+        expr->binary.left = iterator->binary.right;
+        iterator->binary.right = expr;
+      }
+    }
+  }
+  if (expr->type == ET_Calculate) {
+    if (expr->binary.bind != BT_Left) {
+      ctx->current = expr;
+    }
+  } else {
+    ctx->current = NULL;
+  }
+}
+
+Location getExpressionLocation(SourceFile file, cstring source) {
+  Token token = readToken(file, source);
+  if (!token) {
+    Error_dispose(getError());
+    return getLocation(file, source);
+  }
+  cstring selector = token->raw.begin;
+  Token_dispose(token);
+  return getLocation(file, selector);
+}
+
 Expression Expression_create() {
   Expression expression = (Expression)Buffer_alloc(sizeof(struct s_Expression));
   expression->node = AstNode_create();
@@ -9,10 +77,123 @@ Expression Expression_create() {
   expression->binary.left = NULL;
   expression->binary.right = NULL;
   expression->binary.operator= NULL;
+  expression->level = -2;
+  expression->binary.bind = BT_Both;
   return expression;
 }
-Expression readExpression(SourceFile file, cstring source) { return NULL; }
+
+Expression readExpression(SourceFile file, cstring source) {
+  cstring selector = source;
+  enableReadRegex();
+  Token token = readTokenSkipNewline(file, selector);
+  if (!token) {
+    return NULL;
+  }
+  for (;;) {
+    if (token->type == TT_Newline || token->type == TT_MultiLineComment) {
+      selector = token->raw.end;
+      Token_dispose(token);
+      token = readTokenSkipNewline(file, selector);
+    }
+    if (token->type == TT_Eof) {
+      Token_dispose(token);
+      break;
+    }
+    if (Token_check(token, TT_Symbol, ";")) {
+      Token_dispose(token);
+      break;
+    }
+    if (isExpressionComplete()) {
+      if (isCalculateOperator(token)) {
+        Expression expr = Expression_create();
+        expr->binary.operator= token;
+        expr->level = getCalculateLevel(token);
+        expr->binary.bind = BT_Both;
+        expr->type = ET_Calculate;
+        insertExpression(expr);
+        selector = token->raw.end;
+      } else if (isUpdateOperator(token)) {
+        Expression expr = Expression_create();
+        expr->binary.operator= token;
+        expr->level = -2;
+        expr->binary.bind = BT_Left;
+        expr->type = ET_Calculate;
+        insertExpression(expr);
+        selector = token->raw.end;
+      } else {
+        Token_dispose(token);
+        break;
+      }
+    } else {
+      if (isLiteralToken(token)) {
+        Token_dispose(token);
+        Expression expr = readLiteralExpression(file, selector);
+        if (!expr) {
+          goto failed;
+        }
+        insertExpression(expr);
+        selector = expr->node->position.end;
+      } else if (isIdentifierToken(token)) {
+        Token_dispose(token);
+        Expression expr = readIdentifierExpression(file, selector);
+        if (!expr) {
+          goto failed;
+        }
+        insertExpression(expr);
+        selector = expr->node->position.end;
+      } else {
+        Token_dispose(token);
+        pushError("Unexcept token.", getExpressionLocation(file, selector));
+        goto failed;
+      }
+    }
+    if (isExpressionComplete()) {
+      disableReadRegex();
+    } else {
+      enableReadRegex();
+    }
+    token = readTokenSkipComment(file, selector);
+  }
+  ctx->root->node->position.begin = source;
+  ctx->root->node->position.end = selector;
+  goto finaly;
+failed:
+  if (ctx->root) {
+    Expression_dispose(ctx->root);
+  }
+finaly:
+  Expression result = ctx->root;
+  ctx->root = NULL;
+  ctx->current = NULL;
+  return result;
+}
+
 void Expression_dispose(Expression expression) {
+  switch (expression->type) {
+  case ET_Unknown:
+    break;
+  case ET_Calculate:
+    if (expression->binary.left) {
+      Expression_dispose(expression->binary.left);
+    }
+    if (expression->binary.right) {
+      Expression_dispose(expression->binary.right);
+    }
+    if (expression->binary.operator) {
+      Token_dispose(expression->binary.operator);
+    }
+    break;
+  case ET_Literal:
+    if (expression->literal) {
+      Token_dispose(expression->literal);
+    }
+    break;
+  case ET_Identifier:
+    if (expression->Identifier) {
+      Token_dispose(expression->Identifier);
+    }
+    break;
+  }
   AstNode_dispose(expression->node);
   Buffer_free(expression);
 }

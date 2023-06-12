@@ -8,9 +8,8 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src SOURCE)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/util UTIL)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/engine ENGINE)
-aux_source_directory(${PROJECT_SOURCE_DIR}/src/engine/ast/statement ENGINE_STATEMENT)
-aux_source_directory(${PROJECT_SOURCE_DIR}/src/engine/ast/expression ENGINE_EXPRESSION)
-aux_source_directory(${PROJECT_SOURCE_DIR}/src/engine/ast ENGINE_AST)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/engine/statement ENGINE_STATEMENT)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/engine/expression ENGINE_EXPRESSION)
 
 if(CMAKE_BUILD_TYPE STREQUAL Debug)
     add_definitions(
@@ -19,4 +18,4 @@ if(CMAKE_BUILD_TYPE STREQUAL Debug)
     aux_source_directory(${PROJECT_SOURCE_DIR}/src/debug DEBUG)
 endif()
 
-add_executable(${ATOM_COMPILER_NAME} ${SOURCE} ${DEBUG} ${UTIL} ${ENGINE} ${ENGINE_STATEMENT} ${ENGINE_EXPRESSION} ${ENGINE_AST})
+add_executable(${ATOM_COMPILER_NAME} ${SOURCE} ${DEBUG} ${UTIL} ${ENGINE} ${ENGINE_STATEMENT} ${ENGINE_EXPRESSION})

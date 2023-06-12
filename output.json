@@ -1,45 +1,20 @@
 {
-  "type": "Program",
-  "body": [
-    {
-      "type": "DefinitionStatement",
-      "define": {
-        "type": "BinaryExpression",
-        "operator": "=",
-        "left": {
-          "type": "IdentifierExpression",
-          "identifier": { "type": "Identifier", "raw": "a" }
-        },
-        "right": {
-          "type": "LambdaExpression",
-          "lambda": {
-            "type": "Lambda",
-            "args": [
-              {
-                "type": "IdentifierExpression",
-                "identifier": { "type": "Identifier", "raw": "a" }
-              }
-            ],
-            "body": {
-              "type": "ExpressionStatement",
-              "expression": {
-                "type": "BinaryExpression",
-                "operator": "+",
-                "left": {
-                  "type": "IdentifierExpression",
-                  "identifier": { "type": "Identifier", "raw": "a" }
-                },
-                "right": {
-                  "type": "LiteralExpression",
-                  "literal": { "type": "literal", "raw": "1" }
-                }
-              }
-            },
-            "async": false
-          }
-        }
-      },
-      "define_type": "const"
-    }
-  ]
+  "type": "Calculate",
+  "left": {
+    "type": "Literal",
+    "raw": "123"
+  },
+  "right": {
+    "type": "Calculate",
+    "left": {
+      "type": "Literal",
+      "raw": "456"
+    },
+    "right": {
+      "type": "Literal",
+      "raw": "2"
+    },
+    "operator": "*"
+  },
+  "operator": "+"
 }

@@ -12,5 +12,6 @@ struct s_Error {
 Error Error_create(cstring message, Location location, Error cause);
 void Error_dispose(Error error);
 void setError(Error error);
+void pushError(cstring message, Location location);
 Error getError();
 void printError(Error error);
