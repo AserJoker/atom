@@ -1,20 +1,37 @@
 {
-  "type": "Calculate",
-  "left": {
-    "type": "Literal",
-    "raw": "123"
-  },
-  "right": {
-    "type": "Calculate",
-    "left": {
-      "type": "Literal",
-      "raw": "456"
+  "type": "Expression",
+  "expression": {
+    "type": "Lambda",
+    "args": [
+      {
+        "type": "Identifier",
+        "raw": "a"
+      },
+      {
+        "type": "Identifier",
+        "raw": "b"
+      }
+    ],
+    "body": {
+      "type": "Block",
+      "body": [
+        {
+          "type": "Expression",
+          "expression": {
+            "type": "Calculate",
+            "left": {
+              "type": "Identifier",
+              "raw": "a"
+            },
+            "right": {
+              "type": "Identifier",
+              "raw": "b"
+            },
+            "operator": "+"
+          }
+        }
+      ]
     },
-    "right": {
-      "type": "Literal",
-      "raw": "2"
-    },
-    "operator": "*"
-  },
-  "operator": "+"
+    "async": false
+  }
 }

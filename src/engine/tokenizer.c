@@ -399,6 +399,43 @@ Token readTokenSkipNewline(SourceFile file, cstring source) {
   }
   return token;
 }
-int Token_check(Token token, ATOM_TokenType tt, cstring source) {
+int checkToken(Token token, Token_Type tt, cstring source) {
   return token->type == tt && strings_is(token->raw, source);
+}
+Token pairToken(SourceFile file, cstring source, Token_Type tl, cstring left,
+                Token_Type tr, cstring right) {
+  cstring selector = source;
+  int level = 0;
+  Token token = readToken(file, selector);
+  if (!token) {
+    return NULL;
+  }
+  if (!checkToken(token, tl, left)) {
+    Token_dispose(token);
+    return NULL;
+  }
+  selector = token->raw.end;
+  level++;
+  Token_dispose(token);
+  token = readToken(file, selector);
+  for (;;) {
+    if (checkToken(token, tr, right)) {
+      level--;
+      if (!level) {
+        break;
+      }
+    } else if (checkToken(token, tl, left)) {
+      level++;
+    } else if (token->type == TT_Eof) {
+      Token_dispose(token);
+      return NULL;
+    }
+    selector = token->raw.end;
+    Token_dispose(token);
+    token = readToken(file, selector);
+    if (!token) {
+      return NULL;
+    }
+  }
+  return token;
 }

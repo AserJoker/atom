@@ -45,6 +45,9 @@ int isCalculateOperator(Token token) {
   }
   int level = 0;
   for (;;) {
+    if (getMaxOperatorLevel() != -1 && level >= getMaxOperatorLevel()) {
+      return 0;
+    }
     s_OperatorSet *set = opts[level];
     if (!set) {
       return 0;

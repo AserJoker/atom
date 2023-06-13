@@ -1,13 +1,13 @@
 #include "expression.h"
-int isLiteralToken(Token token) {
+int isLiteralExpression(SourceFile file, Token token) {
   if (token->type == TT_String || token->type == TT_Number ||
       token->type == TT_Regex || token->type == TT_BigInt) {
     return 1;
   }
-  if (Token_check(token, TT_Keyword, "true") ||
-      Token_check(token, TT_Keyword, "false") ||
-      Token_check(token, TT_Keyword, "undefined") ||
-      Token_check(token, TT_Keyword, "null")) {
+  if (checkToken(token, TT_Keyword, "true") ||
+      checkToken(token, TT_Keyword, "false") ||
+      checkToken(token, TT_Keyword, "undefined") ||
+      checkToken(token, TT_Keyword, "null")) {
     return 1;
   }
   return 0;
@@ -18,7 +18,7 @@ Expression readLiteralExpression(SourceFile file, cstring source) {
   if (!token) {
     return NULL;
   }
-  if (!isLiteralToken(token)) {
+  if (!isLiteralExpression(file, token)) {
     Token_dispose(token);
     pushError("Unexcept token.", getExpressionLocation(file, source));
     goto failed;

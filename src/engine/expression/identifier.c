@@ -1,6 +1,6 @@
 #include "expression.h"
 
-int isIdentifierToken(Token token) { return token->type == TT_Identifier; }
+int isIdentifierExpression(SourceFile file,Token token) { return token->type == TT_Identifier; }
 Expression readIdentifierExpression(SourceFile file, cstring source) {
   cstring selector = source;
   Token token = readTokenSkipNewline(file, selector);

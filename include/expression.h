@@ -11,6 +11,8 @@ ExpressionContext pushExpressionContext();
 void popExpressionContext(ExpressionContext ectx);
 int isExpressionComplete();
 void insertExpression(Expression expr);
+void setMaxOperatorLevel(int level);
+int getMaxOperatorLevel();
 
 Location getExpressionLocation(SourceFile file, cstring source);
 
@@ -18,18 +20,24 @@ Expression Expression_create();
 Expression readExpression(SourceFile file, cstring source);
 void Expression_dispose(Expression expression);
 
-int isLiteralToken(Token token);
+int isLiteralExpression(SourceFile file, Token token);
 Expression readLiteralExpression(SourceFile file, cstring source);
 
-int isIdentifierToken(Token token);
-Expression readIdentifierExpression(SourceFile file,cstring source);
+int isIdentifierExpression(SourceFile file, Token token);
+Expression readIdentifierExpression(SourceFile file, cstring source);
 
-typedef enum e_BindType { BT_Unknown, BT_Left, BT_Right, BT_Both } BindType;
+int isBracketExpression(SourceFile file, Token token);
+Expression readBracketExpression(SourceFile file, cstring source);
+
+int isLambdaExpression(SourceFile file, Token token);
+Expression readLambdaExpression(SourceFile file, cstring source);
 
 int isCalculateOperator(Token token);
 int isUnaryOperator(Token token);
 int isUpdateOperator(Token token);
 int getCalculateLevel(Token token);
+
+typedef enum e_BindType { BT_Unknown, BT_Left, BT_Right, BT_Both } BindType;
 
 struct s_ExpressionContext {
   TokenContext token_ctx;
@@ -43,7 +51,11 @@ typedef enum e_ExpressionType {
   ET_Calculate,
   ET_Literal,
   ET_Identifier,
+  ET_Bracket,
+  ET_Lambda,
 } ExpressionType;
+
+typedef struct s_Statement *Statement;
 
 struct s_Expression {
   AstNode node;
@@ -56,6 +68,14 @@ struct s_Expression {
       Token operator;
       BindType bind;
     } binary;
+    struct {
+      Expression sub;
+    } bracket;
+    struct {
+      List args;
+      Statement body;
+      int async;
+    } lambda;
     Token literal;
     Token Identifier;
   };

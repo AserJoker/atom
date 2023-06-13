@@ -22,10 +22,10 @@ int main(int argc, char **argv) {
 #endif
 
   SourceFile sf = SourceFile_read("./demo.js");
-  Expression node = parse(sf);
+  Statement node = parse(sf);
   if (node) {
-    JSON_Value val = JSON_fromExpression(node);
-    Expression_dispose(node);
+    JSON_Value val = JSON_fromStatement(node);
+    Statement_dispose(node);
     cstring json = JSON_stringlify(val);
     JSON_dispose(val);
     printf("%s\n", json);

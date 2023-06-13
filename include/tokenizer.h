@@ -5,7 +5,7 @@
 typedef struct s_TokenContext *TokenContext;
 typedef struct s_Token *Token;
 
-typedef enum e_TokenType {
+typedef enum e_Token_Type {
   TT_Number,
   TT_BigInt,
   TT_String,
@@ -21,14 +21,12 @@ typedef enum e_TokenType {
   TT_TemplatePart,
   TT_TemplateEnd,
   TT_Eof
-} ATOM_TokenType;
+} Token_Type;
 
 struct s_Token {
-  ATOM_TokenType type;
+  Token_Type type;
   strings raw;
 };
-
-
 
 TokenContext pushTokenContext();
 void popTokenContext(TokenContext ctx);
@@ -41,4 +39,6 @@ Token readToken(SourceFile file, cstring source);
 void Token_dispose(Token token);
 Token readTokenSkipComment(SourceFile file, cstring source);
 Token readTokenSkipNewline(SourceFile file, cstring source);
-int Token_check(Token token, ATOM_TokenType tt, cstring source);
+int checkToken(Token token, Token_Type tt, cstring source);
+Token pairToken(SourceFile file, cstring source, Token_Type tl, cstring left,
+                Token_Type tr, cstring right);

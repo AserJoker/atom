@@ -1,8 +1,9 @@
 #include "parser.h"
 #include "expression.h"
-Expression parse(SourceFile file) {
+#include "statement.h"
+Statement parse(SourceFile file) {
   ExpressionContext ectx = pushExpressionContext();
-  Expression expr = readExpression(file, file->_source);
+  Statement statement = readStatement(file, file->_source);
   popExpressionContext(ectx);
-  return expr;
+  return statement;
 }

@@ -1,5 +1,6 @@
 #include "expression.h"
 #include "ast.h"
+#include "statement.h"
 #include "tokenizer.h"
 
 static ExpressionContext ctx = NULL;
@@ -26,6 +27,9 @@ void popExpressionContext(ExpressionContext ectx) {
   Buffer_free(ctx);
   ctx = ectx;
 }
+
+void setMaxOperatorLevel(int level) { ctx->maxlevel = level; }
+int getMaxOperatorLevel() { return ctx->maxlevel; }
 
 int isExpressionComplete() { return ctx->root && !ctx->current; }
 
@@ -94,14 +98,31 @@ Expression readExpression(SourceFile file, cstring source) {
       selector = token->raw.end;
       Token_dispose(token);
       token = readTokenSkipNewline(file, selector);
+      if (isExpressionComplete()) {
+        if (checkToken(token, TT_Symbol, "++") ||
+            checkToken(token, TT_Symbol, "--")) {
+          Token_dispose(token);
+          break;
+        }
+      }
     }
     if (token->type == TT_Eof) {
       Token_dispose(token);
-      break;
+      if (isExpressionComplete()) {
+        break;
+      } else {
+        pushError("Unexcept token.", getExpressionLocation(file, selector));
+        goto failed;
+      }
     }
-    if (Token_check(token, TT_Symbol, ";")) {
+    if (checkToken(token, TT_Symbol, ";")) {
       Token_dispose(token);
-      break;
+      if (isExpressionComplete()) {
+        break;
+      } else {
+        pushError("Unexcept token.", getExpressionLocation(file, selector));
+        goto failed;
+      }
     }
     if (isExpressionComplete()) {
       if (isCalculateOperator(token)) {
@@ -125,7 +146,7 @@ Expression readExpression(SourceFile file, cstring source) {
         break;
       }
     } else {
-      if (isLiteralToken(token)) {
+      if (isLiteralExpression(file, token)) {
         Token_dispose(token);
         Expression expr = readLiteralExpression(file, selector);
         if (!expr) {
@@ -133,7 +154,15 @@ Expression readExpression(SourceFile file, cstring source) {
         }
         insertExpression(expr);
         selector = expr->node->position.end;
-      } else if (isIdentifierToken(token)) {
+      } else if (isLambdaExpression(file, token)) {
+        Token_dispose(token);
+        Expression expr = readLambdaExpression(file, selector);
+        if (!expr) {
+          goto failed;
+        }
+        insertExpression(expr);
+        selector = expr->node->position.end;
+      } else if (isIdentifierExpression(file, token)) {
         Token_dispose(token);
         Expression expr = readIdentifierExpression(file, selector);
         if (!expr) {
@@ -141,9 +170,17 @@ Expression readExpression(SourceFile file, cstring source) {
         }
         insertExpression(expr);
         selector = expr->node->position.end;
+      } else if (isBracketExpression(file, token)) {
+        Token_dispose(token);
+        Expression expr = readBracketExpression(file, selector);
+        if (!expr) {
+          goto failed;
+        }
+        insertExpression(expr);
+        selector = expr->node->position.end;
       } else {
         Token_dispose(token);
-        pushError("Unexcept token.", getExpressionLocation(file, selector));
+        pushError("Unexcept token.", getLocation(file, selector));
         goto failed;
       }
     }
@@ -153,13 +190,19 @@ Expression readExpression(SourceFile file, cstring source) {
       enableReadRegex();
     }
     token = readTokenSkipComment(file, selector);
+    if (!token) {
+      goto failed;
+    }
   }
-  ctx->root->node->position.begin = source;
-  ctx->root->node->position.end = selector;
+  if (ctx->root) {
+    ctx->root->node->position.begin = source;
+    ctx->root->node->position.end = selector;
+  }
   goto finaly;
 failed:
   if (ctx->root) {
     Expression_dispose(ctx->root);
+    ctx->root = NULL;
   }
 finaly:
   Expression result = ctx->root;
@@ -170,19 +213,6 @@ finaly:
 
 void Expression_dispose(Expression expression) {
   switch (expression->type) {
-  case ET_Unknown:
-    break;
-  case ET_Calculate:
-    if (expression->binary.left) {
-      Expression_dispose(expression->binary.left);
-    }
-    if (expression->binary.right) {
-      Expression_dispose(expression->binary.right);
-    }
-    if (expression->binary.operator) {
-      Token_dispose(expression->binary.operator);
-    }
-    break;
   case ET_Literal:
     if (expression->literal) {
       Token_dispose(expression->literal);
@@ -193,6 +223,24 @@ void Expression_dispose(Expression expression) {
       Token_dispose(expression->Identifier);
     }
     break;
+  case ET_Lambda:
+    if (expression->lambda.args) {
+      List_dispose(expression->lambda.args);
+    }
+    if (expression->lambda.body) {
+      Statement_dispose(expression->lambda.body);
+    }
+    break;
+  default:
+    if (expression->binary.left) {
+      Expression_dispose(expression->binary.left);
+    }
+    if (expression->binary.right) {
+      Expression_dispose(expression->binary.right);
+    }
+    if (expression->binary.operator) {
+      Token_dispose(expression->binary.operator);
+    }
   }
   AstNode_dispose(expression->node);
   Buffer_free(expression);
