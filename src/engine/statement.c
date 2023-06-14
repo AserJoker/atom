@@ -14,10 +14,10 @@ Statement readStatement(SourceFile file, cstring source) {
     return NULL;
   }
   Statement statement = NULL;
-  if (checkToken(token, TT_Symbol, ";")) {
+  if (isEmptyStatement(file, token)) {
     Token_dispose(token);
     statement = readEmptyStatement(file, source);
-  } else if (checkToken(token, TT_Symbol, "{")) {
+  } else if (isBlockStatement(file, token)) {
     Token_dispose(token);
     statement = readBlockStatement(file, source);
   } else {

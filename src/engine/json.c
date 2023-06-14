@@ -35,9 +35,9 @@ JSON_Value JSON_fromExpression(Expression expression) {
     break;
   case ET_Bracket:
     JSON_setField(obj, "type", JSON_createString("Bracket"));
-    if (expression->bracket.sub) {
+    if (expression->bracket) {
       JSON_setField(obj, "subExpression",
-                    JSON_fromExpression(expression->bracket.sub));
+                    JSON_fromExpression(expression->bracket));
     }
     break;
   case ET_Calculate:
@@ -66,9 +66,25 @@ JSON_Value JSON_fromExpression(Expression expression) {
     JSON_setField(obj, "type", JSON_createString("Lambda"));
     JSON_setField(
         obj, "args",
-        JSON_fromList(expression->lambda.args, (ToJSON)JSON_fromExpression));
-    JSON_setField(obj, "body", JSON_fromStatement(expression->lambda.body));
-    JSON_setField(obj, "async", JSON_createBoolean(expression->lambda.async));
+        JSON_fromList(expression->lambda->args, (ToJSON)JSON_fromExpression));
+    JSON_setField(obj, "body", JSON_fromStatement(expression->lambda->body));
+    JSON_setField(obj, "async", JSON_createBoolean(expression->lambda->async));
+    break;
+  case ET_Function:
+    JSON_setField(obj, "type", JSON_createString("Function"));
+    if (expression->function->name) {
+      JSON_setField(obj, "name", JSON_fromToken(expression->function->name));
+    } else {
+      JSON_setField(obj, "name", JSON_createNull());
+    }
+    JSON_setField(
+        obj, "args",
+        JSON_fromList(expression->function->args, (ToJSON)JSON_fromExpression));
+    JSON_setField(obj, "body", JSON_fromStatement(expression->function->body));
+    JSON_setField(obj, "async",
+                  JSON_createBoolean(expression->function->async));
+    JSON_setField(obj, "generator",
+                  JSON_createBoolean(expression->function->generator));
     break;
   }
   return obj;

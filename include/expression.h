@@ -32,6 +32,9 @@ Expression readBracketExpression(SourceFile file, cstring source);
 int isLambdaExpression(SourceFile file, Token token);
 Expression readLambdaExpression(SourceFile file, cstring source);
 
+int isFunctionExpression(SourceFile file, Token token);
+Expression readFunctionExpression(SourceFile file, cstring source);
+
 int isCalculateOperator(Token token);
 int isUnaryOperator(Token token);
 int isUpdateOperator(Token token);
@@ -53,9 +56,24 @@ typedef enum e_ExpressionType {
   ET_Identifier,
   ET_Bracket,
   ET_Lambda,
+  ET_Function,
 } ExpressionType;
 
 typedef struct s_Statement *Statement;
+
+typedef struct s_Lambda {
+  List args;
+  Statement body;
+  int async;
+} *Lambda;
+
+typedef struct s_Function {
+  Token name;
+  List args;
+  Statement body;
+  int async;
+  int generator;
+} *Function;
 
 struct s_Expression {
   AstNode node;
@@ -68,14 +86,9 @@ struct s_Expression {
       Token operator;
       BindType bind;
     } binary;
-    struct {
-      Expression sub;
-    } bracket;
-    struct {
-      List args;
-      Statement body;
-      int async;
-    } lambda;
+    Expression bracket;
+    Lambda lambda;
+    Function function;
     Token literal;
     Token Identifier;
   };

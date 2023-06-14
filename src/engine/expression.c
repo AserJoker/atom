@@ -86,6 +86,21 @@ Expression Expression_create() {
   return expression;
 }
 
+typedef int (*ExpressionChecker)(SourceFile file, Token token);
+typedef Expression (*ExpressionReader)(SourceFile file, cstring token);
+struct ExpressionHandler {
+  ExpressionChecker checker;
+  ExpressionReader reader;
+};
+
+struct ExpressionHandler handlers[] = {
+    {isLiteralExpression, readLiteralExpression},
+    {isFunctionExpression, readFunctionExpression},
+    {isLambdaExpression, readLambdaExpression},
+    {isIdentifierExpression, readIdentifierExpression},
+    {isBracketExpression, readBracketExpression},
+    {0, 0}};
+
 Expression readExpression(SourceFile file, cstring source) {
   cstring selector = source;
   enableReadRegex();
@@ -146,42 +161,26 @@ Expression readExpression(SourceFile file, cstring source) {
         break;
       }
     } else {
-      if (isLiteralExpression(file, token)) {
-        Token_dispose(token);
-        Expression expr = readLiteralExpression(file, selector);
-        if (!expr) {
+      int indexOfHandler = 0;
+      for (;;) {
+        struct ExpressionHandler handler = handlers[indexOfHandler];
+        if (handler.checker == NULL) {
+          Token_dispose(token);
+          pushError("Unexcept token.", getLocation(file, selector));
           goto failed;
+        } else {
+          if (handler.checker(file, token)) {
+            Token_dispose(token);
+            Expression expr = handler.reader(file, selector);
+            if (!expr) {
+              goto failed;
+            }
+            insertExpression(expr);
+            selector = expr->node->position.end;
+            break;
+          }
         }
-        insertExpression(expr);
-        selector = expr->node->position.end;
-      } else if (isLambdaExpression(file, token)) {
-        Token_dispose(token);
-        Expression expr = readLambdaExpression(file, selector);
-        if (!expr) {
-          goto failed;
-        }
-        insertExpression(expr);
-        selector = expr->node->position.end;
-      } else if (isIdentifierExpression(file, token)) {
-        Token_dispose(token);
-        Expression expr = readIdentifierExpression(file, selector);
-        if (!expr) {
-          goto failed;
-        }
-        insertExpression(expr);
-        selector = expr->node->position.end;
-      } else if (isBracketExpression(file, token)) {
-        Token_dispose(token);
-        Expression expr = readBracketExpression(file, selector);
-        if (!expr) {
-          goto failed;
-        }
-        insertExpression(expr);
-        selector = expr->node->position.end;
-      } else {
-        Token_dispose(token);
-        pushError("Unexcept token.", getLocation(file, selector));
-        goto failed;
+        indexOfHandler++;
       }
     }
     if (isExpressionComplete()) {
@@ -224,12 +223,25 @@ void Expression_dispose(Expression expression) {
     }
     break;
   case ET_Lambda:
-    if (expression->lambda.args) {
-      List_dispose(expression->lambda.args);
+    if (expression->lambda->args) {
+      List_dispose(expression->lambda->args);
     }
-    if (expression->lambda.body) {
-      Statement_dispose(expression->lambda.body);
+    if (expression->lambda->body) {
+      Statement_dispose(expression->lambda->body);
     }
+    Buffer_free(expression->lambda);
+    break;
+  case ET_Function:
+    if (expression->function->args) {
+      List_dispose(expression->function->args);
+    }
+    if (expression->function->name) {
+      Token_dispose(expression->function->name);
+    }
+    if (expression->function->body) {
+      Statement_dispose(expression->function->body);
+    }
+    Buffer_free(expression->function);
     break;
   default:
     if (expression->binary.left) {

@@ -41,11 +41,11 @@ Expression readLambdaExpression(SourceFile file, cstring source) {
   Expression expr = Expression_create();
   expr->type = ET_Lambda;
   List_Option opt = {1, (Buffer_Free)Expression_dispose};
-  expr->lambda.args = List_create(opt);
+  expr->lambda = (Lambda)Buffer_alloc(sizeof(struct s_Lambda));
+  expr->lambda->args = List_create(opt);
   if (checkToken(token, TT_Keyword, "async")) {
-    expr->lambda.async = 1;
+    expr->lambda->async = 1;
     selector = token->raw.end;
-    Token_dispose(token);
   }
   Token_dispose(token);
   token = readTokenSkipNewline(file, selector);
@@ -60,7 +60,7 @@ Expression readLambdaExpression(SourceFile file, cstring source) {
     if (!arg) {
       goto failed;
     }
-    List_insert_tail(expr->lambda.args, arg);
+    List_insert_tail(expr->lambda->args, arg);
     selector = arg->node->position.end;
   } else if (checkToken(token, TT_Symbol, "(")) {
     selector = token->raw.end;
@@ -79,7 +79,7 @@ Expression readLambdaExpression(SourceFile file, cstring source) {
         goto failed;
       }
       for (;;) {
-        List_insert_tail(expr->lambda.args, arg);
+        List_insert_tail(expr->lambda->args, arg);
         selector = arg->node->position.end;
         token = readTokenSkipNewline(file, selector);
         if (!token) {
@@ -120,8 +120,8 @@ Expression readLambdaExpression(SourceFile file, cstring source) {
   }
   selector = token->raw.end;
   Token_dispose(token);
-  expr->lambda.body = readBlockStatement(file, selector);
-  if (!expr->lambda.body) {
+  expr->lambda->body = readBlockStatement(file, selector);
+  if (!expr->lambda->body) {
     goto failed;
   }
   expr->node->position.begin = source;

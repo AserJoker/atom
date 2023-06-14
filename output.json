@@ -1,37 +1,45 @@
 {
   "type": "Expression",
   "expression": {
-    "type": "Lambda",
-    "args": [
-      {
-        "type": "Identifier",
-        "raw": "a"
-      },
-      {
-        "type": "Identifier",
-        "raw": "b"
-      }
-    ],
-    "body": {
-      "type": "Block",
-      "body": [
-        {
-          "type": "Expression",
-          "expression": {
-            "type": "Calculate",
-            "left": {
-              "type": "Identifier",
-              "raw": "a"
-            },
-            "right": {
-              "type": "Identifier",
-              "raw": "b"
-            },
-            "operator": "+"
-          }
-        }
-      ]
+    "type": "Calculate",
+    "left": {
+      "type": "Identifier",
+      "raw": "a"
     },
-    "async": false
+    "right": {
+      "type": "Lambda",
+      "args": [
+        {
+          "type": "Identifier",
+          "raw": "a"
+        },
+        {
+          "type": "Identifier",
+          "raw": "b"
+        }
+      ],
+      "body": {
+        "type": "Block",
+        "body": [
+          {
+            "type": "Expression",
+            "expression": {
+              "type": "Calculate",
+              "left": {
+                "type": "Identifier",
+                "raw": "a"
+              },
+              "right": {
+                "type": "Identifier",
+                "raw": "b"
+              },
+              "operator": "+"
+            }
+          }
+        ]
+      },
+      "async": true
+    },
+    "operator": "="
   }
 }
