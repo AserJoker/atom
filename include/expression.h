@@ -35,9 +35,18 @@ Expression readLambdaExpression(SourceFile file, cstring source);
 int isFunctionExpression(SourceFile file, Token token);
 Expression readFunctionExpression(SourceFile file, cstring source);
 
-int isCalculateOperator(Token token);
-int isUnaryOperator(Token token);
-int isUpdateOperator(Token token);
+int isCalculateOperator(SourceFile file, Token token);
+Expression readCalculateExpression(SourceFile file, cstring source);
+
+int isUpdateOperator(SourceFile file, Token token);
+Expression readUpdateExpression(SourceFile file, cstring source);
+
+int isMemberOperator(SourceFile file, Token token);
+Expression readMemberExpression(SourceFile file, cstring source);
+
+int isUnaryOperator(SourceFile file, Token token);
+Expression readUnaryExpression(SourceFile file, cstring source);
+
 int getCalculateLevel(Token token);
 
 typedef enum e_BindType { BT_Unknown, BT_Left, BT_Right, BT_Both } BindType;
@@ -57,6 +66,13 @@ typedef enum e_ExpressionType {
   ET_Bracket,
   ET_Lambda,
   ET_Function,
+  ET_Compute,
+  ET_Call,
+  ET_OptionalCompute,
+  ET_OptionalCall,
+  ET_Array,
+  EF_Object,
+  ET_Class,
 } ExpressionType;
 
 typedef struct s_Statement *Statement;

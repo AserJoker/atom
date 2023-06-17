@@ -1,4 +1,7 @@
 #include "expression.h"
+#include "source.h"
+#include "strings.h"
+#include "tokenizer.h"
 typedef struct s_OperatorSet {
   cstring *operators;
 } s_OperatorSet;
@@ -39,7 +42,7 @@ static cstring unaryOperators[] = {"++", "--", "...", "!", "+", "-", "~", 0};
 
 static cstring updateOperators[] = {"++", "--", 0};
 
-int isCalculateOperator(Token token) {
+int isCalculateOperator(SourceFile file, Token token) {
   if (token->type != TT_Symbol) {
     return 0;
   }
@@ -75,15 +78,46 @@ int getCalculateLevel(Token token) {
   }
 }
 
-int isUnaryOperator(Token token) {
+int isUnaryOperator(SourceFile file, Token token) {
   if (token->type != TT_Symbol) {
     return 0;
   }
   return strings_contains(token->raw, unaryOperators);
 }
-int isUpdateOperator(Token token) {
+Expression readUnaryExpression(SourceFile file, cstring source) {
+  Token token = readTokenSkipNewline(file, source);
+  Expression expr = Expression_create();
+  expr->binary.operator= token;
+  expr->binary.bind = BT_Right;
+  expr->type = ET_Calculate;
+  expr->level = -1;
+  expr->node->position = token->raw;
+  return expr;
+}
+
+int isUpdateOperator(SourceFile file, Token token) {
   if (token->type != TT_Symbol) {
     return 0;
   }
   return strings_contains(token->raw, updateOperators);
+}
+Expression readCalculateExpression(SourceFile file, cstring source) {
+  Token token = readTokenSkipNewline(file, source);
+  Expression expr = Expression_create();
+  expr->binary.operator= token;
+  expr->level = getCalculateLevel(token);
+  expr->binary.bind = BT_Both;
+  expr->type = ET_Calculate;
+  expr->node->position = token->raw;
+  return expr;
+}
+Expression readUpdateExpression(SourceFile file, cstring source) {
+  Token token = readTokenSkipNewline(file, source);
+  Expression expr = Expression_create();
+  expr->binary.operator= token;
+  expr->binary.bind = BT_Left;
+  expr->type = ET_Calculate;
+  expr->level = -1;
+  expr->node->position = token->raw;
+  return expr;
 }

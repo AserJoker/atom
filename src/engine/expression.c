@@ -87,18 +87,25 @@ Expression Expression_create() {
 }
 
 typedef int (*ExpressionChecker)(SourceFile file, Token token);
-typedef Expression (*ExpressionReader)(SourceFile file, cstring token);
+typedef Expression (*ExpressionReader)(SourceFile file, cstring source);
 struct ExpressionHandler {
   ExpressionChecker checker;
   ExpressionReader reader;
 };
 
-struct ExpressionHandler handlers[] = {
+static struct ExpressionHandler atom_handlers[] = {
+    {isUnaryOperator, readUnaryExpression},
     {isLiteralExpression, readLiteralExpression},
     {isFunctionExpression, readFunctionExpression},
     {isLambdaExpression, readLambdaExpression},
     {isIdentifierExpression, readIdentifierExpression},
     {isBracketExpression, readBracketExpression},
+    {0, 0}};
+
+static struct ExpressionHandler operator_handlers[] = {
+    {isCalculateOperator, readCalculateExpression},
+    {isMemberOperator, readMemberExpression},
+    {isUpdateOperator, readUpdateExpression},
     {0, 0}};
 
 Expression readExpression(SourceFile file, cstring source) {
@@ -140,30 +147,30 @@ Expression readExpression(SourceFile file, cstring source) {
       }
     }
     if (isExpressionComplete()) {
-      if (isCalculateOperator(token)) {
-        Expression expr = Expression_create();
-        expr->binary.operator= token;
-        expr->level = getCalculateLevel(token);
-        expr->binary.bind = BT_Both;
-        expr->type = ET_Calculate;
-        insertExpression(expr);
-        selector = token->raw.end;
-      } else if (isUpdateOperator(token)) {
-        Expression expr = Expression_create();
-        expr->binary.operator= token;
-        expr->level = -2;
-        expr->binary.bind = BT_Left;
-        expr->type = ET_Calculate;
-        insertExpression(expr);
-        selector = token->raw.end;
-      } else {
-        Token_dispose(token);
+      int indexOfHandler = 0;
+      for (;;) {
+        struct ExpressionHandler handler = operator_handlers[indexOfHandler];
+        if (handler.checker == NULL) {
+          Token_dispose(token);
+          break;
+        } else {
+          if (handler.checker(file, token)) {
+            Expression expr = handler.reader(file, selector);
+            insertExpression(expr);
+            selector = token->raw.end;
+            Token_dispose(token);
+            break;
+          }
+          indexOfHandler++;
+        }
+      }
+      if (!operator_handlers[indexOfHandler].checker) {
         break;
       }
     } else {
       int indexOfHandler = 0;
       for (;;) {
-        struct ExpressionHandler handler = handlers[indexOfHandler];
+        struct ExpressionHandler handler = atom_handlers[indexOfHandler];
         if (handler.checker == NULL) {
           Token_dispose(token);
           pushError("Unexcept token.", getLocation(file, selector));
