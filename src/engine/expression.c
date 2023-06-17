@@ -106,6 +106,7 @@ static struct ExpressionHandler operator_handlers[] = {
     {isCalculateOperator, readCalculateExpression},
     {isMemberOperator, readMemberExpression},
     {isUpdateOperator, readUpdateExpression},
+    {isComputeExpression, readComputeExpression},
     {0, 0}};
 
 Expression readExpression(SourceFile file, cstring source) {
@@ -155,10 +156,10 @@ Expression readExpression(SourceFile file, cstring source) {
           break;
         } else {
           if (handler.checker(file, token)) {
+            Token_dispose(token);
             Expression expr = handler.reader(file, selector);
             insertExpression(expr);
-            selector = token->raw.end;
-            Token_dispose(token);
+            selector = expr->node->position.end;
             break;
           }
           indexOfHandler++;

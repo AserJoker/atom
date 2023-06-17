@@ -1,13 +1,15 @@
 #include "debug.h"
 #include "buffer.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 typedef struct s_DebugFrame *DebugFrame;
 
-size_t allocated = 0;
+uint32_t allocated = 0;
 struct s_DebugFrame {
   void *handler;
-  size_t size;
+  uint32_t size;
   const char *filename;
   int line;
   DebugFrame next;
@@ -15,7 +17,7 @@ struct s_DebugFrame {
 
 static DebugFrame frame = NULL;
 
-Buffer Debug_alloc(size_t size, const char *filename, int line) {
+Buffer Debug_alloc(uint32_t size, const char *filename, int line) {
   void *data = malloc(size);
   DebugFrame f = (DebugFrame)malloc(sizeof(struct s_DebugFrame));
   f->filename = filename;
@@ -60,8 +62,8 @@ void Debug_check() {
   while (frame) {
     DebugFrame f = frame;
     frame = frame->next;
-    printf("[Debug] memory leak: addr is 0x%llx,size is %llu,define at %s:%d\n",
-           (ptrdiff_t)f->handler, f->size, f->filename, f->line);
+    printf("[Debug] memory leak: addr is 0x%llx,size is %u,define at %s:%d\n",
+           (uint64_t)(ptrdiff_t)f->handler, f->size, f->filename, f->line);
     free(f->handler);
     free(f);
   }

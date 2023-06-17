@@ -261,4 +261,5 @@ cstring JSON_stringlify(JSON_Value val) {
   case JSON_ARRAY:
     return JSON_stringlify_array(val);
   }
+  return NULL;
 }

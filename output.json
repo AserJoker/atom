@@ -1,15 +1,9 @@
 {
   "type": "Expression",
   "expression": {
-    "type": "Calculate",
-    "right": {
-      "type": "Calculate",
-      "left": { "type": "Identifier", "raw": "a", "level": -2.0 },
-      "right": { "type": "Identifier", "raw": "b", "level": -2.0 },
-      "operator": ".",
-      "level": -2.0
-    },
-    "operator": "++",
-    "level": -1.0
+    "type": "Compute",
+    "host": { "type": "Identifier", "raw": "a", "level": -2.0 },
+    "key": { "type": "Identifier", "raw": "b", "level": -2.0 },
+    "level": -2.0
   }
 }

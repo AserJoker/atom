@@ -11,5 +11,6 @@ Expression readMemberExpression(SourceFile file, cstring source) {
   expr->binary.operator= token;
   expr->binary.bind = BT_Both;
   expr->type = ET_Calculate;
+  expr->node->position = token->raw;
   return expr;
 }

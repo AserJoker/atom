@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 typedef void *Buffer;
-typedef Buffer (*Buffer_Alloc)(size_t size, const char *filename, int line);
+typedef Buffer (*Buffer_Alloc)(uint32_t size, const char *filename, int line);
 typedef void (*Buffer_Free)(Buffer buffer);
 
 /**
@@ -18,7 +18,7 @@ void Buffer_init(Buffer_Alloc alloc, Buffer_Free free);
  * @param size size of buffer size
  * @return Buffer the pointer for alloc with size
  */
-Buffer Buffer_alloc_(size_t size, const char *filename, int line);
+Buffer Buffer_alloc_(uint32_t size, const char *filename, int line);
 #define Buffer_alloc(size) Buffer_alloc_(size, __FILE__, __LINE__)
 /**
  * @brief clone buffer from pointer and size
@@ -27,7 +27,8 @@ Buffer Buffer_alloc_(size_t size, const char *filename, int line);
  * @param source pointer of source buffer
  * @return Buffer pointer of the new buffer
  */
-Buffer Buffer_from_(size_t size, Buffer source, const char *filename, int line);
+Buffer Buffer_from_(uint32_t size, Buffer source, const char *filename,
+                    int line);
 #define Buffer_from(size, source) Buffer_from_(size, source, __FILE__, __LINE__)
 /**
  * @brief free buffer with pointer

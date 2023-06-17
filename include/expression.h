@@ -47,7 +47,8 @@ Expression readMemberExpression(SourceFile file, cstring source);
 int isUnaryOperator(SourceFile file, Token token);
 Expression readUnaryExpression(SourceFile file, cstring source);
 
-int getCalculateLevel(Token token);
+int isComputeExpression(SourceFile file, Token token);
+Expression readComputeExpression(SourceFile file, cstring source);
 
 typedef enum e_BindType { BT_Unknown, BT_Left, BT_Right, BT_Both } BindType;
 
@@ -103,6 +104,10 @@ struct s_Expression {
       BindType bind;
     } binary;
     Expression bracket;
+    struct {
+      Expression host;
+      Expression key;
+    } compute;
     Lambda lambda;
     Function function;
     Token literal;

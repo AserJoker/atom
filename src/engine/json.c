@@ -1,4 +1,5 @@
 #include "json.h"
+#include "expression.h"
 #include "parser.h"
 static JSON_Value JSON_fromToken(Token token) {
   cstring s = cstring_from(token->raw);
@@ -87,7 +88,12 @@ JSON_Value JSON_fromExpression(Expression expression) {
     JSON_setField(obj, "generator",
                   JSON_createBoolean(expression->function->generator));
     break;
+  case ET_Compute:
+    JSON_setField(obj, "type", JSON_createString("Compute"));
+    JSON_setField(obj, "host", JSON_fromExpression(expression->compute.host));
+    JSON_setField(obj, "key", JSON_fromExpression(expression->compute.key));
+    break;
   }
-  JSON_setField(obj,"level",JSON_createDouble(expression->level));
+  JSON_setField(obj, "level", JSON_createDouble(expression->level));
   return obj;
 }
