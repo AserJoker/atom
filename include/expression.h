@@ -69,8 +69,6 @@ typedef enum e_ExpressionType {
   ET_Function,
   ET_Compute,
   ET_Call,
-  ET_OptionalCompute,
-  ET_OptionalCall,
   ET_Array,
   EF_Object,
   ET_Class,
@@ -92,6 +90,11 @@ typedef struct s_Function {
   int generator;
 } *Function;
 
+typedef struct s_FunctionCall {
+  Expression callee;
+  List args;
+} *FunctionCall;
+
 struct s_Expression {
   AstNode node;
   ExpressionType type;
@@ -109,6 +112,7 @@ struct s_Expression {
       Expression key;
     } compute;
     Lambda lambda;
+    FunctionCall call;
     Function function;
     Token literal;
     Token Identifier;

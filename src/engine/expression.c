@@ -251,6 +251,15 @@ void Expression_dispose(Expression expression) {
     }
     Buffer_free(expression->function);
     break;
+  case ET_Call:
+    if (expression->call->args) {
+      List_dispose(expression->call->args);
+    }
+    if (expression->call->callee) {
+      Expression_dispose(expression->call->callee);
+    }
+    Buffer_free(expression->call);
+    break;
   default:
     if (expression->binary.left) {
       Expression_dispose(expression->binary.left);
