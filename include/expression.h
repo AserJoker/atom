@@ -63,7 +63,7 @@ int isObjectExpression(SourceFile file, Token token);
 Expression readObjectExpression(SourceFile file, cstring source);
 
 int isClassExpression(SourceFile file, Token token);
-Expression readClassExpression(SourceFile file, Token token);
+Expression readClassExpression(SourceFile file, cstring source);
 
 typedef enum e_BindType { BT_Unknown, BT_Left, BT_Right, BT_Both } BindType;
 
@@ -122,13 +122,16 @@ typedef struct s_ClassProperty {
   Expression key;
   Expression value;
   int isPrivate;
+  int isStatic;
   List decorators;
 } *ClassProperty;
 
 typedef struct s_Class {
   List properties;
+  List staticBlocks;
   List decorators;
   Expression extends;
+  Token name;
 } *Class;
 
 typedef struct s_Object {

@@ -159,13 +159,46 @@ static JSON_Value JSON_fromObjectProperty(ObjectProperty property) {
 }
 JSON_Value JSON_fromObject(Expression expression) {
   JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Object"));
   JSON_setField(obj, "properties",
                 JSON_fromList(expression->object->properties,
                               (ToJSON)JSON_fromObjectProperty));
   return obj;
 }
+static JSON_Value JSON_fromClassProperty(ClassProperty property) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(
+      obj, "decorators",
+      JSON_fromList(property->decorators, (ToJSON)JSON_fromExpression));
+  if (property->key) {
+    JSON_setField(obj, "key", JSON_fromExpression(property->key));
+  }
+  if (property->value) {
+    JSON_setField(obj, "value", JSON_fromExpression(property->value));
+  }
+  JSON_setField(obj, "private", JSON_createBoolean(property->isPrivate));
+  JSON_setField(obj, "static", JSON_createBoolean(property->isStatic));
+  return obj;
+}
 JSON_Value JSON_fromClass(Expression expression) {
   JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Class"));
+  if (expression->clazz->name) {
+    JSON_setField(obj, "name", JSON_fromToken(expression->clazz->name));
+  }
+  if (expression->clazz->extends) {
+    JSON_setField(obj, "extends",
+                  JSON_fromExpression(expression->clazz->extends));
+  }
+  JSON_setField(obj, "decorators",
+                JSON_fromList(expression->clazz->decorators,
+                              (ToJSON)JSON_fromExpression));
+  JSON_setField(obj, "properties",
+                JSON_fromList(expression->clazz->properties,
+                              (ToJSON)JSON_fromClassProperty));
+  JSON_setField(obj, "staticBlocks",
+                JSON_fromList(expression->clazz->staticBlocks,
+                              (ToJSON)JSON_fromStatement));
   return obj;
 }
 

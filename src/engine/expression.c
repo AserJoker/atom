@@ -102,6 +102,7 @@ static struct ExpressionHandler atom_handlers[] = {
     {isBracketExpression, readBracketExpression},
     {isArrayExpression, readArrayExpression},
     {isObjectExpression, readObjectExpression},
+    {isClassExpression, readClassExpression},
     {0, 0}};
 
 static struct ExpressionHandler operator_handlers[] = {
@@ -278,6 +279,24 @@ void Expression_dispose(Expression expression) {
       List_dispose(expression->object->properties);
     }
     Buffer_free(expression->object);
+    break;
+  case ET_Class:
+    if (expression->clazz->extends) {
+      Expression_dispose(expression->clazz->extends);
+    }
+    if (expression->clazz->decorators) {
+      List_dispose(expression->clazz->decorators);
+    }
+    if (expression->clazz->properties) {
+      List_dispose(expression->clazz->properties);
+    }
+    if (expression->clazz->name) {
+      Token_dispose(expression->clazz->name);
+    }
+    if (expression->clazz->staticBlocks) {
+      List_dispose(expression->clazz->staticBlocks);
+    }
+    Buffer_free(expression->clazz);
     break;
   default:
     if (expression->binary.left) {

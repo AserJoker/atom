@@ -32,7 +32,7 @@ static ObjectProperty readObjectProperty(SourceFile file, cstring source) {
       goto failed;
     }
   }
-  if (checkToken(token, TT_Keyword, "getter")) {
+  if (checkToken(token, TT_Keyword, "get")) {
     getter = 1;
     selector = token->raw.end;
     Token_dispose(token);
@@ -41,7 +41,7 @@ static ObjectProperty readObjectProperty(SourceFile file, cstring source) {
       goto failed;
     }
   }
-  if (checkToken(token, TT_Keyword, "setter")) {
+  if (checkToken(token, TT_Keyword, "set")) {
     setter = 1;
     selector = token->raw.end;
     Token_dispose(token);
