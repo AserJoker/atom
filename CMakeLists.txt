@@ -11,6 +11,8 @@ aux_source_directory(${PROJECT_SOURCE_DIR}/src/engine ENGINE)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/engine/statement ENGINE_STATEMENT)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/engine/expression ENGINE_EXPRESSION)
 
+aux_source_directory(${PROJECT_SOURCE_DIR}/include HEADERS)
+
 if(CMAKE_BUILD_TYPE STREQUAL Debug)
     add_definitions(
         -D_DEBUG

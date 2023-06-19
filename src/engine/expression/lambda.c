@@ -120,10 +120,11 @@ Expression readLambdaExpression(SourceFile file, cstring source) {
   }
   selector = token->raw.end;
   Token_dispose(token);
-  expr->lambda->body = readBlockStatement(file, selector);
+  expr->lambda->body = readStatement(file, selector);
   if (!expr->lambda->body) {
     goto failed;
   }
+  selector = expr->lambda->body->node->position.end;
   expr->node->position.begin = source;
   expr->node->position.end = selector;
   return expr;

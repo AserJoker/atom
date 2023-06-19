@@ -100,13 +100,17 @@ static struct ExpressionHandler atom_handlers[] = {
     {isLambdaExpression, readLambdaExpression},
     {isIdentifierExpression, readIdentifierExpression},
     {isBracketExpression, readBracketExpression},
+    {isArrayExpression, readArrayExpression},
+    {isObjectExpression, readObjectExpression},
     {0, 0}};
 
 static struct ExpressionHandler operator_handlers[] = {
     {isCalculateOperator, readCalculateExpression},
+    {isOptionalExpression, readOptionalExpression},
     {isMemberOperator, readMemberExpression},
     {isUpdateOperator, readUpdateExpression},
     {isComputeExpression, readComputeExpression},
+    {isCallExpression, readCallExpression},
     {0, 0}};
 
 Expression readExpression(SourceFile file, cstring source) {
@@ -158,6 +162,9 @@ Expression readExpression(SourceFile file, cstring source) {
           if (handler.checker(file, token)) {
             Token_dispose(token);
             Expression expr = handler.reader(file, selector);
+            if (!expr) {
+              goto failed;
+            }
             insertExpression(expr);
             selector = expr->node->position.end;
             break;
@@ -252,13 +259,25 @@ void Expression_dispose(Expression expression) {
     Buffer_free(expression->function);
     break;
   case ET_Call:
-    if (expression->call->args) {
-      List_dispose(expression->call->args);
+  case ET_OptionalCall:
+    if (expression->call.args) {
+      List_dispose(expression->call.args);
     }
-    if (expression->call->callee) {
-      Expression_dispose(expression->call->callee);
+    if (expression->call.callee) {
+      Expression_dispose(expression->call.callee);
     }
-    Buffer_free(expression->call);
+    break;
+  case ET_Array:
+    if (expression->array->items) {
+      List_dispose(expression->array->items);
+    }
+    Buffer_free(expression->array);
+    break;
+  case ET_Object:
+    if (expression->object->properties) {
+      List_dispose(expression->object->properties);
+    }
+    Buffer_free(expression->object);
     break;
   default:
     if (expression->binary.left) {

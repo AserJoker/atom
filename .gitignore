@@ -1,4 +1,5 @@
 .cache
 *.dll
 *.exe
+*.gch
 build

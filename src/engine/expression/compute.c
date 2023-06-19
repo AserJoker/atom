@@ -21,7 +21,7 @@ Expression readComputeExpression(SourceFile file, cstring source) {
     goto failed;
   }
   selector = token->raw.end;
-  //Token_dispose(token);
+  Token_dispose(token);
   ExpressionContext ectx = pushExpressionContext();
   expr->compute.key = readExpression(file, selector);
   popExpressionContext(ectx);

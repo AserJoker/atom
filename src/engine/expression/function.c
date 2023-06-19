@@ -29,6 +29,8 @@ Expression readFunctionExpression(SourceFile file, cstring source) {
   expr->function->body = NULL;
   expr->function->async = 0;
   expr->function->generator = 0;
+  expr->function->getter = 0;
+  expr->function->setter = 0;
   expr->type = ET_Function;
   List_Option opt = {1, (Buffer_Free)Expression_dispose};
   expr->function->args = List_create(opt);

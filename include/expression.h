@@ -50,6 +50,21 @@ Expression readUnaryExpression(SourceFile file, cstring source);
 int isComputeExpression(SourceFile file, Token token);
 Expression readComputeExpression(SourceFile file, cstring source);
 
+int isCallExpression(SourceFile file, Token token);
+Expression readCallExpression(SourceFile file, cstring source);
+
+int isOptionalExpression(SourceFile file, Token token);
+Expression readOptionalExpression(SourceFile file, cstring source);
+
+int isArrayExpression(SourceFile file, Token token);
+Expression readArrayExpression(SourceFile file, cstring source);
+
+int isObjectExpression(SourceFile file, Token token);
+Expression readObjectExpression(SourceFile file, cstring source);
+
+int isClassExpression(SourceFile file, Token token);
+Expression readClassExpression(SourceFile file, Token token);
+
 typedef enum e_BindType { BT_Unknown, BT_Left, BT_Right, BT_Both } BindType;
 
 struct s_ExpressionContext {
@@ -69,8 +84,10 @@ typedef enum e_ExpressionType {
   ET_Function,
   ET_Compute,
   ET_Call,
+  ET_OptionalCompute,
+  ET_OptionalCall,
   ET_Array,
-  EF_Object,
+  ET_Object,
   ET_Class,
 } ExpressionType;
 
@@ -88,12 +105,35 @@ typedef struct s_Function {
   Statement body;
   int async;
   int generator;
+  int getter;
+  int setter;
 } *Function;
 
-typedef struct s_FunctionCall {
-  Expression callee;
-  List args;
-} *FunctionCall;
+typedef struct s_Array {
+  List items;
+} *Array;
+
+typedef struct s_ObjectProperty {
+  Expression key;
+  Expression value;
+} *ObjectProperty;
+
+typedef struct s_ClassProperty {
+  Expression key;
+  Expression value;
+  int isPrivate;
+  List decorators;
+} *ClassProperty;
+
+typedef struct s_Class {
+  List properties;
+  List decorators;
+  Expression extends;
+} *Class;
+
+typedef struct s_Object {
+  List properties;
+} *Object;
 
 struct s_Expression {
   AstNode node;
@@ -112,8 +152,14 @@ struct s_Expression {
       Expression key;
     } compute;
     Lambda lambda;
-    FunctionCall call;
+    struct {
+      Expression callee;
+      List args;
+    } call;
     Function function;
+    Array array;
+    Object object;
+    Class clazz;
     Token literal;
     Token Identifier;
   };
