@@ -103,6 +103,11 @@ static struct ExpressionHandler atom_handlers[] = {
     {isArrayExpression, readArrayExpression},
     {isObjectExpression, readObjectExpression},
     {isClassExpression, readClassExpression},
+    {isNewExpression, readNewExpression},
+    {isDeleteExpression, readDeleteExpression},
+    {isAwaitExpression, readAwaitExpression},
+    {isThisExpression, readThisExpression},
+    {isSuperExpression, readSuperExpression},
     {0, 0}};
 
 static struct ExpressionHandler operator_handlers[] = {
@@ -112,6 +117,7 @@ static struct ExpressionHandler operator_handlers[] = {
     {isUpdateOperator, readUpdateExpression},
     {isComputeExpression, readComputeExpression},
     {isCallExpression, readCallExpression},
+    {isConditionExpression, readConditionExpression},
     {0, 0}};
 
 Expression readExpression(SourceFile file, cstring source) {
@@ -297,6 +303,17 @@ void Expression_dispose(Expression expression) {
       List_dispose(expression->clazz->staticBlocks);
     }
     Buffer_free(expression->clazz);
+    break;
+  case ET_Condition:
+    if (expression->condition.condition) {
+      Expression_dispose(expression->condition.condition);
+    }
+    if (expression->condition.consequent) {
+      Expression_dispose(expression->condition.consequent);
+    }
+    if (expression->condition.alternate) {
+      Expression_dispose(expression->condition.alternate);
+    }
     break;
   default:
     if (expression->binary.left) {

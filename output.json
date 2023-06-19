@@ -1,115 +1,52 @@
 {
   "type": "Expression",
   "expression": {
-    "type": "Class",
-    "name": "Test",
-    "decorators": [],
-    "properties": [
-      {
-        "decorators": [
-          {
-            "type": "Identifier",
-            "raw": "datra",
-            "level": -2.000000
-          }
-        ],
-        "key": {
+    "type": "Calculate",
+    "left": {
+      "type": "Identifier",
+      "raw": "a",
+      "level": -2.000000
+    },
+    "right": {
+      "type": "Condition",
+      "condition": {
+        "type": "Calculate",
+        "left": {
           "type": "Identifier",
-          "raw": "calc",
+          "raw": "b",
           "level": -2.000000
         },
-        "value": {
-          "type": "Function",
-          "name": null,
-          "args": [],
-          "body": {
-            "type": "Block",
-            "body": [
-              {
-                "type": "Expression",
-                "expression": {
-                  "type": "Calculate",
-                  "left": {
-                    "type": "Identifier",
-                    "raw": "c",
-                    "level": -2.000000
-                  },
-                  "right": {
-                    "type": "Calculate",
-                    "left": {
-                      "type": "Identifier",
-                      "raw": "a",
-                      "level": -2.000000
-                    },
-                    "right": {
-                      "type": "Identifier",
-                      "raw": "b",
-                      "level": -2.000000
-                    },
-                    "operator": "+",
-                    "level": 2.000000
-                  },
-                  "operator": "=",
-                  "level": 11.000000
-                }
-              }
-            ]
+        "right": {
+          "type": "Calculate",
+          "left": {
+            "type": "Identifier",
+            "raw": "d",
+            "level": -2.000000
           },
-          "async": false,
-          "generator": false,
-          "getter": true,
-          "setter": false,
-          "level": -2.000000
+          "right": {
+            "type": "Identifier",
+            "raw": "c",
+            "level": -2.000000
+          },
+          "operator": ">",
+          "level": 4.000000
         },
-        "private": true
+        "operator": "||",
+        "level": 10.000000
       },
-      {
-        "decorators": [],
-        "key": {
-          "type": "Identifier",
-          "raw": "B",
-          "level": -2.000000
-        },
-        "value": {
-          "type": "Class",
-          "extends": {
-            "type": "Identifier",
-            "raw": "Data",
-            "level": -2.000000
-          },
-          "decorators": [],
-          "properties": [],
-          "staticBlocks": [],
-          "level": -2.000000
-        },
-        "private": false
-      }
-    ],
-    "staticBlocks": [
-      {
-        "type": "Block",
-        "body": [
-          {
-            "type": "Expression",
-            "expression": {
-              "type": "Calculate",
-              "left": {
-                "type": "Identifier",
-                "raw": "a",
-                "level": -2.000000
-              },
-              "right": {
-                "type": "Literal",
-                "raw": "123",
-                "level": -2.000000
-              },
-              "operator": "=",
-              "level": 11.000000
-            }
-          }
-        ]
-      }
-    ],
-    "level": -2.000000
+      "consequent": {
+        "type": "Identifier",
+        "raw": "b",
+        "level": -2.000000
+      },
+      "alternate": {
+        "type": "Identifier",
+        "raw": "c",
+        "level": -2.000000
+      },
+      "level": 10.000000
+    },
+    "operator": "=",
+    "level": 11.000000
   }
 }

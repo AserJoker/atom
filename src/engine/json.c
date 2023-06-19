@@ -202,6 +202,51 @@ JSON_Value JSON_fromClass(Expression expression) {
   return obj;
 }
 
+JSON_Value JSON_fromNew(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("New"));
+  JSON_setField(obj, "newExpression", JSON_fromExpression(expression->newExpr));
+  return obj;
+}
+
+JSON_Value JSON_fromDelete(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Delete"));
+  JSON_setField(obj, "newExpression", JSON_fromExpression(expression->newExpr));
+  return obj;
+}
+
+JSON_Value JSON_fromAwait(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Await"));
+  JSON_setField(obj, "newExpression", JSON_fromExpression(expression->newExpr));
+  return obj;
+}
+
+JSON_Value JSON_fromThis(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("This"));
+  return obj;
+}
+
+JSON_Value JSON_fromSuper(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Super"));
+  return obj;
+}
+
+JSON_Value JSON_fromCondition(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Condition"));
+  JSON_setField(obj, "condition",
+                JSON_fromExpression(expression->condition.condition));
+  JSON_setField(obj, "consequent",
+                JSON_fromExpression(expression->condition.consequent));
+  JSON_setField(obj, "alternate",
+                JSON_fromExpression(expression->condition.alternate));
+  return obj;
+}
+
 JSON_Value JSON_fromExpression(Expression expression) {
   JSON_Value obj = NULL;
   switch (expression->type) {
@@ -243,6 +288,24 @@ JSON_Value JSON_fromExpression(Expression expression) {
     break;
   case ET_Class:
     obj = JSON_fromClass(expression);
+    break;
+  case ET_New:
+    obj = JSON_fromNew(expression);
+    break;
+  case ET_Delete:
+    obj = JSON_fromDelete(expression);
+    break;
+  case ET_Await:
+    obj = JSON_fromAwait(expression);
+    break;
+  case ET_This:
+    obj = JSON_fromThis(expression);
+    break;
+  case ET_Super:
+    obj = JSON_fromSuper(expression);
+    break;
+  case ET_Condition:
+    obj = JSON_fromCondition(expression);
     break;
   default:
     break;

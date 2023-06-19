@@ -65,6 +65,24 @@ Expression readObjectExpression(SourceFile file, cstring source);
 int isClassExpression(SourceFile file, Token token);
 Expression readClassExpression(SourceFile file, cstring source);
 
+int isNewExpression(SourceFile file, Token token);
+Expression readNewExpression(SourceFile file, cstring source);
+
+int isDeleteExpression(SourceFile file, Token token);
+Expression readDeleteExpression(SourceFile file, cstring source);
+
+int isAwaitExpression(SourceFile file, Token token);
+Expression readAwaitExpression(SourceFile file, cstring source);
+
+int isThisExpression(SourceFile file, Token token);
+Expression readThisExpression(SourceFile file, cstring source);
+
+int isSuperExpression(SourceFile file, Token token);
+Expression readSuperExpression(SourceFile file, cstring source);
+
+int isConditionExpression(SourceFile file, Token token);
+Expression readConditionExpression(SourceFile file, cstring source);
+
 typedef enum e_BindType { BT_Unknown, BT_Left, BT_Right, BT_Both } BindType;
 
 struct s_ExpressionContext {
@@ -89,6 +107,12 @@ typedef enum e_ExpressionType {
   ET_Array,
   ET_Object,
   ET_Class,
+  ET_Await,
+  ET_New,
+  ET_Delete,
+  ET_This,
+  ET_Super,
+  ET_Condition
 } ExpressionType;
 
 typedef struct s_Statement *Statement;
@@ -149,7 +173,12 @@ struct s_Expression {
       Token operator;
       BindType bind;
     } binary;
-    Expression bracket;
+    struct {
+      Expression condition;
+      Expression consequent;
+      Expression alternate;
+    } condition;
+    Expression bracket, await, deleteExpr, newExpr;
     struct {
       Expression host;
       Expression key;

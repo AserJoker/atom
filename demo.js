@@ -1,4 +1,1 @@
-class Test {
-  static B = class extends Data { };
-  
-}
+a = b||d>c?b:c
