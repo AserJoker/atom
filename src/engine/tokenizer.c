@@ -213,6 +213,7 @@ static Token readCommentToken(SourceFile file, cstring source) {
     } else {
       token->type = TT_Comment;
     }
+    return token;
   }
   return NULL;
 }

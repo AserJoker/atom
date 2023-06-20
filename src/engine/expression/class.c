@@ -29,6 +29,11 @@ static ClassProperty readClassProperty(SourceFile file, cstring source) {
   if (!token) {
     goto failed;
   }
+  while (checkToken(token, TT_Symbol, ";")) {
+    selector = token->raw.end;
+    Token_dispose(token);
+    token = readTokenSkipNewline(file, selector);
+  }
   if (checkToken(token, TT_Symbol, "@")) {
     for (;;) {
       selector = token->raw.end;
@@ -324,6 +329,11 @@ Expression readClassExpression(SourceFile file, cstring source) {
       if (!token) {
         goto failed;
       }
+      while (checkToken(token, TT_Symbol, ";")) {
+        selector = token->raw.end;
+        Token_dispose(token);
+        token = readTokenSkipNewline(file, selector);
+      }
       if (isStaticBlock(file, token)) {
         Token_dispose(token);
         Statement block = readStaticBlock(file, selector);
@@ -332,7 +342,7 @@ Expression readClassExpression(SourceFile file, cstring source) {
         }
         List_insert_tail(expr->clazz->staticBlocks, block);
         selector = block->node->position.end;
-      } else {
+      } else if (!checkToken(token, TT_Symbol, "}")) {
         Token_dispose(token);
         ClassProperty property = readClassProperty(file, selector);
         if (!property) {
@@ -345,18 +355,12 @@ Expression readClassExpression(SourceFile file, cstring source) {
         if (property->value) {
           selector = property->value->node->position.end;
         }
+      } else {
+        Token_dispose(token);
       }
       token = readTokenSkipNewline(file, selector);
       if (!token) {
         goto failed;
-      }
-      if (checkToken(token, TT_Symbol, ";")) {
-        selector = token->raw.end;
-        Token_dispose(token);
-        token = readTokenSkipNewline(file, selector);
-        if (!token) {
-          goto failed;
-        }
       }
       if (checkToken(token, TT_Symbol, "}")) {
         break;

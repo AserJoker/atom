@@ -7,29 +7,160 @@ static JSON_Value JSON_fromToken(Token token) {
   Buffer_free(s);
   return res;
 }
-JSON_Value JSON_fromStatement(Statement statement) {
+static JSON_Value JSON_fromBlockStatement(Statement statement) {
+
   JSON_Value obj = JSON_createObject();
-  switch (statement->type) {
-  case ST_Block:
-    JSON_setField(obj, "type", JSON_createString("Block"));
-    JSON_setField(
-        obj, "body",
-        JSON_fromList(statement->block.body, (ToJSON)JSON_fromStatement));
-    break;
-  case ST_Empty:
-    JSON_setField(obj, "type", JSON_createString("Empty"));
-    break;
-  case ST_Expression:
-    JSON_setField(obj, "type", JSON_createString("Expression"));
-    JSON_setField(obj, "expression",
-                  JSON_fromExpression(statement->expression));
-    break;
-  default:
-    break;
+  JSON_setField(obj, "type", JSON_createString("Block"));
+  JSON_setField(
+      obj, "body",
+      JSON_fromList(statement->block.body, (ToJSON)JSON_fromStatement));
+  return obj;
+}
+static JSON_Value JSON_fromEmptyStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Empty"));
+  return obj;
+}
+static JSON_Value JSON_fromExpressionStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Expression"));
+  JSON_setField(obj, "expression", JSON_fromExpression(statement->expression));
+  return obj;
+}
+static JSON_Value JSON_fromAssignmentStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Assignment"));
+  cstring assignment_type = "unknown";
+  if (statement->assignement.type == AT_Const) {
+    assignment_type = "const";
+  } else if (statement->assignement.type == AT_Let) {
+    assignment_type = "let";
+  } else if (statement->assignement.type == AT_Var) {
+    assignment_type = "var";
+  }
+  JSON_setField(obj, "assignment_type", JSON_createString(assignment_type));
+  JSON_setField(obj, "expression",
+                JSON_fromExpression(statement->assignement.expression));
+  return obj;
+}
+static JSON_Value JSON_fromReturnStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Return"));
+  JSON_setField(obj, "expression",
+                statement->expression
+                    ? JSON_fromExpression(statement->expression)
+                    : JSON_createNull());
+  return obj;
+}
+static JSON_Value JSON_fromYieldStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Yield"));
+  JSON_setField(obj, "expression",
+                statement->expression
+                    ? JSON_fromExpression(statement->expression)
+                    : JSON_createNull());
+  return obj;
+}
+
+static JSON_Value JSON_fromBreakStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Break"));
+  JSON_setField(obj, "label",
+                statement->label ? JSON_fromToken(statement->label)
+                                 : JSON_createNull());
+  return obj;
+}
+
+static JSON_Value JSON_fromContinueStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Continue"));
+  JSON_setField(obj, "label",
+                statement->label ? JSON_fromToken(statement->label)
+                                 : JSON_createNull());
+  return obj;
+}
+static JSON_Value JSON_fromWhileStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("While"));
+  JSON_setField(obj, "condition",
+                JSON_fromExpression(statement->whileStatement.condition));
+  JSON_setField(obj, "body",
+                JSON_fromStatement(statement->whileStatement.body));
+  return obj;
+}
+
+static JSON_Value JSON_fromLabelStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Label"));
+  JSON_setField(obj, "label", JSON_fromToken(statement->labelStatement.label));
+  JSON_setField(obj, "body",
+                JSON_fromStatement(statement->labelStatement.body));
+  return obj;
+}
+
+static JSON_Value JSON_fromIfStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("If"));
+  JSON_setField(obj, "condition",
+                JSON_fromExpression(statement->ifStatement.condition));
+  JSON_setField(obj, "consequent",
+                JSON_fromStatement(statement->ifStatement.consequent));
+  if (statement->ifStatement.alternate) {
+    JSON_setField(obj, "alternate",
+                  JSON_fromStatement(statement->ifStatement.alternate));
   }
   return obj;
 }
-JSON_Value JSON_fromBracket(Expression expression) {
+static JSON_Value JSON_fromSwitchPattern(SwitchPattern pattern) {
+  JSON_Value obj = JSON_createObject();
+  if (pattern->condition) {
+    JSON_setField(obj, "condition", JSON_fromExpression(pattern->condition));
+  }
+  JSON_setField(obj, "body",
+                JSON_fromList(pattern->body, (ToJSON)JSON_fromStatement));
+  return obj;
+}
+static JSON_Value JSON_fromSwitchStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Switch"));
+  JSON_setField(obj, "condition",
+                JSON_fromExpression(statement->switchStatement.condition));
+  JSON_setField(obj, "patterns",
+                JSON_fromList(statement->switchStatement.patterns,
+                              (ToJSON)JSON_fromSwitchPattern));
+  return obj;
+}
+JSON_Value JSON_fromStatement(Statement statement) {
+  switch (statement->type) {
+  case ST_Block:
+    return JSON_fromBlockStatement(statement);
+  case ST_Empty:
+    return JSON_fromEmptyStatement(statement);
+  case ST_Expression:
+    return JSON_fromExpressionStatement(statement);
+  case ST_Assignment:
+    return JSON_fromAssignmentStatement(statement);
+  case ST_Return:
+    return JSON_fromReturnStatement(statement);
+  case ST_Yield:
+    return JSON_fromYieldStatement(statement);
+  case ST_Break:
+    return JSON_fromBreakStatement(statement);
+  case ST_Continue:
+    return JSON_fromContinueStatement(statement);
+  case ST_While:
+    return JSON_fromWhileStatement(statement);
+  case ST_Label:
+    return JSON_fromLabelStatement(statement);
+  case ST_If:
+    return JSON_fromIfStatement(statement);
+  case ST_Switch:
+    return JSON_fromSwitchStatement(statement);
+  default:
+    return JSON_createNull();
+  }
+}
+static JSON_Value JSON_fromBracket(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Bracket"));
   if (expression->bracket) {
@@ -38,7 +169,7 @@ JSON_Value JSON_fromBracket(Expression expression) {
   }
   return obj;
 }
-JSON_Value JSON_fromCalculate(Expression expression) {
+static JSON_Value JSON_fromCalculate(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Calculate"));
   if (expression->binary.left) {
@@ -53,20 +184,20 @@ JSON_Value JSON_fromCalculate(Expression expression) {
   return obj;
 }
 
-JSON_Value JSON_fromLiteral(Expression expression) {
+static JSON_Value JSON_fromLiteral(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Literal"));
   JSON_setField(obj, "raw", JSON_fromToken(expression->literal));
   return obj;
 }
-JSON_Value JSON_fromIdentifier(Expression expression) {
+static JSON_Value JSON_fromIdentifier(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Identifier"));
   JSON_setField(obj, "raw", JSON_fromToken(expression->Identifier));
   return obj;
 }
 
-JSON_Value JSON_fromLambda(Expression expression) {
+static JSON_Value JSON_fromLambda(Expression expression) {
 
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Lambda"));
@@ -78,7 +209,7 @@ JSON_Value JSON_fromLambda(Expression expression) {
   return obj;
 }
 
-JSON_Value JSON_fromFunction(Expression expression) {
+static JSON_Value JSON_fromFunction(Expression expression) {
 
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Function"));
@@ -101,7 +232,7 @@ JSON_Value JSON_fromFunction(Expression expression) {
   return obj;
 }
 
-JSON_Value JSON_fromCompute(Expression expression) {
+static JSON_Value JSON_fromCompute(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Compute"));
   if (expression->compute.host) {
@@ -111,7 +242,7 @@ JSON_Value JSON_fromCompute(Expression expression) {
   return obj;
 }
 
-JSON_Value JSON_fromCall(Expression expression) {
+static JSON_Value JSON_fromCall(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Call"));
   JSON_setField(obj, "callee", JSON_fromExpression(expression->call.callee));
@@ -121,7 +252,7 @@ JSON_Value JSON_fromCall(Expression expression) {
   return obj;
 }
 
-JSON_Value JSON_fromOptionalCall(Expression expression) {
+static JSON_Value JSON_fromOptionalCall(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("OptionalCompute"));
   JSON_setField(obj, "host", JSON_fromExpression(expression->compute.host));
@@ -129,7 +260,7 @@ JSON_Value JSON_fromOptionalCall(Expression expression) {
   return obj;
 }
 
-JSON_Value JSON_fromOptionalCompute(Expression expression) {
+static JSON_Value JSON_fromOptionalCompute(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("OptionalCall"));
   JSON_setField(obj, "callee", JSON_fromExpression(expression->call.callee));
@@ -139,7 +270,7 @@ JSON_Value JSON_fromOptionalCompute(Expression expression) {
   return obj;
 }
 
-JSON_Value JSON_fromArray(Expression expression) {
+static JSON_Value JSON_fromArray(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Array"));
   JSON_setField(
@@ -157,7 +288,7 @@ static JSON_Value JSON_fromObjectProperty(ObjectProperty property) {
   }
   return obj;
 }
-JSON_Value JSON_fromObject(Expression expression) {
+static JSON_Value JSON_fromObject(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Object"));
   JSON_setField(obj, "properties",
@@ -180,7 +311,7 @@ static JSON_Value JSON_fromClassProperty(ClassProperty property) {
   JSON_setField(obj, "static", JSON_createBoolean(property->isStatic));
   return obj;
 }
-JSON_Value JSON_fromClass(Expression expression) {
+static JSON_Value JSON_fromClass(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Class"));
   if (expression->clazz->name) {
@@ -202,40 +333,40 @@ JSON_Value JSON_fromClass(Expression expression) {
   return obj;
 }
 
-JSON_Value JSON_fromNew(Expression expression) {
+static JSON_Value JSON_fromNew(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("New"));
   JSON_setField(obj, "newExpression", JSON_fromExpression(expression->newExpr));
   return obj;
 }
 
-JSON_Value JSON_fromDelete(Expression expression) {
+static JSON_Value JSON_fromDelete(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Delete"));
   JSON_setField(obj, "newExpression", JSON_fromExpression(expression->newExpr));
   return obj;
 }
 
-JSON_Value JSON_fromAwait(Expression expression) {
+static JSON_Value JSON_fromAwait(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Await"));
   JSON_setField(obj, "newExpression", JSON_fromExpression(expression->newExpr));
   return obj;
 }
 
-JSON_Value JSON_fromThis(Expression expression) {
+static JSON_Value JSON_fromThis(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("This"));
   return obj;
 }
 
-JSON_Value JSON_fromSuper(Expression expression) {
+static JSON_Value JSON_fromSuper(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Super"));
   return obj;
 }
 
-JSON_Value JSON_fromCondition(Expression expression) {
+static JSON_Value JSON_fromCondition(Expression expression) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Condition"));
   JSON_setField(obj, "condition",

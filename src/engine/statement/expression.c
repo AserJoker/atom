@@ -1,4 +1,5 @@
 #include "statement.h"
+int isExpressionStatement(SourceFile file, Token token) { return 1; }
 Statement readExpressionStatement(SourceFile file, cstring source) {
   ExpressionContext ectx = pushExpressionContext();
   Expression expr = readExpression(file, source);

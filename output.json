@@ -1,6 +1,6 @@
 {
-  "type": "Expression",
-  "expression": {
+  "type": "If",
+  "condition": {
     "type": "Calculate",
     "left": {
       "type": "Identifier",
@@ -8,8 +8,59 @@
       "level": -2.000000
     },
     "right": {
-      "type": "Condition",
-      "condition": {
+      "type": "Literal",
+      "raw": "0",
+      "level": -2.000000
+    },
+    "operator": ">",
+    "level": 4.000000
+  },
+  "consequent": {
+    "type": "Expression",
+    "expression": {
+      "type": "Calculate",
+      "left": {
+        "type": "Identifier",
+        "raw": "a",
+        "level": -2.000000
+      },
+      "operator": "++",
+      "level": -1.000000
+    }
+  },
+  "alternate": {
+    "type": "If",
+    "condition": {
+      "type": "Calculate",
+      "left": {
+        "type": "Identifier",
+        "raw": "a",
+        "level": -2.000000
+      },
+      "right": {
+        "type": "Literal",
+        "raw": "0",
+        "level": -2.000000
+      },
+      "operator": "==",
+      "level": 5.000000
+    },
+    "consequent": {
+      "type": "Expression",
+      "expression": {
+        "type": "Calculate",
+        "left": {
+          "type": "Identifier",
+          "raw": "b",
+          "level": -2.000000
+        },
+        "operator": "++",
+        "level": -1.000000
+      }
+    },
+    "alternate": {
+      "type": "Expression",
+      "expression": {
         "type": "Calculate",
         "left": {
           "type": "Identifier",
@@ -17,36 +68,13 @@
           "level": -2.000000
         },
         "right": {
-          "type": "Calculate",
-          "left": {
-            "type": "Identifier",
-            "raw": "d",
-            "level": -2.000000
-          },
-          "right": {
-            "type": "Identifier",
-            "raw": "c",
-            "level": -2.000000
-          },
-          "operator": ">",
-          "level": 4.000000
+          "type": "Literal",
+          "raw": "0",
+          "level": -2.000000
         },
-        "operator": "||",
-        "level": 10.000000
-      },
-      "consequent": {
-        "type": "Identifier",
-        "raw": "b",
-        "level": -2.000000
-      },
-      "alternate": {
-        "type": "Identifier",
-        "raw": "c",
-        "level": -2.000000
-      },
-      "level": 10.000000
-    },
-    "operator": "=",
-    "level": 11.000000
+        "operator": "=",
+        "level": 11.000000
+      }
+    }
   }
 }

@@ -225,11 +225,12 @@ failed:
     Expression_dispose(ctx->root);
     ctx->root = NULL;
   }
-finaly:
+finaly : {
   Expression result = ctx->root;
   ctx->root = NULL;
   ctx->current = NULL;
   return result;
+}
 }
 
 void Expression_dispose(Expression expression) {

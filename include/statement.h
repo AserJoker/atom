@@ -7,8 +7,21 @@ typedef enum e_StatementType {
   ST_Block,
   ST_Empty,
   ST_Expression,
+  ST_Assignment,
+  ST_Return,
+  ST_Yield,
+  ST_Label,
+  ST_Break,
+  ST_Continue,
+  ST_While,
+  ST_If,
+  ST_Switch,
 } StatementType;
 
+typedef struct s_SwitchPattern {
+  Expression condition;
+  List body;
+} *SwitchPattern;
 struct s_Statement {
   AstNode node;
   StatementType type;
@@ -17,6 +30,29 @@ struct s_Statement {
       List body;
     } block;
     Expression expression;
+    Token label;
+    struct {
+      enum { AT_Unknown, AT_Const, AT_Let, AT_Var } type;
+      Expression expression;
+    } assignement;
+
+    struct {
+      Expression condition;
+      Statement body;
+    } whileStatement;
+    struct {
+      Token label;
+      Statement body;
+    } labelStatement;
+    struct {
+      Expression condition;
+      Statement consequent;
+      Statement alternate;
+    } ifStatement;
+    struct {
+      Expression condition;
+      List patterns;
+    } switchStatement;
   };
 };
 Statement Statement_create();
@@ -28,4 +64,33 @@ Statement readEmptyStatement(SourceFile file, cstring source);
 
 int isBlockStatement(SourceFile file, Token token);
 Statement readBlockStatement(SourceFile file, cstring source);
+
+int isExpressionStatement(SourceFile file, Token token);
 Statement readExpressionStatement(SourceFile file, cstring source);
+
+int isAssignmentStatement(SourceFile file, Token token);
+Statement readAssignmentStatement(SourceFile file, cstring source);
+
+int isReturnStatement(SourceFile file, Token token);
+Statement readReturnStatement(SourceFile file, cstring source);
+
+int isYieldStatement(SourceFile file, Token token);
+Statement readYieldStatement(SourceFile file, cstring source);
+
+int isBreakStatement(SourceFile file, Token token);
+Statement readBreakStatement(SourceFile file, cstring source);
+
+int isContinueStatement(SourceFile file, Token token);
+Statement readContinueStatement(SourceFile file, cstring source);
+
+int isWhileStatement(SourceFile file, Token token);
+Statement readWhileStatement(SourceFile file, cstring source);
+
+int isLabelStatement(SourceFile file, Token token);
+Statement readLabelStatement(SourceFile file, cstring source);
+
+int isIfStatement(SourceFile file, Token token);
+Statement readIfStatement(SourceFile file, cstring source);
+
+int isSwitchStatement(SourceFile file, Token token);
+Statement readSwitchStatement(SourceFile file,cstring source);
