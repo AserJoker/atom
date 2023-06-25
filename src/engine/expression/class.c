@@ -34,6 +34,26 @@ static ClassProperty readClassProperty(SourceFile file, cstring source) {
     Token_dispose(token);
     token = readTokenSkipNewline(file, selector);
   }
+  if (checkToken(token, TT_Symbol, "@")) {
+    for (;;) {
+      selector = token->raw.end;
+      Token_dispose(token);
+      ExpressionContext ectx = pushExpressionContext();
+      Expression dec = readExpression(file, selector);
+      popExpressionContext(ectx);
+      if (!dec) {
+        goto failed;
+      }
+      List_insert_tail(property->decorators, dec);
+      selector = dec->node->position.end;
+      token = readTokenSkipNewline(file, selector);
+      if (checkToken(token, TT_Symbol, "@")) {
+        continue;
+      } else {
+        break;
+      }
+    }
+  }
   if (checkToken(token, TT_Keyword, "static")) {
     isStatic = 1;
     selector = token->raw.end;
@@ -213,7 +233,8 @@ static int isStaticBlock(SourceFile file, Token token) {
   return 0;
 }
 int isClassExpression(SourceFile file, Token token) {
-  return checkToken(token, TT_Keyword, "class");
+  return checkToken(token, TT_Symbol, "@") ||
+         checkToken(token, TT_Keyword, "class");
 }
 Expression readClassExpression(SourceFile file, cstring source) {
   Expression expr = Expression_create();
@@ -233,6 +254,29 @@ Expression readClassExpression(SourceFile file, cstring source) {
     goto failed;
   }
   expr->node->position.begin = token->raw.begin;
+  if (!checkToken(token, TT_Keyword, "class")) {
+    for (;;) {
+      selector = token->raw.end;
+      Token_dispose(token);
+      ExpressionContext ectx = pushExpressionContext();
+      Expression decorator = readExpression(file, selector);
+      popExpressionContext(ectx);
+      if (!decorator) {
+        goto failed;
+      }
+      List_insert_tail(expr->clazz->decorators, decorator);
+      selector = decorator->node->position.end;
+      token = readTokenSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+      if (checkToken(token, TT_Symbol, "@")) {
+        continue;
+      } else {
+        break;
+      }
+    }
+  }
   if (!checkToken(token, TT_Keyword, "class")) {
     pushError("Unexcept token.missing token 'class'",
               getLocation(file, token->raw.begin));
