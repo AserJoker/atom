@@ -15,6 +15,7 @@ static struct s_StatementHandle handles[] = {
     {isWhileStatement, readWhileStatement},
     {isIfStatement, readIfStatement},
     {isSwitchStatement, readSwitchStatement},
+    {isExportStatement, readExportStatement},
     {isExpressionStatement, readExpressionStatement},
     {0, 0}};
 Statement Statement_create() {
@@ -114,6 +115,10 @@ void Statement_dispose(Statement statement) {
       List_dispose(statement->switchStatement.patterns);
     }
     break;
+  case ST_Export:
+    if (statement->export.statement) {
+      Statement_dispose(statement->export.statement);
+    }
   default:
     break;
   }

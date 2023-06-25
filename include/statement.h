@@ -16,6 +16,11 @@ typedef enum e_StatementType {
   ST_While,
   ST_If,
   ST_Switch,
+  ST_For,
+  ST_ForIn,
+  ST_ForOf,
+  ST_Import,
+  ST_Export,
 } StatementType;
 
 typedef struct s_SwitchPattern {
@@ -54,6 +59,31 @@ struct s_Statement {
       Expression condition;
       List patterns;
     } switchStatement;
+
+    struct {
+      Expression obj;
+      Statement body;
+    } with;
+
+    struct {
+      Statement statement;
+      int isDefault;
+    } export;
+
+    struct {
+      Statement init;
+      Expression condition;
+      Statement after;
+    } forStatement;
+    struct {
+      Statement define;
+      Expression object;
+    } forIn, forOf;
+    struct {
+      List patterns;
+      Token source;
+      List asserts;
+    } import;
   };
 };
 Statement Statement_create();
@@ -94,4 +124,7 @@ int isIfStatement(SourceFile file, Token token);
 Statement readIfStatement(SourceFile file, cstring source);
 
 int isSwitchStatement(SourceFile file, Token token);
-Statement readSwitchStatement(SourceFile file,cstring source);
+Statement readSwitchStatement(SourceFile file, cstring source);
+
+int isExportStatement(SourceFile file, Token token);
+Statement readExportStatement(SourceFile file, cstring source);

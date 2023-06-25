@@ -132,6 +132,15 @@ static JSON_Value JSON_fromSwitchStatement(Statement statement) {
                               (ToJSON)JSON_fromSwitchPattern));
   return obj;
 }
+static JSON_Value JSON_fromExportStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Export"));
+  JSON_setField(obj, "statement",
+                JSON_fromStatement(statement->export.statement));
+  JSON_setField(obj, "default",
+                JSON_createBoolean(statement->export.isDefault));
+  return obj;
+}
 JSON_Value JSON_fromStatement(Statement statement) {
   switch (statement->type) {
   case ST_Block:
@@ -158,6 +167,8 @@ JSON_Value JSON_fromStatement(Statement statement) {
     return JSON_fromIfStatement(statement);
   case ST_Switch:
     return JSON_fromSwitchStatement(statement);
+  case ST_Export:
+    return JSON_fromExportStatement(statement);
   default:
     return JSON_createNull();
   }
