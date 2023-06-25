@@ -115,6 +115,8 @@ static JSON_Value JSON_fromSwitchPattern(SwitchPattern pattern) {
   JSON_Value obj = JSON_createObject();
   if (pattern->condition) {
     JSON_setField(obj, "condition", JSON_fromExpression(pattern->condition));
+  } else {
+    JSON_setField(obj, "condition", JSON_createNull());
   }
   JSON_setField(obj, "body",
                 JSON_fromList(pattern->body, (ToJSON)JSON_fromStatement));

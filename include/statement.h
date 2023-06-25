@@ -21,6 +21,7 @@ typedef enum e_StatementType {
 typedef struct s_SwitchPattern {
   Expression condition;
   List body;
+  strings position;
 } *SwitchPattern;
 struct s_Statement {
   AstNode node;

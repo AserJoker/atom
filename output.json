@@ -1,80 +1,68 @@
 {
-  "type": "If",
+  "type": "Switch",
   "condition": {
-    "type": "Calculate",
-    "left": {
-      "type": "Identifier",
-      "raw": "a",
-      "level": -2.000000
-    },
-    "right": {
-      "type": "Literal",
-      "raw": "0",
-      "level": -2.000000
-    },
-    "operator": ">",
-    "level": 4.000000
+    "type": "Identifier",
+    "raw": "a",
+    "level": -2.000000
   },
-  "consequent": {
-    "type": "Expression",
-    "expression": {
-      "type": "Calculate",
-      "left": {
-        "type": "Identifier",
-        "raw": "a",
-        "level": -2.000000
-      },
-      "operator": "++",
-      "level": -1.000000
-    }
-  },
-  "alternate": {
-    "type": "If",
-    "condition": {
-      "type": "Calculate",
-      "left": {
-        "type": "Identifier",
-        "raw": "a",
-        "level": -2.000000
-      },
-      "right": {
+  "patterns": [
+    {
+      "condition": {
         "type": "Literal",
-        "raw": "0",
+        "raw": "1",
         "level": -2.000000
       },
-      "operator": "==",
-      "level": 5.000000
+      "body": []
     },
-    "consequent": {
-      "type": "Expression",
-      "expression": {
-        "type": "Calculate",
-        "left": {
-          "type": "Identifier",
-          "raw": "b",
-          "level": -2.000000
+    {
+      "condition": {
+        "type": "Literal",
+        "raw": "2",
+        "level": -2.000000
+      },
+      "body": [
+        {
+          "type": "Expression",
+          "expression": {
+            "type": "Identifier",
+            "raw": "b",
+            "level": -2.000000
+          }
         },
-        "operator": "++",
-        "level": -1.000000
-      }
+        {
+          "type": "Break",
+          "label": null
+        }
+      ]
     },
-    "alternate": {
-      "type": "Expression",
-      "expression": {
-        "type": "Calculate",
-        "left": {
-          "type": "Identifier",
-          "raw": "b",
-          "level": -2.000000
-        },
-        "right": {
-          "type": "Literal",
-          "raw": "0",
-          "level": -2.000000
-        },
-        "operator": "=",
-        "level": 11.000000
-      }
+    {
+      "condition": {
+        "type": "Literal",
+        "raw": "3",
+        "level": -2.000000
+      },
+      "body": [
+        {
+          "type": "Expression",
+          "expression": {
+            "type": "Identifier",
+            "raw": "c",
+            "level": -2.000000
+          }
+        }
+      ]
+    },
+    {
+      "body": [
+        {
+          "type": "Expression",
+          "expression": {
+            "type": "Identifier",
+            "raw": "d",
+            "level": -2.000000
+          }
+        }
+      ]
     }
-  }
+  ]
 }
