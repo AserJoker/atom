@@ -21,6 +21,8 @@ typedef enum e_StatementType {
   ST_ForOf,
   ST_Import,
   ST_Export,
+  ST_With,
+  ST_DoWhile,
 } StatementType;
 
 typedef struct s_SwitchPattern {
@@ -128,3 +130,6 @@ Statement readSwitchStatement(SourceFile file, cstring source);
 
 int isExportStatement(SourceFile file, Token token);
 Statement readExportStatement(SourceFile file, cstring source);
+
+int isWithStatement(SourceFile file, Token token);
+Statement readWithStatement(SourceFile file, cstring source);
