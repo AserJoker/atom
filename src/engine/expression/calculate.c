@@ -43,7 +43,9 @@ static cstring unaryOperators[] = {"++", "--", "...", "!", "+", "-", "~", 0};
 static cstring updateOperators[] = {"++", "--", 0};
 
 int isCalculateOperator(SourceFile file, Token token) {
-  if (checkToken(token, TT_Keyword, "instanceof")) {
+  if (checkToken(token, TT_Keyword, "instanceof") ||
+      checkToken(token, TT_Keyword, "in") ||
+      checkToken(token, TT_Keyword, "of")) {
     return 1;
   }
   if (token->type != TT_Symbol) {
@@ -108,7 +110,9 @@ Expression readCalculateExpression(SourceFile file, cstring source) {
   Token token = readTokenSkipNewline(file, source);
   Expression expr = Expression_create();
   expr->binary.operator= token;
-  if (checkToken(token, TT_Keyword, "instanceof")) {
+  if (checkToken(token, TT_Keyword, "instanceof") ||
+      checkToken(token, TT_Keyword, "in") ||
+      checkToken(token, TT_Keyword, "of")) {
     expr->level = 4;
   } else {
     expr->level = getCalculateLevel(token);
