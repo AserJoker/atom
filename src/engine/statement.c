@@ -7,7 +7,6 @@ struct s_StatementHandle {
 static struct s_StatementHandle handles[] = {
     {isBlockStatement, readBlockStatement},
     {isEmptyStatement, readEmptyStatement},
-    {isAssignmentStatement, readAssignmentStatement},
     {isReturnStatement, readReturnStatement},
     {isBreakStatement, readBreakStatement},
     {isContinueStatement, readContinueStatement},
@@ -18,6 +17,7 @@ static struct s_StatementHandle handles[] = {
     {isExportStatement, readExportStatement},
     {isWithStatement, readWithStatement},
     {isDoWhileStatement, readDoWhileStatement},
+    {isForStatement, readForStatement},
     {isExpressionStatement, readExpressionStatement},
     {0, 0}};
 Statement Statement_create() {
@@ -73,9 +73,6 @@ void Statement_dispose(Statement statement) {
       Expression_dispose(statement->expression);
     }
     break;
-  case ST_Assignment:
-    Expression_dispose(statement->assignement.expression);
-    break;
   case ST_Continue:
   case ST_Break:
     if (statement->label) {
@@ -129,6 +126,29 @@ void Statement_dispose(Statement statement) {
     }
     if (statement->with.body) {
       Statement_dispose(statement->with.body);
+    }
+    break;
+  case ST_For:
+    if (statement->forStatement.init) {
+      Expression_dispose(statement->forStatement.init);
+    }
+    if (statement->forStatement.condition) {
+      Expression_dispose(statement->forStatement.condition);
+    }
+    if (statement->forStatement.after) {
+      Expression_dispose(statement->forStatement.after);
+    }
+    if (statement->forStatement.body) {
+      Statement_dispose(statement->forStatement.body);
+    }
+    break;
+  case ST_ForIn:
+  case ST_ForOf:
+    if (statement->forIn.init) {
+      Expression_dispose(statement->forIn.init);
+    }
+    if (statement->forIn.body) {
+      Statement_dispose(statement->forIn.body);
     }
     break;
   default:

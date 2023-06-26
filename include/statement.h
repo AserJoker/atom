@@ -7,7 +7,6 @@ typedef enum e_StatementType {
   ST_Block,
   ST_Empty,
   ST_Expression,
-  ST_Assignment,
   ST_Return,
   ST_Yield,
   ST_Label,
@@ -39,10 +38,6 @@ struct s_Statement {
     } block;
     Expression expression;
     Token label;
-    struct {
-      enum { AT_Unknown, AT_Const, AT_Let, AT_Var } type;
-      Expression expression;
-    } assignement;
 
     struct {
       Expression condition;
@@ -73,13 +68,14 @@ struct s_Statement {
     } export;
 
     struct {
-      Statement init;
+      Statement body;
+      Expression init;
       Expression condition;
-      Statement after;
+      Expression after;
     } forStatement;
     struct {
-      Statement define;
-      Expression object;
+      Statement body;
+      Expression init;
     } forIn, forOf;
     struct {
       List patterns;
@@ -100,9 +96,6 @@ Statement readBlockStatement(SourceFile file, cstring source);
 
 int isExpressionStatement(SourceFile file, Token token);
 Statement readExpressionStatement(SourceFile file, cstring source);
-
-int isAssignmentStatement(SourceFile file, Token token);
-Statement readAssignmentStatement(SourceFile file, cstring source);
 
 int isReturnStatement(SourceFile file, Token token);
 Statement readReturnStatement(SourceFile file, cstring source);
@@ -136,3 +129,6 @@ Statement readWithStatement(SourceFile file, cstring source);
 
 int isDoWhileStatement(SourceFile file, Token token);
 Statement readDoWhileStatement(SourceFile file, cstring source);
+
+int isForStatement(SourceFile file, Token token);
+Statement readForStatement(SourceFile file, cstring source);

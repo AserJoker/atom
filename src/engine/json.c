@@ -27,22 +27,6 @@ static JSON_Value JSON_fromExpressionStatement(Statement statement) {
   JSON_setField(obj, "expression", JSON_fromExpression(statement->expression));
   return obj;
 }
-static JSON_Value JSON_fromAssignmentStatement(Statement statement) {
-  JSON_Value obj = JSON_createObject();
-  JSON_setField(obj, "type", JSON_createString("Assignment"));
-  cstring assignment_type = "unknown";
-  if (statement->assignement.type == AT_Const) {
-    assignment_type = "const";
-  } else if (statement->assignement.type == AT_Let) {
-    assignment_type = "let";
-  } else if (statement->assignement.type == AT_Var) {
-    assignment_type = "var";
-  }
-  JSON_setField(obj, "assignment_type", JSON_createString(assignment_type));
-  JSON_setField(obj, "expression",
-                JSON_fromExpression(statement->assignement.expression));
-  return obj;
-}
 static JSON_Value JSON_fromReturnStatement(Statement statement) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Return"));
@@ -159,7 +143,34 @@ static JSON_Value JSON_fromWithStatement(Statement statement) {
   JSON_setField(obj, "body", JSON_fromStatement(statement->with.body));
   return obj;
 }
+static JSON_Value JSON_fromForStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("For"));
+  JSON_setField(obj, "init", JSON_fromExpression(statement->forStatement.init));
+  JSON_setField(obj, "condition",
+                JSON_fromExpression(statement->forStatement.condition));
+  if (statement->forStatement.after) {
+    JSON_setField(obj, "after",
+                  JSON_fromExpression(statement->forStatement.after));
+  }
+  JSON_setField(obj, "body", JSON_fromStatement(statement->forStatement.body));
+  return obj;
+}
 
+static JSON_Value JSON_fromForInStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("ForIn"));
+  JSON_setField(obj, "init", JSON_fromExpression(statement->forIn.init));
+  JSON_setField(obj, "body", JSON_fromStatement(statement->forIn.body));
+  return obj;
+}
+static JSON_Value JSON_fromForOfStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("ForOf"));
+  JSON_setField(obj, "init", JSON_fromExpression(statement->forOf.init));
+  JSON_setField(obj, "body", JSON_fromStatement(statement->forOf.body));
+  return obj;
+}
 JSON_Value JSON_fromStatement(Statement statement) {
   switch (statement->type) {
   case ST_Block:
@@ -168,8 +179,6 @@ JSON_Value JSON_fromStatement(Statement statement) {
     return JSON_fromEmptyStatement(statement);
   case ST_Expression:
     return JSON_fromExpressionStatement(statement);
-  case ST_Assignment:
-    return JSON_fromAssignmentStatement(statement);
   case ST_Return:
     return JSON_fromReturnStatement(statement);
   case ST_Yield:
@@ -192,6 +201,12 @@ JSON_Value JSON_fromStatement(Statement statement) {
     return JSON_fromExportStatement(statement);
   case ST_With:
     return JSON_fromWithStatement(statement);
+  case ST_For:
+    return JSON_fromForStatement(statement);
+  case ST_ForIn:
+    return JSON_fromForInStatement(statement);
+  case ST_ForOf:
+    return JSON_fromForOfStatement(statement);
   default:
     return JSON_createNull();
   }
@@ -414,6 +429,15 @@ static JSON_Value JSON_fromCondition(Expression expression) {
   return obj;
 }
 
+static JSON_Value JSON_fromAssignment(Expression expression) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Assignment"));
+  JSON_setField(obj, "expression",
+                JSON_fromExpression(expression->assignment.expression));
+  JSON_setField(obj, "type", JSON_fromToken(expression->assignment.type));
+  return obj;
+}
+
 JSON_Value JSON_fromExpression(Expression expression) {
   JSON_Value obj = NULL;
   switch (expression->type) {
@@ -473,6 +497,9 @@ JSON_Value JSON_fromExpression(Expression expression) {
     break;
   case ET_Condition:
     obj = JSON_fromCondition(expression);
+    break;
+  case ET_Assignment:
+    obj = JSON_fromAssignment(expression);
     break;
   default:
     break;

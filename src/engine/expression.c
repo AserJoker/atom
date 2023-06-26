@@ -94,6 +94,7 @@ struct ExpressionHandler {
 };
 
 static struct ExpressionHandler atom_handlers[] = {
+    {isAssignmentExpression, readAssignmentExpression},
     {isUnaryOperator, readUnaryExpression},
     {isLiteralExpression, readLiteralExpression},
     {isFunctionExpression, readFunctionExpression},
@@ -314,6 +315,14 @@ void Expression_dispose(Expression expression) {
     }
     if (expression->condition.alternate) {
       Expression_dispose(expression->condition.alternate);
+    }
+    break;
+  case ET_Assignment:
+    if (expression->assignment.expression) {
+      Expression_dispose(expression->assignment.expression);
+    }
+    if (expression->assignment.type) {
+      Token_dispose(expression->assignment.type);
     }
     break;
   default:

@@ -83,6 +83,9 @@ Expression readSuperExpression(SourceFile file, cstring source);
 int isConditionExpression(SourceFile file, Token token);
 Expression readConditionExpression(SourceFile file, cstring source);
 
+int isAssignmentExpression(SourceFile file, Token token);
+Expression readAssignmentExpression(SourceFile file, cstring source);
+
 typedef enum e_BindType { BT_Unknown, BT_Left, BT_Right, BT_Both } BindType;
 
 struct s_ExpressionContext {
@@ -112,7 +115,8 @@ typedef enum e_ExpressionType {
   ET_Delete,
   ET_This,
   ET_Super,
-  ET_Condition
+  ET_Condition,
+  ET_Assignment,
 } ExpressionType;
 
 typedef struct s_Statement *Statement;
@@ -178,6 +182,11 @@ struct s_Expression {
       Expression consequent;
       Expression alternate;
     } condition;
+
+    struct {
+      Expression expression;
+      Token type;
+    } assignment;
     Expression bracket, await, deleteExpr, newExpr;
     struct {
       Expression host;
