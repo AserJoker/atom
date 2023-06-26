@@ -66,7 +66,7 @@ struct s_Statement {
     } with;
 
     struct {
-      Statement statement;
+      List exports;
       int isDefault;
     } export;
 

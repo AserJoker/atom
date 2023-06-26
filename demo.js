@@ -1,1 +1,3 @@
-export class A { }
+export {
+    a,b,c
+}

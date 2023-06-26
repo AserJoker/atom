@@ -1,68 +1,30 @@
 {
-  "type": "Switch",
-  "condition": {
-    "type": "Identifier",
-    "raw": "a",
-    "level": -2.000000
-  },
-  "patterns": [
+  "type": "Export",
+  "statement": [
     {
-      "condition": {
-        "type": "Literal",
-        "raw": "1",
+      "type": "Expression",
+      "expression": {
+        "type": "Identifier",
+        "raw": "a",
         "level": -2.000000
-      },
-      "body": []
+      }
     },
     {
-      "condition": {
-        "type": "Literal",
-        "raw": "2",
+      "type": "Expression",
+      "expression": {
+        "type": "Identifier",
+        "raw": "b",
         "level": -2.000000
-      },
-      "body": [
-        {
-          "type": "Expression",
-          "expression": {
-            "type": "Identifier",
-            "raw": "b",
-            "level": -2.000000
-          }
-        },
-        {
-          "type": "Break",
-          "label": null
-        }
-      ]
+      }
     },
     {
-      "condition": {
-        "type": "Literal",
-        "raw": "3",
+      "type": "Expression",
+      "expression": {
+        "type": "Identifier",
+        "raw": "c",
         "level": -2.000000
-      },
-      "body": [
-        {
-          "type": "Expression",
-          "expression": {
-            "type": "Identifier",
-            "raw": "c",
-            "level": -2.000000
-          }
-        }
-      ]
-    },
-    {
-      "body": [
-        {
-          "type": "Expression",
-          "expression": {
-            "type": "Identifier",
-            "raw": "d",
-            "level": -2.000000
-          }
-        }
-      ]
+      }
     }
-  ]
+  ],
+  "default": false
 }

@@ -116,8 +116,8 @@ void Statement_dispose(Statement statement) {
     }
     break;
   case ST_Export:
-    if (statement->export.statement) {
-      Statement_dispose(statement->export.statement);
+    if (statement->export.exports) {
+      List_dispose(statement->export.exports);
     }
   default:
     break;

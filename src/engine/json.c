@@ -135,8 +135,9 @@ static JSON_Value JSON_fromSwitchStatement(Statement statement) {
 static JSON_Value JSON_fromExportStatement(Statement statement) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Export"));
-  JSON_setField(obj, "statement",
-                JSON_fromStatement(statement->export.statement));
+  JSON_setField(
+      obj, "statement",
+      JSON_fromList(statement->export.exports, (ToJSON)JSON_fromStatement));
   JSON_setField(obj, "default",
                 JSON_createBoolean(statement->export.isDefault));
   return obj;
