@@ -89,6 +89,16 @@ static JSON_Value JSON_fromWhileStatement(Statement statement) {
   return obj;
 }
 
+static JSON_Value JSON_fromDoWhileStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("DoWhile"));
+  JSON_setField(obj, "condition",
+                JSON_fromExpression(statement->whileStatement.condition));
+  JSON_setField(obj, "body",
+                JSON_fromStatement(statement->whileStatement.body));
+  return obj;
+}
+
 static JSON_Value JSON_fromLabelStatement(Statement statement) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Label"));
@@ -170,6 +180,8 @@ JSON_Value JSON_fromStatement(Statement statement) {
     return JSON_fromContinueStatement(statement);
   case ST_While:
     return JSON_fromWhileStatement(statement);
+  case ST_DoWhile:
+    return JSON_fromDoWhileStatement(statement);
   case ST_Label:
     return JSON_fromLabelStatement(statement);
   case ST_If:

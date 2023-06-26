@@ -17,6 +17,7 @@ static struct s_StatementHandle handles[] = {
     {isSwitchStatement, readSwitchStatement},
     {isExportStatement, readExportStatement},
     {isWithStatement, readWithStatement},
+    {isDoWhileStatement, readDoWhileStatement},
     {isExpressionStatement, readExpressionStatement},
     {0, 0}};
 Statement Statement_create() {
@@ -81,6 +82,7 @@ void Statement_dispose(Statement statement) {
       Token_dispose(statement->label);
     }
     break;
+  case ST_DoWhile:
   case ST_While:
     if (statement->labelStatement.label) {
       Expression_dispose(statement->whileStatement.condition);

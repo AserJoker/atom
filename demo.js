@@ -1,3 +1,1 @@
-with ({ a, b:2, c }) {
-    a.data = 2
-}
+const { a: b } = { a: 123 };

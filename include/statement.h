@@ -133,3 +133,6 @@ Statement readExportStatement(SourceFile file, cstring source);
 
 int isWithStatement(SourceFile file, Token token);
 Statement readWithStatement(SourceFile file, cstring source);
+
+int isDoWhileStatement(SourceFile file, Token token);
+Statement readDoWhileStatement(SourceFile file, cstring source);

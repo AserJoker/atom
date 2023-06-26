@@ -1,68 +1,45 @@
 {
-  "type": "With",
-  "object": {
-    "type": "Object",
-    "properties": [
-      {
-        "key": {
-          "type": "Identifier",
-          "raw": "a",
-          "level": -2.000000
-        }
-      },
-      {
-        "key": {
-          "type": "Identifier",
-          "raw": "b",
-          "level": -2.000000
-        },
-        "value": {
-          "type": "Literal",
-          "raw": "2",
-          "level": -2.000000
-        }
-      },
-      {
-        "key": {
-          "type": "Identifier",
-          "raw": "c",
-          "level": -2.000000
-        }
-      }
-    ],
-    "level": -2.000000
-  },
-  "body": {
-    "type": "Block",
-    "body": [
-      {
-        "type": "Expression",
-        "expression": {
-          "type": "Calculate",
-          "left": {
-            "type": "Calculate",
-            "left": {
-              "type": "Identifier",
-              "raw": "a",
-              "level": -2.000000
-            },
-            "right": {
-              "type": "Identifier",
-              "raw": "data",
-              "level": -2.000000
-            },
-            "operator": ".",
+  "type": "Assignment",
+  "assignment_type": "const",
+  "expression": {
+    "type": "Calculate",
+    "left": {
+      "type": "Object",
+      "properties": [
+        {
+          "key": {
+            "type": "Identifier",
+            "raw": "a",
             "level": -2.000000
           },
-          "right": {
+          "value": {
+            "type": "Identifier",
+            "raw": "b",
+            "level": -2.000000
+          }
+        }
+      ],
+      "level": -2.000000
+    },
+    "right": {
+      "type": "Object",
+      "properties": [
+        {
+          "key": {
+            "type": "Identifier",
+            "raw": "a",
+            "level": -2.000000
+          },
+          "value": {
             "type": "Literal",
-            "raw": "2",
+            "raw": "123",
             "level": -2.000000
-          },
-          "operator": "=",
-          "level": 11.000000
+          }
         }
-      }
-    ]
+      ],
+      "level": -2.000000
+    },
+    "operator": "=",
+    "level": 11.000000
   }
 }
