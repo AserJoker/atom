@@ -1,3 +1,1 @@
-const printArr = (arr) => {
-    arr.forEach(item=>console.log(item))
-}
+import data,{ a as b,c as d } from "data";

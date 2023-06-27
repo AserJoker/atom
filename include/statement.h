@@ -18,10 +18,10 @@ typedef enum e_StatementType {
   ST_For,
   ST_ForIn,
   ST_ForOf,
-  ST_Import,
   ST_Export,
   ST_With,
   ST_DoWhile,
+  ST_Import,
 } StatementType;
 
 typedef struct s_SwitchPattern {
@@ -29,6 +29,13 @@ typedef struct s_SwitchPattern {
   List body;
   strings position;
 } *SwitchPattern;
+
+typedef struct s_ImportSpecifier {
+  strings position;
+  Token imported;
+  Token local;
+  enum { IST_Namespace, IST_Default, IST_Entity } importType;
+} *ImportSpecifier;
 struct s_Statement {
   AstNode node;
   StatementType type;
@@ -78,7 +85,7 @@ struct s_Statement {
       Expression init;
     } forIn, forOf;
     struct {
-      List patterns;
+      List specifiers;
       Token source;
       List asserts;
     } import;
@@ -132,3 +139,6 @@ Statement readDoWhileStatement(SourceFile file, cstring source);
 
 int isForStatement(SourceFile file, Token token);
 Statement readForStatement(SourceFile file, cstring source);
+
+int isImportStatement(SourceFile file, Token token);
+Statement readImportStatement(SourceFile file, cstring source);

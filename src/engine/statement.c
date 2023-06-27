@@ -5,6 +5,7 @@ struct s_StatementHandle {
   Statement (*reader)(SourceFile file, cstring source);
 };
 static struct s_StatementHandle handles[] = {
+    {isImportStatement, readImportStatement},
     {isBlockStatement, readBlockStatement},
     {isEmptyStatement, readEmptyStatement},
     {isReturnStatement, readReturnStatement},
@@ -150,6 +151,12 @@ void Statement_dispose(Statement statement) {
     if (statement->forIn.body) {
       Statement_dispose(statement->forIn.body);
     }
+    break;
+  case ST_Import:
+    if (statement->import.source) {
+      Token_dispose(statement->import.source);
+    }
+    List_dispose(statement->import.specifiers);
     break;
   default:
     break;

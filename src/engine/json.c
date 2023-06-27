@@ -171,6 +171,39 @@ static JSON_Value JSON_fromForOfStatement(Statement statement) {
   JSON_setField(obj, "body", JSON_fromStatement(statement->forOf.body));
   return obj;
 }
+
+static JSON_Value JSON_fromImportSpecifier(ImportSpecifier specifier) {
+  JSON_Value obj = JSON_createObject();
+  if (specifier->imported) {
+    JSON_setField(obj, "imported", JSON_fromToken(specifier->imported));
+  }
+  if (specifier->local) {
+    JSON_setField(obj, "local", JSON_fromToken(specifier->local));
+  }
+  switch (specifier->importType) {
+
+  case IST_Namespace:
+    JSON_setField(obj, "kind", JSON_createString("Namespace"));
+    break;
+  case IST_Default:
+    JSON_setField(obj, "kind", JSON_createString("Default"));
+    break;
+  case IST_Entity:
+    JSON_setField(obj, "kind", JSON_createString("Entity"));
+    break;
+  }
+  return obj;
+}
+
+static JSON_Value JSON_fromImportStatement(Statement statement) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "specifiers",
+                JSON_fromList(statement->import.specifiers,
+                              (ToJSON)JSON_fromImportSpecifier));
+  JSON_setField(obj, "source", JSON_fromToken(statement->import.source));
+  return obj;
+}
+
 JSON_Value JSON_fromStatement(Statement statement) {
   switch (statement->type) {
   case ST_Block:
@@ -207,6 +240,8 @@ JSON_Value JSON_fromStatement(Statement statement) {
     return JSON_fromForInStatement(statement);
   case ST_ForOf:
     return JSON_fromForOfStatement(statement);
+  case ST_Import:
+    return JSON_fromImportStatement(statement);
   default:
     return JSON_createNull();
   }
