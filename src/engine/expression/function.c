@@ -32,6 +32,7 @@ Expression readFunctionExpression(SourceFile file, cstring source) {
   expr->function->getter = 0;
   expr->function->setter = 0;
   expr->type = ET_Function;
+  expr->bind = BT_None;
   List_Option opt = {1, (Buffer_Free)Expression_dispose};
   expr->function->args = List_create(opt);
   cstring selector = source;

@@ -9,7 +9,7 @@ Expression readMemberExpression(SourceFile file, cstring source) {
   Token token = readTokenSkipNewline(file, source);
   Expression expr = Expression_create();
   expr->binary.operator= token;
-  expr->binary.bind = BT_Both;
+  expr->bind = BT_Both;
   expr->type = ET_Calculate;
   expr->node->position = token->raw;
   return expr;

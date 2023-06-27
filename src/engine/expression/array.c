@@ -6,6 +6,7 @@ Expression readArrayExpression(SourceFile file, cstring source) {
   cstring selector = source;
   Expression expr = Expression_create();
   expr->type = ET_Array;
+  expr->bind = BT_Left;
   expr->array = (Array)Buffer_alloc(sizeof(struct s_Array));
   List_Option opt = {1, (Buffer_Free)Expression_dispose};
   expr->array->items = List_create(opt);

@@ -8,6 +8,7 @@ int isCallExpression(SourceFile file, Token token) {
 Expression readCallExpression(SourceFile file, cstring source) {
   Expression expr = Expression_create();
   expr->type = ET_Call;
+  expr->bind = BT_Left;
   List_Option opt = {1, (Buffer_Free)Expression_dispose};
   expr->call.args = List_create(opt);
   cstring selector = source;

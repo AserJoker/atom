@@ -8,6 +8,7 @@ Expression readAssignmentExpression(SourceFile file, cstring source) {
   cstring selector = source;
   Expression expr = Expression_create();
   expr->type = ET_Assignment;
+  expr->bind = BT_Right;
   expr->assignment.expression = NULL;
   expr->assignment.type = NULL;
   Token token = readTokenSkipNewline(file, selector);
@@ -16,10 +17,6 @@ Expression readAssignmentExpression(SourceFile file, cstring source) {
   }
   expr->assignment.type = token;
   selector = token->raw.end;
-  expr->assignment.expression = readExpression(file, selector);
-  if (!expr->assignment.expression) {
-    goto failed;
-  }
   expr->node->position.begin = source;
   expr->node->position.end = selector;
   return expr;

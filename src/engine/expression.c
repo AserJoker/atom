@@ -53,10 +53,9 @@ void insertExpression(Expression expr) {
       }
     }
   }
-  if (expr->type == ET_Calculate) {
-    if (expr->binary.bind != BT_Left) {
-      ctx->current = expr;
-    }
+
+  if (expr->bind == BT_Right || expr->bind == BT_Both) {
+    ctx->current = expr;
   } else {
     ctx->current = NULL;
   }
@@ -82,7 +81,7 @@ Expression Expression_create() {
   expression->binary.right = NULL;
   expression->binary.operator= NULL;
   expression->level = -2;
-  expression->binary.bind = BT_Both;
+  expression->bind = BT_Unknown;
   return expression;
 }
 
@@ -96,9 +95,9 @@ struct ExpressionHandler {
 static struct ExpressionHandler atom_handlers[] = {
     {isAssignmentExpression, readAssignmentExpression},
     {isUnaryOperator, readUnaryExpression},
+    {isLambdaExpression, readLambdaExpression},
     {isLiteralExpression, readLiteralExpression},
     {isFunctionExpression, readFunctionExpression},
-    {isLambdaExpression, readLambdaExpression},
     {isIdentifierExpression, readIdentifierExpression},
     {isBracketExpression, readBracketExpression},
     {isArrayExpression, readArrayExpression},
@@ -188,8 +187,8 @@ Expression readExpression(SourceFile file, cstring source) {
       for (;;) {
         struct ExpressionHandler handler = atom_handlers[indexOfHandler];
         if (handler.checker == NULL) {
+          pushError("Unexcept token.", getLocation(file, token->raw.begin));
           Token_dispose(token);
-          pushError("Unexcept token.", getLocation(file, selector));
           goto failed;
         } else {
           if (handler.checker(file, token)) {

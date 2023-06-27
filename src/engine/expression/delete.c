@@ -19,6 +19,7 @@ Expression readDeleteExpression(SourceFile file, cstring source) {
     ex->level = -1;
     ex->type = ET_Delete;
     ex->deleteExpr = expr;
+    ex->bind = BT_Right;
     ex->node->position.begin = source;
     ex->node->position.end = expr->node->position.end;
     return ex;

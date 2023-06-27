@@ -10,6 +10,7 @@ Expression readConditionExpression(SourceFile file, cstring source) {
   expr->condition.consequent = NULL;
   expr->condition.alternate = NULL;
   expr->level = 10;
+  expr->bind = BT_Left;
   cstring selector = source;
   Token token = readTokenSkipNewline(file, selector);
   if (!token) {

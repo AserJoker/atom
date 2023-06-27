@@ -434,7 +434,7 @@ static JSON_Value JSON_fromAssignment(Expression expression) {
   JSON_setField(obj, "type", JSON_createString("Assignment"));
   JSON_setField(obj, "expression",
                 JSON_fromExpression(expression->assignment.expression));
-  JSON_setField(obj, "type", JSON_fromToken(expression->assignment.type));
+  JSON_setField(obj, "descrition", JSON_fromToken(expression->assignment.type));
   return obj;
 }
 

@@ -18,6 +18,7 @@ Expression readNewExpression(SourceFile file, cstring source) {
     Expression ex = Expression_create();
     ex->level = -1;
     ex->type = ET_New;
+    ex->bind = BT_Right;
     ex->newExpr = expr;
     ex->node->position.begin = source;
     ex->node->position.end = expr->node->position.end;

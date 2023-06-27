@@ -239,6 +239,7 @@ int isClassExpression(SourceFile file, Token token) {
 Expression readClassExpression(SourceFile file, cstring source) {
   Expression expr = Expression_create();
   expr->type = ET_Class;
+  expr->bind = BT_None;
   expr->clazz = (Class)Buffer_alloc(sizeof(struct s_Class));
   expr->clazz->extends = NULL;
   List_Option dec_opt = {1, (Buffer_Free)Expression_dispose};

@@ -1,42 +1,97 @@
 {
-  "type": "Assignment",
-  "assignment_type": "const",
+  "type": "Expression",
   "expression": {
     "type": "Calculate",
     "left": {
-      "type": "Object",
-      "properties": [
-        {
-          "key": {
-            "type": "Identifier",
-            "raw": "a",
-            "level": -2.000000
-          },
-          "value": {
-            "type": "Identifier",
-            "raw": "b",
-            "level": -2.000000
-          }
-        }
-      ],
+      "type": "Assignment",
+      "expression": {
+        "type": "Identifier",
+        "raw": "printArr",
+        "level": -2.000000
+      },
+      "descrition": "const",
       "level": -2.000000
     },
     "right": {
-      "type": "Object",
-      "properties": [
+      "type": "Lambda",
+      "args": [
         {
-          "key": {
-            "type": "Identifier",
-            "raw": "a",
-            "level": -2.000000
-          },
-          "value": {
-            "type": "Literal",
-            "raw": "123",
-            "level": -2.000000
-          }
+          "type": "Identifier",
+          "raw": "arr",
+          "level": -2.000000
         }
       ],
+      "body": {
+        "type": "Block",
+        "body": [
+          {
+            "type": "Expression",
+            "expression": {
+              "type": "Call",
+              "callee": {
+                "type": "Calculate",
+                "left": {
+                  "type": "Identifier",
+                  "raw": "arr",
+                  "level": -2.000000
+                },
+                "right": {
+                  "type": "Identifier",
+                  "raw": "forEach",
+                  "level": -2.000000
+                },
+                "operator": ".",
+                "level": -2.000000
+              },
+              "args": [
+                {
+                  "type": "Lambda",
+                  "args": [
+                    {
+                      "type": "Identifier",
+                      "raw": "item",
+                      "level": -2.000000
+                    }
+                  ],
+                  "body": {
+                    "type": "Expression",
+                    "expression": {
+                      "type": "Call",
+                      "callee": {
+                        "type": "Calculate",
+                        "left": {
+                          "type": "Identifier",
+                          "raw": "console",
+                          "level": -2.000000
+                        },
+                        "right": {
+                          "type": "Identifier",
+                          "raw": "log",
+                          "level": -2.000000
+                        },
+                        "operator": ".",
+                        "level": -2.000000
+                      },
+                      "args": [
+                        {
+                          "type": "Identifier",
+                          "raw": "item",
+                          "level": -2.000000
+                        }
+                      ],
+                      "level": -2.000000
+                    }
+                  },
+                  "async": true,
+                  "level": -2.000000
+                }
+              ],
+              "level": -2.000000
+            }
+          }
+        ]
+      },
+      "async": false,
       "level": -2.000000
     },
     "operator": "=",

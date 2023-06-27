@@ -10,6 +10,7 @@ Expression readComputeExpression(SourceFile file, cstring source) {
   cstring selector = source;
   Expression expr = Expression_create();
   expr->type = ET_Compute;
+  expr->bind = BT_Left;
   Token token = readTokenSkipNewline(file, selector);
   if (!token) {
     goto failed;

@@ -93,7 +93,7 @@ Expression readUnaryExpression(SourceFile file, cstring source) {
   Token token = readTokenSkipNewline(file, source);
   Expression expr = Expression_create();
   expr->binary.operator= token;
-  expr->binary.bind = BT_Right;
+  expr->bind = BT_Right;
   expr->type = ET_Calculate;
   expr->level = -1;
   expr->node->position = token->raw;
@@ -117,7 +117,7 @@ Expression readCalculateExpression(SourceFile file, cstring source) {
   } else {
     expr->level = getCalculateLevel(token);
   }
-  expr->binary.bind = BT_Both;
+  expr->bind = BT_Both;
   expr->type = ET_Calculate;
   expr->node->position = token->raw;
   return expr;
@@ -126,7 +126,7 @@ Expression readUpdateExpression(SourceFile file, cstring source) {
   Token token = readTokenSkipNewline(file, source);
   Expression expr = Expression_create();
   expr->binary.operator= token;
-  expr->binary.bind = BT_Left;
+  expr->bind = BT_Left;
   expr->type = ET_Calculate;
   expr->level = -1;
   expr->node->position = token->raw;

@@ -169,6 +169,7 @@ int isObjectExpression(SourceFile file, Token token) {
 Expression readObjectExpression(SourceFile file, cstring source) {
   Expression expr = Expression_create();
   expr->type = ET_Object;
+  expr->bind = BT_None;
   expr->object = (Object)Buffer_alloc(sizeof(struct s_Object));
   List_Option opt = {1, (Buffer_Free)ObjectProperty_dispose};
   expr->object->properties = List_create(opt);

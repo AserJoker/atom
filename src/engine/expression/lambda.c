@@ -40,6 +40,7 @@ Expression readLambdaExpression(SourceFile file, cstring source) {
   }
   Expression expr = Expression_create();
   expr->type = ET_Lambda;
+  expr->bind = BT_None;
   List_Option opt = {1, (Buffer_Free)Expression_dispose};
   expr->lambda = (Lambda)Buffer_alloc(sizeof(struct s_Lambda));
   expr->lambda->args = List_create(opt);

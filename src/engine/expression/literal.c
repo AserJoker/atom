@@ -26,6 +26,7 @@ Expression readLiteralExpression(SourceFile file, cstring source) {
   Expression expr = Expression_create();
   expr->type = ET_Literal;
   expr->literal = token;
+  expr->bind = BT_None;
   expr->node->position.begin = token->raw.begin;
   expr->node->position.end = token->raw.end;
   return expr;

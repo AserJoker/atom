@@ -1,1 +1,3 @@
-const a in 123
+const printArr = (arr) => {
+    arr.forEach(item=>console.log(item))
+}

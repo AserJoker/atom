@@ -1,6 +1,8 @@
 #include "expression.h"
 
-int isIdentifierExpression(SourceFile file,Token token) { return token->type == TT_Identifier; }
+int isIdentifierExpression(SourceFile file, Token token) {
+  return token->type == TT_Identifier;
+}
 Expression readIdentifierExpression(SourceFile file, cstring source) {
   cstring selector = source;
   Token token = readTokenSkipNewline(file, selector);
@@ -17,6 +19,7 @@ Expression readIdentifierExpression(SourceFile file, cstring source) {
   expression->Identifier = token;
   expression->type = ET_Identifier;
   expression->node->position = token->raw;
+  expression->bind = BT_None;
   return expression;
 failed:
   Expression_dispose(expression);

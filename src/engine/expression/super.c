@@ -6,6 +6,7 @@ Expression readSuperExpression(SourceFile file, cstring source) {
   Token token = readTokenSkipNewline(file, source);
   Expression expr = Expression_create();
   expr->type = ET_Super;
+  expr->bind = BT_None;
   expr->node->position = token->raw;
   Token_dispose(token);
   return expr;

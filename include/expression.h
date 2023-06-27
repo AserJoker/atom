@@ -86,7 +86,13 @@ Expression readConditionExpression(SourceFile file, cstring source);
 int isAssignmentExpression(SourceFile file, Token token);
 Expression readAssignmentExpression(SourceFile file, cstring source);
 
-typedef enum e_BindType { BT_Unknown, BT_Left, BT_Right, BT_Both } BindType;
+typedef enum e_BindType {
+  BT_Unknown,
+  BT_Left,
+  BT_Right,
+  BT_Both,
+  BT_None
+} BindType;
 
 struct s_ExpressionContext {
   TokenContext token_ctx;
@@ -170,12 +176,12 @@ struct s_Expression {
   AstNode node;
   ExpressionType type;
   int level;
+  BindType bind;
   union {
     struct {
       Expression left;
       Expression right;
       Token operator;
-      BindType bind;
     } binary;
     struct {
       Expression condition;
@@ -184,6 +190,7 @@ struct s_Expression {
     } condition;
 
     struct {
+      Expression null;
       Expression expression;
       Token type;
     } assignment;

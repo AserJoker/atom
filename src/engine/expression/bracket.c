@@ -37,6 +37,7 @@ Expression readBracketExpression(SourceFile file, cstring source) {
   Token_dispose(token);
   Expression bracket_expr = Expression_create();
   bracket_expr->type = ET_Bracket;
+  bracket_expr->bind = BT_None;
   bracket_expr->binary.left = expr;
   bracket_expr->node->position.begin = source;
   bracket_expr->node->position.end = selector;
