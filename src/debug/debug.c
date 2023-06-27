@@ -1,5 +1,5 @@
-#include "debug.h"
-#include "buffer.h"
+#include "debug/debug.h"
+#include "util/buffer.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

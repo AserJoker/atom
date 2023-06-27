@@ -1,6 +1,6 @@
-#include "strings.h"
-#include "buffer.h"
-#include "list.h"
+#include "util/strings.h"
+#include "util/buffer.h"
+#include "util/list.h"
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>

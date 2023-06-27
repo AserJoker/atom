@@ -1,5 +1,5 @@
-#include "error.h"
-#include "strings.h"
+#include "util/error.h"
+#include "util/strings.h"
 static Error globalError = NULL;
 Error Error_create(cstring message, Location location, Error cause) {
   Error error = (Error)Buffer_alloc(sizeof(struct s_Error));

@@ -7,9 +7,9 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src SOURCE)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/util UTIL)
-aux_source_directory(${PROJECT_SOURCE_DIR}/src/engine ENGINE)
-aux_source_directory(${PROJECT_SOURCE_DIR}/src/engine/statement ENGINE_STATEMENT)
-aux_source_directory(${PROJECT_SOURCE_DIR}/src/engine/expression ENGINE_EXPRESSION)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/parser ENGINE)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/parser/statement ENGINE_STATEMENT)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/parser/expression ENGINE_EXPRESSION)
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/include HEADERS)
 

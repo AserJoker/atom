@@ -1,7 +1,7 @@
-#include "json.h"
-#include "buffer.h"
-#include "list.h"
-#include "strings.h"
+#include "util/json.h"
+#include "util/buffer.h"
+#include "util/list.h"
+#include "util/strings.h"
 #include <stdint.h>
 #include <string.h>
 JSON_Value JSON_fromList(List list, ToJSON toJSON) {

@@ -1,13 +1,14 @@
-#include "error.h"
-#include "parser.h"
-#include "source.h"
+#include "parser/parser.h"
+#include "util/error.h"
+#include "util/source.h"
+
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
 #ifdef _DEBUG
-#include "debug.h"
+#include "debug/debug.h"
 #endif
 
 int main(int argc, char **argv) {
