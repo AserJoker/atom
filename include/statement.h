@@ -36,6 +36,12 @@ typedef struct s_ImportSpecifier {
   Token local;
   enum { IST_Namespace, IST_Default, IST_Entity } importType;
 } *ImportSpecifier;
+
+typedef struct s_ImportAttribute {
+  Token key;
+  Token value;
+} *ImportAttribute;
+
 struct s_Statement {
   AstNode node;
   StatementType type;

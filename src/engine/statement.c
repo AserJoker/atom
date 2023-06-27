@@ -157,6 +157,7 @@ void Statement_dispose(Statement statement) {
       Token_dispose(statement->import.source);
     }
     List_dispose(statement->import.specifiers);
+    List_dispose(statement->import.asserts);
     break;
   default:
     break;

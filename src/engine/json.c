@@ -194,13 +194,21 @@ static JSON_Value JSON_fromImportSpecifier(ImportSpecifier specifier) {
   }
   return obj;
 }
-
+static JSON_Value JSON_fromImportAttribute(ImportAttribute attr) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "key", JSON_fromToken(attr->key));
+  JSON_setField(obj, "value", JSON_fromToken(attr->value));
+  return obj;
+}
 static JSON_Value JSON_fromImportStatement(Statement statement) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "specifiers",
                 JSON_fromList(statement->import.specifiers,
                               (ToJSON)JSON_fromImportSpecifier));
   JSON_setField(obj, "source", JSON_fromToken(statement->import.source));
+  JSON_setField(obj, "asserts",
+                JSON_fromList(statement->import.asserts,
+                              (ToJSON)JSON_fromImportAttribute));
   return obj;
 }
 

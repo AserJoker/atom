@@ -9,15 +9,15 @@ struct s_TokenContext {
 static TokenContext g_context = NULL;
 
 static cstring g_keywords[] = {
-    "as",      "await",   "async",  "break",    "case",
-    "catch",   "class",   "const",  "continue", "debugger",
-    "default", "delete",  "do",     "else",     "export",
-    "extends", "finally", "for",    "function", "from",
-    "if",      "get",     "import", "in",       "instanceof",
-    "let",     "new",     "of",     "return",   "static",
-    "super",   "switch",  "set",    "this",     "throw",
-    "try",     "typeof",  "var",    "void",     "while",
-    "with",    "yield",   0};
+    "assert",    "as",      "await",   "async",  "break",
+    "case",       "catch",   "class",   "const",  "continue",
+    "debugger",   "default", "delete",  "do",     "else",
+    "export",     "extends", "finally", "for",    "function",
+    "from",       "if",      "get",     "import", "in",
+    "instanceof", "let",     "new",     "of",     "return",
+    "static",     "super",   "switch",  "set",    "this",
+    "throw",      "try",     "typeof",  "var",    "void",
+    "while",      "with",    "yield",   0};
 
 static cstring g_symbols[] = {
     "===", "!==", "...", "==", "!=", "<=", ">=", "++", "--", "+=", "-=", "|=",

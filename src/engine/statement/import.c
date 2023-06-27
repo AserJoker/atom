@@ -1,5 +1,53 @@
 #include "statement.h"
-
+void ImportAttribute_dispose(ImportAttribute attribute) {
+  Token_dispose(attribute->key);
+  Token_dispose(attribute->value);
+  Buffer_free(attribute);
+}
+ImportAttribute readImportAttribute(SourceFile file, cstring source) {
+  cstring selector = source;
+  ImportAttribute attr =
+      (ImportAttribute)Buffer_alloc(sizeof(struct s_ImportAttribute));
+  attr->key = NULL;
+  attr->value = NULL;
+  Token token = readTokenSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (token->type != TT_Identifier) {
+    pushError("Unexcept token", getLocation(file, token->raw.begin));
+    Token_dispose(token);
+    goto failed;
+  }
+  selector = token->raw.end;
+  attr->key = token;
+  token = readTokenSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (!checkToken(token, TT_Symbol, ":")) {
+    pushError("Unexcept token.missing token ':'",
+              getLocation(file, token->raw.begin));
+    Token_dispose(token);
+    goto failed;
+  }
+  selector = token->raw.end;
+  Token_dispose(token);
+  token = readTokenSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (token->type != TT_String) {
+    pushError("Unexcept token", getLocation(file, token->raw.begin));
+    Token_dispose(token);
+    goto failed;
+  }
+  attr->value = token;
+  return attr;
+failed:
+  ImportAttribute_dispose(attr);
+  return NULL;
+}
 void ImportSpecifier_dispose(ImportSpecifier specifier) {
   if (specifier->imported) {
     Token_dispose(specifier->imported);
@@ -128,7 +176,8 @@ Statement readImportStatement(SourceFile file, cstring source) {
   statement->import.source = NULL;
   List_Option spec_opt = {1, (Buffer_Free)ImportSpecifier_dispose};
   statement->import.specifiers = List_create(spec_opt);
-  statement->import.asserts = NULL;
+  List_Option attr_opt = {1, (Buffer_Free)ImportAttribute_dispose};
+  statement->import.asserts = List_create(attr_opt);
   Token token = readTokenSkipNewline(file, selector);
   if (!token) {
     goto failed;
@@ -220,6 +269,62 @@ Statement readImportStatement(SourceFile file, cstring source) {
   }
   statement->import.source = token;
   selector = token->raw.end;
+
+  token = readTokenSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (checkToken(token, TT_Keyword, "assert")) {
+    selector = token->raw.end;
+    Token_dispose(token);
+    token = readTokenSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (!checkToken(token, TT_Symbol, "{")) {
+      pushError("Unexcept token.missing token '{'",
+                getLocation(file, token->raw.begin));
+      Token_dispose(token);
+      goto failed;
+    }
+    selector = token->raw.end;
+    Token_dispose(token);
+    token = readTokenSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (!checkToken(token, TT_Symbol, "}")) {
+      Token_dispose(token);
+      for (;;) {
+        ImportAttribute attr = readImportAttribute(file, selector);
+        if (!attr) {
+          goto failed;
+        }
+        List_insert_tail(statement->import.asserts, attr);
+        selector = attr->value->raw.end;
+        token = readTokenSkipNewline(file, selector);
+        if (!token) {
+          goto failed;
+        }
+        if (checkToken(token, TT_Symbol, ",")) {
+          selector = token->raw.end;
+          Token_dispose(token);
+        } else {
+          break;
+        }
+      }
+    }
+    if (!checkToken(token, TT_Symbol, "}")) {
+      pushError("Unexcept token.missing token '}'",
+                getLocation(file, token->raw.begin));
+      Token_dispose(token);
+      goto failed;
+    }
+    selector = token->raw.end;
+    Token_dispose(token);
+  } else {
+    Token_dispose(token);
+  }
   statement->node->position.begin = source;
   statement->node->position.end = selector;
   return statement;
