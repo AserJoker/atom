@@ -402,7 +402,7 @@ Token Token_readSkipNewline(SourceFile file, cstring source) {
   }
   return token;
 }
-int Token_check(Token token, Token_Type tt, cstring source) {
+Bool Token_check(Token token, Token_Type tt, cstring source) {
   return token->type == tt && Strings_is(token->raw, source);
 }
 Token Token_pair(SourceFile file, cstring source, Token_Type tl, cstring left,

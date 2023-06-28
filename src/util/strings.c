@@ -9,7 +9,7 @@ Buffer cstring_toBuffer(cstring source) {
   return Buffer_clone(strlen(source) + 1, source);
 }
 
-int Strings_is(Strings str, const cstring source) {
+Bool Strings_is(Strings str, const cstring source) {
   cstring ss = (cstring)source;
   cstring s = str.begin;
   while (s != str.end) {
@@ -22,7 +22,7 @@ int Strings_is(Strings str, const cstring source) {
   return *ss == 0;
 }
 
-int Strings_contains(Strings str, const cstring list[]) {
+Bool Strings_contains(Strings str, const cstring list[]) {
   for (int index = 0; list[index] != 0; index++) {
     if (Strings_is(str, list[index])) {
       return True;

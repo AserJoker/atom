@@ -80,7 +80,7 @@ void List_insert_head(List list, void *data) {
   node->_list = list;
   list->_size++;
 }
-int List_remove(List list, List_Node node) {
+Bool List_remove(List list, List_Node node) {
   if (node != list->_tail) {
     if (node == list->_head) {
       node->_next->_last = NULL;
@@ -104,7 +104,7 @@ List_Node List_find(List list, Finder_t finder) {
   }
   return NULL;
 }
-int List_empty(List list) { return list->_size == 0; }
+Bool List_empty(List list) { return list->_size == 0; }
 
 List_Node List_next(List_Node current) { return current->_next; }
 List_Node List_last(List_Node current) { return current->_last; }
