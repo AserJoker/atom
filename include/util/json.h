@@ -33,7 +33,6 @@ JSON_Value JSON_createObject();
 JSON_Value JSON_createArray();
 typedef JSON_Value (*ToJSON)(void *);
 JSON_Value JSON_fromList(List list, ToJSON toJSON);
-void JSON_dispose(JSON_Value val);
 void JSON_setField(JSON_Value obj, cstring key, JSON_Value value);
 void JSON_setIndex(JSON_Value obj, int32_t index, JSON_Value value);
 

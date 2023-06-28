@@ -27,7 +27,6 @@ struct s_Location {
 typedef struct s_Location Location;
 
 SourceLine SourceLine_create();
-void SourceLine_dispose(SourceLine sl);
 SourceFile SourceFile_read(cstring filename);
 void SourceFile_dispose(SourceFile sf);
 Location SourceFile_getLocation(SourceFile file, cstring source);

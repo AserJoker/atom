@@ -14,7 +14,7 @@ int Strings_is(Strings str, const cstring source) {
   cstring s = str.begin;
   while (s != str.end) {
     if (*s != *ss) {
-      return 0;
+      return False;
     }
     s++;
     ss++;
@@ -25,10 +25,10 @@ int Strings_is(Strings str, const cstring source) {
 int Strings_contains(Strings str, const cstring list[]) {
   for (int index = 0; list[index] != 0; index++) {
     if (Strings_is(str, list[index])) {
-      return 1;
+      return True;
     }
   }
-  return 0;
+  return False;
 }
 
 cstring cstring_from(Strings source) {

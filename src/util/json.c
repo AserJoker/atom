@@ -15,6 +15,27 @@ JSON_Value JSON_fromList(List list, ToJSON toJSON) {
   return arr;
 }
 
+static void JSON_dispose(JSON_Value val) {
+  switch (val->type) {
+  case JSON_STRING:
+    Buffer_dispose(val->d.s);
+    break;
+  case JSON_ARRAY:
+  case JSON_OBJECT:
+    if (val->children) {
+      JSON_dispose(val->children);
+    }
+    break;
+  default:
+    break;
+  }
+  if (val->next) {
+    JSON_dispose(val->next);
+  }
+  if (val->key) {
+    Buffer_dispose(val->key);
+  }
+}
 static JSON_Value JSON_create() {
   JSON_Value obj =
       (JSON_Value)Buffer_alloc(sizeof(struct s_JSON_Value), JSON_dispose);
@@ -47,28 +68,6 @@ static cstring JSON_formatString(cstring val) {
   }
   *selector = '\0';
   return result;
-}
-
-void JSON_dispose(JSON_Value val) {
-  switch (val->type) {
-  case JSON_STRING:
-    Buffer_dispose(val->d.s);
-    break;
-  case JSON_ARRAY:
-  case JSON_OBJECT:
-    if (val->children) {
-      JSON_dispose(val->children);
-    }
-    break;
-  default:
-    break;
-  }
-  if (val->next) {
-    JSON_dispose(val->next);
-  }
-  if (val->key) {
-    Buffer_dispose(val->key);
-  }
 }
 
 JSON_Value JSON_createDouble(double val) {

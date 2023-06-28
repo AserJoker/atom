@@ -1,4 +1,5 @@
 #pragma once
+#include "bool.h"
 #include "buffer.h"
 #include <stdint.h>
 
@@ -21,10 +22,10 @@ List_Node List_tail(List list);
 void List_insert(List list, List_Node pos, Buffer data);
 void List_insert_tail(List list, Buffer data);
 void List_insert_head(List list, Buffer data);
-int List_remove(List list, List_Node node);
+Bool List_remove(List list, List_Node node);
 uint32_t List_size(List list);
 List_Node List_find(List list, Finder_t finder);
-int List_empty(List list);
+Bool List_empty(List list);
 
 List_Node List_next(List_Node current);
 List_Node List_last(List_Node current);

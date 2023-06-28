@@ -91,9 +91,9 @@ int List_remove(List list, List_Node node) {
     }
     List_Node_dispose(node);
     list->_size--;
-    return 1;
+    return True;
   }
-  return 0;
+  return False;
 }
 uint32_t List_size(List list) { return list->_size; }
 List_Node List_find(List list, Finder_t finder) {
