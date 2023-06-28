@@ -1,4 +1,3 @@
-#include "parser/parser.h"
 #include "util/error.h"
 #include "util/source.h"
 
@@ -9,6 +8,8 @@
 #ifdef _DEBUG
 #include "debug/debug.h"
 #endif
+
+void Dispose_int(int *val) { printf("%d", *val); }
 
 int main(int argc, char **argv) {
 
@@ -22,20 +23,11 @@ int main(int argc, char **argv) {
 #endif
 
   SourceFile sf = SourceFile_read("./demo.js");
-  Program program = parse(sf);
-  if (program) {
-    JSON_Value val = JSON_fromProgram(program);
-    Program_dispose(program);
-    cstring json = JSON_stringlify(val);
-    JSON_dispose(val);
-    printf("%s\n", json);
-    Buffer_free(json);
-  }
-  Error error = getError();
+  Error error = Error_get();
   if (error) {
-    printError(error);
-    Error_dispose(error);
+    Error_print(error);
+    Buffer_dispose(error);
   }
-  SourceFile_dispose(sf);
+  Buffer_dispose(sf);
   return 0;
 }

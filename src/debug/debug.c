@@ -69,6 +69,6 @@ void Debug_check() {
   }
 }
 void Debug_init() {
-  Buffer_init(Debug_alloc, Debug_free);
+  initBufferContext(Debug_alloc, Debug_free);
   atexit(&Debug_check);
 }

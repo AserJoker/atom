@@ -1,4 +1,4 @@
-#include "util/strings.h"
+#include "util/Strings.h"
 #include "util/buffer.h"
 #include "util/list.h"
 #include <stdarg.h>
@@ -6,10 +6,10 @@
 #include <string.h>
 
 Buffer cstring_toBuffer(cstring source) {
-  return Buffer_from(strlen(source) + 1, source);
+  return Buffer_clone(strlen(source) + 1, source);
 }
 
-int strings_is(strings str, const cstring source) {
+int Strings_is(Strings str, const cstring source) {
   cstring ss = (cstring)source;
   cstring s = str.begin;
   while (s != str.end) {
@@ -22,18 +22,18 @@ int strings_is(strings str, const cstring source) {
   return *ss == 0;
 }
 
-int strings_contains(strings str, const cstring list[]) {
+int Strings_contains(Strings str, const cstring list[]) {
   for (int index = 0; list[index] != 0; index++) {
-    if (strings_is(str, list[index])) {
+    if (Strings_is(str, list[index])) {
       return 1;
     }
   }
   return 0;
 }
 
-cstring cstring_from(strings source) {
+cstring cstring_from(Strings source) {
   uint32_t len = source.end - source.begin;
-  cstring result = (cstring)Buffer_from(len + 1, source.begin);
+  cstring result = (cstring)Buffer_clone(len + 1, source.begin);
   result[len] = 0;
   return result;
 }
@@ -53,7 +53,7 @@ cstring cstring_concat(cstring str, ...) {
     len += strlen(arg);
     List_insert_tail(parts, arg);
   }
-  cstring result = (cstring)Buffer_alloc(len + 1);
+  cstring result = (cstring)Buffer_alloc(len + 1, NULL);
   cstring selector = result;
   result[len] = 0;
   for (List_Node node = List_head(parts); node != List_tail(parts);
@@ -63,7 +63,7 @@ cstring cstring_concat(cstring str, ...) {
       *selector++ = *s++;
     }
   }
-  List_dispose(parts);
+  Buffer_dispose(parts);
   return result;
 }
 
@@ -72,7 +72,7 @@ cstring cstring_join(cstring args[]) {
   for (uint32_t i = 0; args[i] != 0; i++) {
     len += strlen(args[i]);
   }
-  cstring result = (cstring)Buffer_alloc(len + 1);
+  cstring result = (cstring)Buffer_alloc(len + 1, NULL);
   result[len] = 0;
   cstring s = result;
   for (uint32_t i = 0; args[i] != 0; i++) {

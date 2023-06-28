@@ -25,20 +25,20 @@ typedef enum e_Token_Type {
 
 struct s_Token {
   Token_Type type;
-  strings raw;
+  Strings raw;
 };
 
-TokenContext pushTokenContext();
-void popTokenContext(TokenContext ctx);
-void enableReadRegex();
-void disableReadRegex();
-void enableReadTemplate();
-void disableReadTemplate();
+TokenContext Token_pushTokenContext();
+void Token_popTokenContext(TokenContext ctx);
+void Token_enableReadRegex();
+void Token_disableReadRegex();
+void Token_enableReadTemplate();
+void Token_disableReadTemplate();
 
-Token readToken(SourceFile file, cstring source);
+Token Token_read(SourceFile file, cstring source);
 void Token_dispose(Token token);
-Token readTokenSkipComment(SourceFile file, cstring source);
-Token readTokenSkipNewline(SourceFile file, cstring source);
-int checkToken(Token token, Token_Type tt, cstring source);
-Token pairToken(SourceFile file, cstring source, Token_Type tl, cstring left,
-                Token_Type tr, cstring right);
+Token Token_readSkipComment(SourceFile file, cstring source);
+Token Token_readSkipNewline(SourceFile file, cstring source);
+int Token_check(Token token, Token_Type tt, cstring source);
+Token Token_pair(SourceFile file, cstring source, Token_Type tl, cstring left,
+                 Token_Type tr, cstring right);

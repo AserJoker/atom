@@ -9,7 +9,7 @@ struct s_TokenContext {
 static TokenContext g_context = NULL;
 
 static cstring g_keywords[] = {
-    "assert",    "as",      "await",   "async",  "break",
+    "assert",     "as",      "await",   "async",  "break",
     "case",       "catch",   "class",   "const",  "continue",
     "debugger",   "default", "delete",  "do",     "else",
     "export",     "extends", "finally", "for",    "function",
@@ -25,23 +25,23 @@ static cstring g_symbols[] = {
     "%",   "!",   "(",   ")",  "[",  "]",  "{",  "}",  "|",  "&",  ";",  ":",
     "<",   ">",   ",",   ".",  "?",  "@",  "#",  "=",  0};
 
-TokenContext pushTokenContext() {
+TokenContext Token_pushTokenContext() {
   TokenContext result = g_context;
-  g_context = (TokenContext)Buffer_alloc(sizeof(struct s_TokenContext));
+  g_context = (TokenContext)Buffer_alloc(sizeof(struct s_TokenContext), NULL);
   g_context->isRegexEnable = 0;
   g_context->isTemplateEnable = 0;
   return result;
 }
-void popTokenContext(TokenContext tctx) {
+void Token_popTokenContext(TokenContext tctx) {
   if (g_context) {
-    Buffer_free(g_context);
+    Buffer_dispose(g_context);
   }
   g_context = tctx;
 }
 
-void Token_dispose(Token token) { Buffer_free(token); }
+void Token_dispose(Token token) { Buffer_dispose(token); }
 Token Token_create() {
-  Token token = (Token)Buffer_alloc(sizeof(struct s_Token));
+  Token token = (Token)Buffer_alloc(sizeof(struct s_Token), NULL);
   token->raw.begin = 0;
   token->raw.end = 0;
   token->type = TT_Eof;
@@ -140,8 +140,8 @@ static Token readStringToken(SourceFile file, cstring source) {
       token->type = TT_String;
       return token;
     } else {
-      setError(Error_create("Unterminated string literal.",
-                            getLocation(file, selector), NULL));
+      Error_set(Error_create("Unterminated string literal.",
+                             SourceFile_getLocation(file, selector), NULL));
     }
   }
   return NULL;
@@ -165,7 +165,7 @@ static Token readIdentifierToken(SourceFile file, cstring source) {
     token->raw.begin = source;
     token->raw.end = selector;
     for (int index = 0; g_keywords[index] != 0; index++) {
-      if (strings_is(token->raw, g_keywords[index])) {
+      if (Strings_is(token->raw, g_keywords[index])) {
         token->type = TT_Keyword;
         break;
       }
@@ -194,8 +194,8 @@ static Token readCommentToken(SourceFile file, cstring source) {
     int newline_flag = 0;
     for (;;) {
       if (!*selector) {
-        setError(
-            Error_create("'*/' expected.", getLocation(file, selector), NULL));
+        Error_set(Error_create("'*/' expected.",
+                               SourceFile_getLocation(file, selector), NULL));
         return NULL;
       } else if (*selector == '/' && *(selector - 1) == '*') {
         selector++;
@@ -300,8 +300,8 @@ static Token readTemplateToken(SourceFile file, cstring source) {
         break;
       }
       if (!*selector) {
-        setError(Error_create("Unterminated template literal.",
-                              getLocation(file, selector), NULL));
+        Error_set(Error_create("Unterminated template literal.",
+                               SourceFile_getLocation(file, selector), NULL));
         return NULL;
       }
       selector++;
@@ -329,8 +329,8 @@ static Token readTemplatePartOrEndToken(SourceFile file, cstring source) {
         selector++;
         break;
       } else if (!*selector) {
-        setError(Error_create("Unterminated template literal.",
-                              getLocation(file, selector), NULL));
+        Error_set(Error_create("Unterminated template literal.",
+                               SourceFile_getLocation(file, selector), NULL));
         return NULL;
       }
       selector++;
@@ -348,12 +348,12 @@ static Token readTemplatePartOrEndToken(SourceFile file, cstring source) {
   return NULL;
 }
 
-void enableReadRegex() { g_context->isRegexEnable = 1; }
-void disableReadRegex() { g_context->isRegexEnable = 0; }
-void enableReadTemplate() { g_context->isTemplateEnable = 1; };
-void disableReadTemplate() { g_context->isTemplateEnable = 0; };
+void Token_enableReadRegex() { g_context->isRegexEnable = 1; }
+void Token_disableReadRegex() { g_context->isRegexEnable = 0; }
+void Token_enableReadTemplate() { g_context->isTemplateEnable = 1; };
+void Token_disableReadTemplate() { g_context->isTemplateEnable = 0; };
 
-Token readToken(SourceFile file, cstring source) {
+Token Token_read(SourceFile file, cstring source) {
   while (*source == ' ' || *source == '\t') {
     source++;
   }
@@ -381,53 +381,53 @@ Token readToken(SourceFile file, cstring source) {
     return readSymbolToken(file, source);
   }
 }
-Token readTokenSkipComment(SourceFile file, cstring source) {
+Token Token_readSkipComment(SourceFile file, cstring source) {
   cstring selector = source;
-  Token token = readToken(file, selector);
+  Token token = Token_read(file, selector);
   while (token && token->type == TT_Comment) {
     selector = token->raw.end;
     Token_dispose(token);
-    token = readToken(file, selector);
+    token = Token_read(file, selector);
   }
   return token;
 }
-Token readTokenSkipNewline(SourceFile file, cstring source) {
+Token Token_readSkipNewline(SourceFile file, cstring source) {
   cstring selector = source;
-  Token token = readTokenSkipComment(file, selector);
+  Token token = Token_readSkipComment(file, selector);
   while (token &&
          (token->type == TT_MultiLineComment || token->type == TT_Newline)) {
     selector = token->raw.end;
     Token_dispose(token);
-    token = readTokenSkipComment(file, selector);
+    token = Token_readSkipComment(file, selector);
   }
   return token;
 }
-int checkToken(Token token, Token_Type tt, cstring source) {
-  return token->type == tt && strings_is(token->raw, source);
+int Token_check(Token token, Token_Type tt, cstring source) {
+  return token->type == tt && Strings_is(token->raw, source);
 }
-Token pairToken(SourceFile file, cstring source, Token_Type tl, cstring left,
-                Token_Type tr, cstring right) {
+Token Token_pair(SourceFile file, cstring source, Token_Type tl, cstring left,
+                 Token_Type tr, cstring right) {
   cstring selector = source;
   int level = 0;
-  Token token = readToken(file, selector);
+  Token token = Token_read(file, selector);
   if (!token) {
     return NULL;
   }
-  if (!checkToken(token, tl, left)) {
+  if (!Token_check(token, tl, left)) {
     Token_dispose(token);
     return NULL;
   }
   selector = token->raw.end;
   level++;
   Token_dispose(token);
-  token = readToken(file, selector);
+  token = Token_read(file, selector);
   for (;;) {
-    if (checkToken(token, tr, right)) {
+    if (Token_check(token, tr, right)) {
       level--;
       if (!level) {
         break;
       }
-    } else if (checkToken(token, tl, left)) {
+    } else if (Token_check(token, tl, left)) {
       level++;
     } else if (token->type == TT_Eof) {
       Token_dispose(token);
@@ -435,7 +435,7 @@ Token pairToken(SourceFile file, cstring source, Token_Type tl, cstring left,
     }
     selector = token->raw.end;
     Token_dispose(token);
-    token = readToken(file, selector);
+    token = Token_read(file, selector);
     if (!token) {
       return NULL;
     }

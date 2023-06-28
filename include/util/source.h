@@ -1,9 +1,9 @@
 #pragma once
+#include "Strings.h"
 #include "list.h"
-#include "strings.h"
 
 typedef struct s_SourceLine {
-  strings _raw;
+  Strings _raw;
   uint32_t _begin;
   uint32_t _end;
 } *SourceLine;
@@ -30,4 +30,4 @@ SourceLine SourceLine_create();
 void SourceLine_dispose(SourceLine sl);
 SourceFile SourceFile_read(cstring filename);
 void SourceFile_dispose(SourceFile sf);
-Location getLocation(SourceFile file, cstring source);
+Location SourceFile_getLocation(SourceFile file, cstring source);

@@ -1,6 +1,7 @@
 #pragma once
+#include "Strings.h"
 #include "source.h"
-#include "strings.h"
+
 struct s_Error;
 typedef struct s_Error *Error;
 struct s_Error {
@@ -11,7 +12,8 @@ struct s_Error {
 
 Error Error_create(cstring message, Location location, Error cause);
 void Error_dispose(Error error);
-void setError(Error error);
-void pushError(cstring message, Location location);
-Error getError();
-void printError(Error error);
+
+void Error_set(Error error);
+void Error_push(cstring message, Location location);
+Error Error_get();
+void Error_print(Error error);

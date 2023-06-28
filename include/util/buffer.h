@@ -11,15 +11,17 @@ typedef void (*Buffer_Free)(Buffer buffer);
  * @param alloc allocator handle for alloc buffer with size
  * @param free free handle for free buffer with pointer
  */
-void Buffer_init(Buffer_Alloc alloc, Buffer_Free free);
+void initBufferContext(Buffer_Alloc alloc, Buffer_Free free);
 /**
  * @brief alloc buffer with size
  *
  * @param size size of buffer size
  * @return Buffer the pointer for alloc with size
  */
-Buffer Buffer_alloc_(uint32_t size, const char *filename, int line);
-#define Buffer_alloc(size) Buffer_alloc_(size, __FILE__, __LINE__)
+Buffer Buffer_alloc_(uint32_t size, Buffer_Free dispose, const char *filename,
+                     int line);
+#define Buffer_alloc(size, dispose)                                            \
+  Buffer_alloc_(size, (Buffer_Free)(dispose), __FILE__, __LINE__)
 /**
  * @brief clone buffer from pointer and size
  *
@@ -27,15 +29,16 @@ Buffer Buffer_alloc_(uint32_t size, const char *filename, int line);
  * @param source pointer of source buffer
  * @return Buffer pointer of the new buffer
  */
-Buffer Buffer_from_(uint32_t size, Buffer source, const char *filename,
-                    int line);
-#define Buffer_from(size, source) Buffer_from_(size, source, __FILE__, __LINE__)
+Buffer Buffer_clone_(uint32_t size, Buffer source, const char *filename,
+                     int line);
+#define Buffer_clone(size, source)                                             \
+  Buffer_clone_(size, source, __FILE__, __LINE__)
 /**
  * @brief free buffer with pointer
  *
  * @param buf free buffer with pointer
  */
-void Buffer_free(Buffer buf);
+void Buffer_dispose(Buffer buf);
 
-#define toBuffer(t) Buffer_from(sizeof(t), &(t))
+#define toBuffer(t) Buffer_clone(sizeof(t), &(t))
 #define fromBuffer(buf, type) (*(type *)(buf))

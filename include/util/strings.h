@@ -1,13 +1,13 @@
 #pragma once
 #include "buffer.h"
 typedef char *cstring;
-typedef struct s_stirngs {
+typedef struct s_Strings {
   cstring begin;
   cstring end;
-} strings;
+} Strings;
 Buffer cstring_toBuffer(cstring source);
-cstring cstring_from(strings source);
+cstring cstring_from(Strings source);
 cstring cstring_concat(cstring str, ...);
 cstring cstring_join(cstring args[]);
-int strings_is(strings str, const cstring source);
-int strings_contains(strings str, const cstring list[]);
+int Strings_is(Strings str, const cstring source);
+int Strings_contains(Strings str, const cstring list[]);

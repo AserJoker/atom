@@ -1,11 +1,11 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "util/source.h"
+#include "util/Strings.h"
 #include "util/list.h"
-#include "util/strings.h"
 #include <stdio.h>
 
 SourceLine SourceLine_create() {
-  SourceLine sl = (SourceLine)Buffer_alloc(sizeof(struct s_SourceLine));
+  SourceLine sl = (SourceLine)Buffer_alloc(sizeof(struct s_SourceLine), NULL);
   sl->_begin = 0;
   sl->_end = 0;
   sl->_raw.begin = 0;
@@ -13,16 +13,17 @@ SourceLine SourceLine_create() {
   return sl;
 }
 
-void SourceLine_dispose(SourceLine sl) { Buffer_free(sl); }
+void SourceLine_dispose(SourceLine sl) { Buffer_dispose(sl); }
 
 SourceFile SourceFile_read(cstring filename) {
-  SourceFile sf = (SourceFile)Buffer_alloc(sizeof(struct s_SourceFile));
+  SourceFile sf =
+      (SourceFile)Buffer_alloc(sizeof(struct s_SourceFile), SourceFile_dispose);
   FILE *fp = NULL;
   cstring source = NULL;
   fp = fopen(filename, "rb");
   fseek(fp, 0, SEEK_END);
   uint32_t len = ftell(fp);
-  source = (cstring)Buffer_alloc(len + 1);
+  source = (cstring)Buffer_alloc(len + 1, NULL);
   source[len] = 0;
   fseek(fp, 0, SEEK_SET);
   fread(source, 1, len, fp);
@@ -38,7 +39,8 @@ SourceFile SourceFile_read(cstring filename) {
       if (*source == '\r') {
         source++;
       }
-      SourceLine sl = (SourceLine)Buffer_alloc(sizeof(struct s_SourceLine));
+      SourceLine sl =
+          (SourceLine)Buffer_alloc(sizeof(struct s_SourceLine), NULL);
       sl->_raw.begin = linestart;
       sl->_raw.end = source;
       linestart = source;
@@ -57,12 +59,11 @@ SourceFile SourceFile_read(cstring filename) {
 }
 
 void SourceFile_dispose(SourceFile sf) {
-  List_dispose(sf->_lines);
-  Buffer_free(sf->_source);
-  Buffer_free(sf);
+  Buffer_dispose(sf->_lines);
+  Buffer_dispose(sf->_source);
 }
 
-Location getLocation(SourceFile file, cstring source) {
+Location SourceFile_getLocation(SourceFile file, cstring source) {
   Location loc;
   cstring selector = source;
   while (selector > file->_source &&

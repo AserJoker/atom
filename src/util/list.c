@@ -16,8 +16,15 @@ struct s_List {
   List_Option _option;
 };
 
+static void List_Node_dispose(List_Node node) {
+  if (node->_list->_option.auto_free_data && node->_data) {
+    node->_list->_option.dispose(node->_data);
+  }
+}
+
 static List_Node List_Node_create() {
-  List_Node node = (List_Node)Buffer_alloc(sizeof(struct s_List_Node));
+  List_Node node =
+      (List_Node)Buffer_alloc(sizeof(struct s_List_Node), List_Node_dispose);
   node->_data = NULL;
   node->_last = NULL;
   node->_next = NULL;
@@ -25,29 +32,21 @@ static List_Node List_Node_create() {
   return node;
 }
 
-static void List_Node_dispose(List_Node node) {
-  if (node->_list->_option.auto_free_data && node->_data) {
-    node->_list->_option.dispose(node->_data);
+void List_dispose(List list) {
+  while (list->_head) {
+    List_Node node = list->_head;
+    list->_head = list->_head->_next;
+    Buffer_dispose(node);
   }
-  Buffer_free(node);
 }
-
 List List_create(List_Option option) {
-  List list = (List)Buffer_alloc(sizeof(struct s_List));
+  List list = (List)Buffer_alloc(sizeof(struct s_List), List_dispose);
   list->_size = 0;
   list->_head = List_Node_create();
   list->_head->_list = list;
   list->_tail = list->_head;
   list->_option = option;
   return list;
-}
-void List_dispose(List list) {
-  while (list->_head) {
-    List_Node node = list->_head;
-    list->_head = list->_head->_next;
-    List_Node_dispose(node);
-  }
-  Buffer_free(list);
 }
 List_Node List_head(List list) { return list->_head; }
 List_Node List_tail(List list) { return list->_tail; }

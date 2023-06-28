@@ -1,6 +1,7 @@
 #pragma once
+#include "Strings.h"
 #include "list.h"
-#include "strings.h"
+
 
 typedef enum JSON_TYPE {
   JSON_NULL,

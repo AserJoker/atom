@@ -1,9 +1,10 @@
 #include "util/json.h"
+#include "util/Strings.h"
 #include "util/buffer.h"
 #include "util/list.h"
-#include "util/strings.h"
 #include <stdint.h>
 #include <string.h>
+
 JSON_Value JSON_fromList(List list, ToJSON toJSON) {
   JSON_Value arr = JSON_createArray();
   int index = 0;
@@ -15,7 +16,8 @@ JSON_Value JSON_fromList(List list, ToJSON toJSON) {
 }
 
 static JSON_Value JSON_create() {
-  JSON_Value obj = (JSON_Value)Buffer_alloc(sizeof(struct s_JSON_Value));
+  JSON_Value obj =
+      (JSON_Value)Buffer_alloc(sizeof(struct s_JSON_Value), JSON_dispose);
   obj->children = NULL;
   obj->next = NULL;
   obj->type = JSON_NULL;
@@ -25,7 +27,7 @@ static JSON_Value JSON_create() {
 }
 
 static cstring JSON_formatString(cstring val) {
-  cstring result = (cstring)Buffer_alloc(strlen(val) * 2 + 1);
+  cstring result = (cstring)Buffer_alloc(strlen(val) * 2 + 1, NULL);
   cstring selector = result;
   while (*val) {
     if (*val == '\"') {
@@ -50,7 +52,7 @@ static cstring JSON_formatString(cstring val) {
 void JSON_dispose(JSON_Value val) {
   switch (val->type) {
   case JSON_STRING:
-    Buffer_free(val->d.s);
+    Buffer_dispose(val->d.s);
     break;
   case JSON_ARRAY:
   case JSON_OBJECT:
@@ -65,9 +67,8 @@ void JSON_dispose(JSON_Value val) {
     JSON_dispose(val->next);
   }
   if (val->key) {
-    Buffer_free(val->key);
+    Buffer_dispose(val->key);
   }
-  Buffer_free(val);
 }
 
 JSON_Value JSON_createDouble(double val) {
@@ -152,7 +153,7 @@ uint32_t JSON_getLength(JSON_Value val) {
 }
 
 static cstring JSON_stringlify_string(JSON_Value val) {
-  cstring str = (cstring)Buffer_alloc(strlen(val->d.s) + 3);
+  cstring str = (cstring)Buffer_alloc(strlen(val->d.s) + 3, NULL);
   str[0] = '\"';
   cstring selector = str + 1;
   cstring ss = val->d.s;
@@ -164,13 +165,13 @@ static cstring JSON_stringlify_string(JSON_Value val) {
   return str;
 }
 cstring JSON_stringlify_double(JSON_Value val) {
-  cstring str = (cstring)Buffer_alloc(32);
+  cstring str = (cstring)Buffer_alloc(32, NULL);
   sprintf(str, "%lf", val->d.d);
   return str;
 }
 
 cstring JSON_stringlify_array(JSON_Value val) {
-  List_Option opt = {1, Buffer_free};
+  List_Option opt = {1, Buffer_dispose};
   List parts = List_create(opt);
   uint32_t len = 0;
   List_insert_tail(parts, cstring_toBuffer("["));
@@ -189,7 +190,7 @@ cstring JSON_stringlify_array(JSON_Value val) {
   List_insert_tail(parts, cstring_toBuffer("]"));
   len++;
 
-  cstring result = (cstring)Buffer_alloc(len + 1);
+  cstring result = (cstring)Buffer_alloc(len + 1, NULL);
   cstring selector = result;
   result[len] = 0;
   for (List_Node node = List_head(parts); node != List_tail(parts);
@@ -199,12 +200,12 @@ cstring JSON_stringlify_array(JSON_Value val) {
       *selector++ = *s++;
     }
   }
-  List_dispose(parts);
+  Buffer_dispose(parts);
   return result;
 }
 
 cstring JSON_stringlify_object(JSON_Value val) {
-  List_Option opt = {1, Buffer_free};
+  List_Option opt = {1, Buffer_dispose};
   List parts = List_create(opt);
   uint32_t len = 0;
   List_insert_tail(parts, cstring_toBuffer("{"));
@@ -232,7 +233,7 @@ cstring JSON_stringlify_object(JSON_Value val) {
   List_insert_tail(parts, cstring_toBuffer("}"));
   len++;
 
-  cstring result = (cstring)Buffer_alloc(len + 1);
+  cstring result = (cstring)Buffer_alloc(len + 1, NULL);
   cstring selector = result;
   result[len] = 0;
   for (List_Node node = List_head(parts); node != List_tail(parts);
@@ -242,7 +243,7 @@ cstring JSON_stringlify_object(JSON_Value val) {
       *selector++ = *s++;
     }
   }
-  List_dispose(parts);
+  Buffer_dispose(parts);
   return result;
 }
 

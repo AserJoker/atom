@@ -16,7 +16,6 @@ typedef struct s_List_Node *List_Node;
 typedef int (*Finder_t)(Buffer data);
 
 List List_create(List_Option option);
-void List_dispose(List list);
 List_Node List_head(List list);
 List_Node List_tail(List list);
 void List_insert(List list, List_Node pos, Buffer data);
