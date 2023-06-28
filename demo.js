@@ -1,1 +1,4 @@
-import data, { a as b, c as d } from "data" assert { type: "string" };
+import { print } from "std";
+export const main = (args) => {
+  print(args);
+};

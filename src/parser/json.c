@@ -550,3 +550,11 @@ JSON_Value JSON_fromExpression(Expression expression) {
   JSON_setField(obj, "level", JSON_createDouble(expression->level));
   return obj;
 }
+
+JSON_Value JSON_fromProgram(Program program) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Program"));
+  JSON_setField(obj, "body",
+                JSON_fromList(program->body, (ToJSON)JSON_fromStatement));
+  return obj;
+}

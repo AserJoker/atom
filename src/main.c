@@ -2,7 +2,6 @@
 #include "util/error.h"
 #include "util/source.h"
 
-
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -23,10 +22,10 @@ int main(int argc, char **argv) {
 #endif
 
   SourceFile sf = SourceFile_read("./demo.js");
-  Statement node = parse(sf);
-  if (node) {
-    JSON_Value val = JSON_fromStatement(node);
-    Statement_dispose(node);
+  Program program = parse(sf);
+  if (program) {
+    JSON_Value val = JSON_fromProgram(program);
+    Program_dispose(program);
     cstring json = JSON_stringlify(val);
     JSON_dispose(val);
     printf("%s\n", json);
