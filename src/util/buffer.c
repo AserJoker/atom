@@ -21,12 +21,12 @@ Buffer Buffer_alloc_(uint32_t size, Buffer_Free dispose, const char *filename,
 }
 Buffer Buffer_clone_(uint32_t size, Buffer source, const char *filename,
                      int line) {
-  void *buf = g_alloc(size, filename, line);
+  void *buf = Buffer_alloc_(size, NULL, filename, line);
   memcpy(buf, source, size);
   return buf;
 }
 
-void Buffer_dispose(Buffer buf) {
+void Buffer_free(Buffer buf) {
   Buffer_Free *ptr = (Buffer_Free *)buf;
   ptr--;
   if (*ptr) {

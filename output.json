@@ -2,75 +2,53 @@
   "type": "Program",
   "body": [
     {
-      "specifiers": [
-        {
-          "imported": "print",
-          "local": "print",
-          "kind": "Entity"
-        }
-      ],
-      "source": "\"std\"",
-      "asserts": []
-    },
-    {
-      "type": "Export",
-      "statement": [
-        {
-          "type": "Expression",
-          "expression": {
-            "type": "Calculate",
-            "left": {
-              "type": "Assignment",
-              "expression": {
-                "type": "Identifier",
-                "raw": "main",
-                "level": -2.000000
-              },
-              "descrition": "const",
-              "level": -2.000000
-            },
-            "right": {
-              "type": "Lambda",
-              "args": [
+      "type": "ExpressionStatement",
+      "expression": {
+        "type": "Binary",
+        "flag": "const",
+        "right": {
+          "type": "Binary",
+          "flag": "=",
+          "left": {
+            "type": "Identifier",
+            "raw": "fn"
+          },
+          "right": {
+            "type": "Function",
+            "args": [],
+            "body": {
+              "type": "BlockStatement",
+              "body": [
                 {
-                  "type": "Identifier",
-                  "raw": "args",
-                  "level": -2.000000
-                }
-              ],
-              "body": {
-                "type": "Block",
-                "body": [
-                  {
-                    "type": "Expression",
-                    "expression": {
-                      "type": "Call",
-                      "callee": {
+                  "type": "ExpressionStatement",
+                  "expression": {
+                    "type": "Binary",
+                    "flag": "const",
+                    "right": {
+                      "type": "Binary",
+                      "flag": "=",
+                      "left": {
                         "type": "Identifier",
-                        "raw": "print",
-                        "level": -2.000000
+                        "raw": "a"
                       },
-                      "args": [
-                        {
-                          "type": "Identifier",
-                          "raw": "args",
-                          "level": -2.000000
-                        }
-                      ],
-                      "level": -2.000000
-                    }
+                      "right": {
+                        "type": "Literal",
+                        "raw": "2"
+                      },
+                      "level": 11.000000
+                    },
+                    "level": 12.000000
                   }
-                ]
-              },
-              "async": true,
-              "level": -2.000000
+                }
+              ]
             },
-            "operator": "=",
-            "level": 11.000000
-          }
-        }
-      ],
-      "default": false
+            "async": false,
+            "generator": false
+          },
+          "level": 11.000000
+        },
+        "level": 12.000000
+      }
     }
   ]
 }

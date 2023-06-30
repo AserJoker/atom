@@ -3,7 +3,6 @@
 #include "util/error.h"
 #include "util/source.h"
 
-
 typedef struct s_TokenContext *TokenContext;
 typedef struct s_Token *Token;
 
@@ -38,7 +37,6 @@ void Token_enableReadTemplate();
 void Token_disableReadTemplate();
 
 Token Token_read(SourceFile file, cstring source);
-void Token_dispose(Token token);
 Token Token_readSkipComment(SourceFile file, cstring source);
 Token Token_readSkipNewline(SourceFile file, cstring source);
 Bool Token_check(Token token, Token_Type tt, cstring source);

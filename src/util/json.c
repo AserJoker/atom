@@ -1,7 +1,7 @@
 #include "util/json.h"
-#include "util/Strings.h"
 #include "util/buffer.h"
 #include "util/list.h"
+#include "util/strings.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -23,14 +23,14 @@ static void JSON_dispose(JSON_Value val) {
   case JSON_ARRAY:
   case JSON_OBJECT:
     if (val->children) {
-      JSON_dispose(val->children);
+      Buffer_dispose(val->children);
     }
     break;
   default:
     break;
   }
   if (val->next) {
-    JSON_dispose(val->next);
+    Buffer_dispose(val->next);
   }
   if (val->key) {
     Buffer_dispose(val->key);
@@ -170,8 +170,7 @@ cstring JSON_stringlify_double(JSON_Value val) {
 }
 
 cstring JSON_stringlify_array(JSON_Value val) {
-  List_Option opt = {1, Buffer_dispose};
-  List parts = List_create(opt);
+  List parts = List_create(True);
   uint32_t len = 0;
   List_insert_tail(parts, cstring_toBuffer("["));
   len++;
@@ -204,8 +203,7 @@ cstring JSON_stringlify_array(JSON_Value val) {
 }
 
 cstring JSON_stringlify_object(JSON_Value val) {
-  List_Option opt = {1, Buffer_dispose};
-  List parts = List_create(opt);
+  List parts = List_create(True);
   uint32_t len = 0;
   List_insert_tail(parts, cstring_toBuffer("{"));
   len++;

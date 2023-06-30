@@ -3,12 +3,6 @@
 #include "buffer.h"
 #include <stdint.h>
 
-struct s_List_Option {
-  int auto_free_data;
-  Buffer_Free dispose;
-};
-typedef struct s_List_Option List_Option;
-
 struct s_List_Node;
 struct s_List;
 typedef struct s_List *List;
@@ -16,7 +10,7 @@ typedef struct s_List_Node *List_Node;
 
 typedef int (*Finder_t)(Buffer data);
 
-List List_create(List_Option option);
+List List_create(Bool autoRelease);
 List_Node List_head(List list);
 List_Node List_tail(List list);
 void List_insert(List list, List_Node pos, Buffer data);

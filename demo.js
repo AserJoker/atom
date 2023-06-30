@@ -1,4 +1,3 @@
-import { print } from "std";
-export const main = (args) => {
-  print(args);
+const fn = function () {
+  const a = 2;
 };

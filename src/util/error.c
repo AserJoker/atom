@@ -1,5 +1,5 @@
 #include "util/error.h"
-#include "util/Strings.h"
+#include "util/strings.h"
 static Error globalError = NULL;
 static void Error_dispose(Error error) {
   if (error->cause) {

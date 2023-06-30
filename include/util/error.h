@@ -1,5 +1,5 @@
 #pragma once
-#include "Strings.h"
+#include "strings.h"
 #include "source.h"
 
 struct s_Error;

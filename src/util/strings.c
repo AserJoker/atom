@@ -1,4 +1,4 @@
-#include "util/Strings.h"
+#include "util/strings.h"
 #include "util/buffer.h"
 #include "util/list.h"
 #include <stdarg.h>
@@ -38,8 +38,7 @@ cstring cstring_from(Strings source) {
   return result;
 }
 cstring cstring_concat(cstring str, ...) {
-  List_Option opt = {0, 0};
-  List parts = List_create(opt);
+  List parts = List_create(False);
   uint32_t len = strlen(str);
   va_list args;
   List_insert_tail(parts, str);

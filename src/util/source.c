@@ -1,7 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "util/source.h"
-#include "util/Strings.h"
 #include "util/list.h"
+#include "util/strings.h"
 #include <stdio.h>
 
 SourceLine SourceLine_create() {
@@ -13,8 +13,10 @@ SourceLine SourceLine_create() {
   return sl;
 }
 
-void SourceLine_dispose(SourceLine sl) { Buffer_dispose(sl); }
-
+void SourceFile_dispose(SourceFile sf) {
+  Buffer_dispose(sf->_lines);
+  Buffer_dispose(sf->_source);
+}
 SourceFile SourceFile_read(cstring filename) {
   SourceFile sf =
       (SourceFile)Buffer_alloc(sizeof(struct s_SourceFile), SourceFile_dispose);
@@ -30,8 +32,7 @@ SourceFile SourceFile_read(cstring filename) {
   fclose(fp);
   sf->_source = source;
   sf->_filename = filename;
-  List_Option opt = {1, (Buffer_Free)SourceLine_dispose};
-  sf->_lines = List_create(opt);
+  sf->_lines = List_create(True);
   cstring linestart = source;
   for (;;) {
     if (*source == '\n' || *source == '\0') {
@@ -56,11 +57,6 @@ SourceFile SourceFile_read(cstring filename) {
   }
 
   return sf;
-}
-
-void SourceFile_dispose(SourceFile sf) {
-  Buffer_dispose(sf->_lines);
-  Buffer_dispose(sf->_source);
 }
 
 Location SourceFile_getLocation(SourceFile file, cstring source) {

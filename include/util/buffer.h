@@ -38,7 +38,12 @@ Buffer Buffer_clone_(uint32_t size, Buffer source, const char *filename,
  *
  * @param buf free buffer with pointer
  */
-void Buffer_dispose(Buffer buf);
+void Buffer_free(Buffer buf);
+#define Buffer_dispose(buf)                                                    \
+  if (buf) {                                                                   \
+    Buffer_free(buf);                                                          \
+    (buf) = NULL;                                                              \
+  }
 
 #define toBuffer(t) Buffer_clone(sizeof(t), &(t))
 #define fromBuffer(buf, type) (*(type *)(buf))
