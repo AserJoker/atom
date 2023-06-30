@@ -1,3 +1,1 @@
-const fn = function () {
-  const a = 2;
-};
+temp = html`part1${arg1*2}part_end`

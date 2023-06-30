@@ -24,6 +24,16 @@ struct s_AstNode {
       List args;
       AstNode body;
     } function;
+    struct {
+      Bool async;
+      List args;
+      AstNode body;
+    } lambda;
+    struct {
+      Token tag;
+      List args;
+      List parts;
+    } template;
     Token identifier, literal;
   };
 };
@@ -37,6 +47,10 @@ enum {
   ANT_Identifier,
   ANT_Literal,
   ANT_Function,
+  ANT_Lambda,
+  ANT_Template,
+  ANT_Object,
+  ANT_Class,
   ANT_OptionalCall,
   ANT_Call,
   ANT_Binary,

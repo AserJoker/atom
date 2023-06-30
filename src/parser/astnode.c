@@ -49,6 +49,14 @@ static void AstNode_dispose(AstNode node) {
   } else if (node->type == ANT_Function) {
     Buffer_dispose(node->function.args);
     Buffer_dispose(node->function.body);
+    Buffer_dispose(node->function.name);
+  } else if (node->type == ANT_Lambda) {
+    Buffer_dispose(node->lambda.args);
+    Buffer_dispose(node->lambda.body);
+  } else if (node->type == ANT_Template) {
+    Buffer_dispose(node->template.tag);
+    Buffer_dispose(node->template.args);
+    Buffer_dispose(node->template.parts);
   } else {
     Buffer_dispose(node->binary.left);
     Buffer_dispose(node->binary.right);
@@ -161,6 +169,7 @@ static void Expression_insert(AstNode expr) {
 }
 
 static AstNode AstNode_readExpression(SourceFile file, cstring source);
+static AstNode AstNode_readStatement(SourceFile file, cstring source);
 static AstNode AstNode_readBlockStatement(SourceFile file, cstring source);
 CHECKER(AstNode_isLiteral) {
   if (!token) {
@@ -381,6 +390,7 @@ READER(AstNode_readCall) {
     goto failed;
   }
   if (!Token_check(token, TT_Symbol, ")")) {
+    Buffer_dispose(token);
     for (;;) {
       ExpressionContext ectx = ExpressionContext_push();
       g_ectx->maxLevel = 12;
@@ -701,7 +711,257 @@ failed:
   return NULL;
 }
 
+CHECKER(AstNode_isLambda) {
+  Token it = token;
+  cstring selector = token->raw.begin;
+  if (Token_check(it, TT_Keyword, "async")) {
+    selector = it->raw.end;
+    it = Token_readSkipNewline(file, selector);
+    if (!it) {
+      return False;
+    }
+    if (Token_check(it, TT_Symbol, "(")) {
+      Buffer_dispose(it);
+      return True;
+    }
+    Buffer_dispose(it);
+    return False;
+  }
+
+  if (Token_check(it, TT_Symbol, "(")) {
+    Token next = Token_pair(file, selector, TT_Symbol, "(", TT_Symbol, ")");
+    if (!next) {
+      return False;
+    }
+    selector = next->raw.end;
+    Buffer_dispose(next);
+    next = Token_readSkipNewline(file, selector);
+    if (!next) {
+      return False;
+    }
+    if (Token_check(next, TT_Symbol, "=>")) {
+      Buffer_dispose(next);
+      return True;
+    }
+    Buffer_dispose(next);
+    return False;
+  }
+  if (it->type == TT_Identifier) {
+    it = Token_readSkipNewline(file, it->raw.end);
+    if (!it) {
+      return False;
+    }
+    if (Token_check(it, TT_Symbol, "=>")) {
+      Buffer_dispose(it);
+      return True;
+    }
+    Buffer_dispose(it);
+    return False;
+  }
+  return False;
+}
+
+READER(AstNode_readLambda) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_Lambda;
+  node->level = -2;
+  node->lambda.args = List_create(True);
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (Token_check(token, TT_Keyword, "async")) {
+    node->lambda.async = True;
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+  }
+  if (token->type == TT_Identifier) {
+    Buffer_dispose(token);
+    ExpressionContext ectx = ExpressionContext_push();
+    AstNode arg = AstNode_readIdentifier(file, selector);
+    ExpressionContext_pop(ectx);
+    if (!arg) {
+      goto failed;
+    }
+    List_insert_tail(node->lambda.args, arg);
+    selector = arg->position.end;
+  } else {
+    if (!Token_check(token, TT_Symbol, "(")) {
+      Error_push("Unexcept token.missing token '('",
+                 SourceFile_getLocation(file, token->raw.begin));
+      Buffer_dispose(token);
+      goto failed;
+    }
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (!Token_check(token, TT_Symbol, ")")) {
+      Buffer_dispose(token);
+      for (;;) {
+        ExpressionContext ectx = ExpressionContext_push();
+        g_ectx->maxLevel = 12;
+        AstNode arg = AstNode_readExpression(file, selector);
+        ExpressionContext_pop(ectx);
+        if (!arg) {
+          goto failed;
+        }
+        List_insert_tail(node->lambda.args, arg);
+        selector = arg->position.end;
+        token = Token_read(file, selector);
+        if (!token) {
+          goto failed;
+        }
+        if (Token_check(token, TT_Symbol, ",")) {
+          selector = token->raw.end;
+          Buffer_dispose(token);
+        } else {
+          break;
+        }
+      }
+    }
+    if (!Token_check(token, TT_Symbol, ")")) {
+      Error_push("Unexcept token.missing token ')'",
+                 SourceFile_getLocation(file, token->raw.begin));
+      Buffer_dispose(token);
+      goto failed;
+    }
+    selector = token->raw.end;
+    Buffer_dispose(token);
+  }
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (!Token_check(token, TT_Symbol, "=>")) {
+    Error_push("Unexcept token.missing token '=>'",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (Token_check(token, TT_Symbol, "{")) {
+    node->lambda.body = AstNode_readStatement(file, selector);
+  } else {
+    ExpressionContext ectx = ExpressionContext_push();
+    g_ectx->maxLevel = 12;
+    node->lambda.body = AstNode_readExpression(file, selector);
+    ExpressionContext_pop(ectx);
+  }
+  Buffer_dispose(token);
+  if (!node->lambda.body) {
+    goto failed;
+  }
+  selector = node->lambda.body->position.end;
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
+
+// TODO: readObject
+CHECKER(AstNode_isObject) { return False; }
+READER(AstNode_readObject) { return NULL; }
+
+// TODO: readClass
+CHECKER(AstNode_isClass) { return False; }
+READER(AstNode_readClass) { return NULL; }
+
+CHECKER(AstNode_isTemplate) {
+  if (token->type == TT_Identifier) {
+    Token next = Token_readSkipNewline(file, token->raw.end);
+    if (!next) {
+      return False;
+    }
+    if (next->type == TT_Template || next->type == TT_TemplateStart) {
+      Buffer_dispose(next);
+      return True;
+    }
+    Buffer_dispose(next);
+    return False;
+  }
+  return token->type == TT_Template || token->type == TT_TemplateStart;
+}
+READER(AstNode_readTemplate) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_Template;
+  node->level = -2;
+  node->template.args = List_create(True);
+  node->template.parts = List_create(True);
+  node->template.tag = NULL;
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (token->type == TT_Identifier) {
+    node->template.tag = token;
+    selector = token->raw.end;
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+  }
+  List_insert_tail(node->template.parts, token);
+  selector = token->raw.end;
+  if (token->type != TT_Template) {
+    for (;;) {
+      ExpressionContext ectx = ExpressionContext_push();
+      Token_enableReadTemplate();
+      AstNode arg = AstNode_readExpression(file, selector);
+      ExpressionContext_pop(ectx);
+      if (!arg) {
+        goto failed;
+      }
+      List_insert_tail(node->template.args, arg);
+      selector = arg->position.end;
+
+      Token_enableReadTemplate();
+      token = Token_readSkipNewline(file, selector);
+      Token_disableReadTemplate();
+      if (!token) {
+        goto failed;
+      }
+      if (token->type != TT_TemplateEnd && token->type != TT_TemplatePart) {
+        Error_push("Unexcept token.",
+                   SourceFile_getLocation(file, token->raw.begin));
+        Buffer_dispose(token);
+        goto failed;
+      }
+      List_insert_tail(node->template.parts, token);
+      selector = token->raw.end;
+      if (token->type == TT_TemplateEnd) {
+        break;
+      }
+    }
+  }
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
+
 static ProcessHandle atom_expression_handlers[] = {
+    {AstNode_isObject, AstNode_readObject},
+    {AstNode_isClass, AstNode_readClass},
+    {AstNode_isTemplate, AstNode_readTemplate},
+    {AstNode_isLambda, AstNode_readLambda},
     {AstNode_isFunction, AstNode_readFunction},
     {AstNode_isAssigment, AstNode_readAssigment},
     {AstNode_isBracket, AstNode_readBracket},
@@ -728,7 +988,7 @@ static AstNode AstNode_readExpression(SourceFile file, cstring source) {
       goto failed;
     }
     Bool isNewlineFlag = False;
-    if (token->type == TT_Newline || token->type == TT_MultiLineComment) {
+    while (token->type == TT_Newline || token->type == TT_MultiLineComment) {
       selector = token->raw.end;
       Buffer_dispose(token);
       token = Token_readSkipNewline(file, selector);
@@ -776,7 +1036,8 @@ static AstNode AstNode_readExpression(SourceFile file, cstring source) {
       ProcessHandle handler = handlers[indexOfHandler];
       if (!handler.checker) {
         if (Expression_isComplete() &&
-            (isNewlineFlag || token->type == TT_Symbol)) {
+            (isNewlineFlag || token->type == TT_Symbol ||
+             token->type == TT_TemplatePart || token->type == TT_TemplateEnd)) {
           Buffer_dispose(token);
           goto final;
         } else {
@@ -820,7 +1081,6 @@ failed:
   }
   return NULL;
 }
-static AstNode AstNode_readStatement(SourceFile file, cstring source);
 static Bool AstNode_isExpressionStatement(SourceFile file, Token token) {
   return True;
 }
@@ -858,26 +1118,39 @@ static AstNode AstNode_readBlockStatement(SourceFile file, cstring source) {
   }
   selector = token->raw.end;
   Buffer_dispose(token);
-  AstNode iterator = node;
-  for (;;) {
-    AstNode statement = AstNode_readStatement(file, selector);
-    if (!statement) {
-      goto failed;
-    }
-    iterator = AstNode_insertToList(iterator, statement);
-    selector = statement->position.end;
-    Token token = Token_readSkipNewline(file, selector);
-    if (!token) {
-      goto failed;
-    }
-    if (Token_check(token, TT_Symbol, "}")) {
-      selector = token->raw.end;
-      Buffer_dispose(token);
-      break;
-    } else {
-      Buffer_dispose(token);
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (!Token_check(token, TT_Symbol, "}")) {
+    Buffer_dispose(token);
+    AstNode iterator = node;
+    for (;;) {
+      AstNode statement = AstNode_readStatement(file, selector);
+      if (!statement) {
+        goto failed;
+      }
+      iterator = AstNode_insertToList(iterator, statement);
+      selector = statement->position.end;
+      Token token = Token_readSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+      if (Token_check(token, TT_Symbol, "}") || token->type == TT_Eof) {
+        break;
+      } else {
+        Buffer_dispose(token);
+      }
     }
   }
+  if (!Token_check(token, TT_Symbol, "}")) {
+    Error_push("Unexcept token.missing token '}'",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
   node->position.begin = source;
   node->position.end = selector;
   return node;

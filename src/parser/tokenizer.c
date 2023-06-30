@@ -153,7 +153,8 @@ static Token readIdentifierToken(SourceFile file, cstring source) {
     cstring selector = source;
     while (*selector) {
       if ((*selector >= 'a' && *selector <= 'z') ||
-          (*selector >= 'A' && *selector <= 'Z') || *selector == '$' ||
+          (*selector >= 'A' && *selector <= 'Z') ||
+          (*selector >= '0' && *selector <= '9') || *selector == '$' ||
           *selector == '_') {
         selector++;
       } else {

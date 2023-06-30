@@ -93,6 +93,29 @@ JSON_Value JSON_fromFunction(AstNode node) {
   JSON_setField(obj, "generator", JSON_createBoolean(node->function.generator));
   return obj;
 }
+JSON_Value JSON_fromLambda(AstNode node) {
+
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Lambda"));
+  JSON_setField(obj, "args",
+                JSON_fromList(node->lambda.args, (ToJSON)JSON_fromAstNode));
+  JSON_setField(obj, "body", JSON_fromAstNode(node->lambda.body));
+  JSON_setField(obj, "async", JSON_createBoolean(node->lambda.async));
+  return obj;
+}
+
+JSON_Value JSON_fromTemplate(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Template"));
+  if (node->template.tag) {
+    JSON_setField(obj, "tag", JSON_fromToken(node->template.tag));
+  }
+  JSON_setField(obj, "args",
+                JSON_fromList(node->template.args, (ToJSON)JSON_fromAstNode));
+  JSON_setField(obj, "parts",
+                JSON_fromList(node->template.parts, (ToJSON)JSON_fromToken));
+  return obj;
+}
 
 JSON_Value JSON_fromAstNode(AstNode node) {
   switch (node->type) {
@@ -110,6 +133,10 @@ JSON_Value JSON_fromAstNode(AstNode node) {
     return JSON_fromBlockStatement(node);
   case ANT_Function:
     return JSON_fromFunction(node);
+  case ANT_Lambda:
+    return JSON_fromLambda(node);
+  case ANT_Template:
+    return JSON_fromTemplate(node);
   default:
     return JSON_fromCalculate(node);
   }
