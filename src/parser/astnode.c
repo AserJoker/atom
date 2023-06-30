@@ -57,6 +57,14 @@ static void AstNode_dispose(AstNode node) {
     Buffer_dispose(node->template.tag);
     Buffer_dispose(node->template.args);
     Buffer_dispose(node->template.parts);
+  } else if (node->type == ANT_ObjectProperty) {
+    Buffer_dispose(node->oprop.key);
+    if (node->oprop.type == OPT_Field) {
+      Buffer_dispose(node->oprop.field);
+    } else {
+      Buffer_dispose(node->oprop.method.args);
+      Buffer_dispose(node->oprop.method.body);
+    }
   } else {
     Buffer_dispose(node->binary.left);
     Buffer_dispose(node->binary.right);
@@ -873,9 +881,239 @@ failed:
   return NULL;
 }
 
-// TODO: readObject
-CHECKER(AstNode_isObject) { return False; }
-READER(AstNode_readObject) { return NULL; }
+// TODO: readArray
+
+static AstNode ObjectProperty_read(SourceFile file, cstring source) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_ObjectProperty;
+  node->oprop.key = NULL;
+  node->oprop.type = OPT_Field;
+  node->oprop.field = NULL;
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (Token_check(token, TT_Keyword, "async")) {
+    if (node->oprop.type != OPT_Field) {
+      Error_push("Unexcept token 'async.'",
+                 SourceFile_getLocation(file, token->raw.begin));
+      Buffer_dispose(token);
+      goto failed;
+    }
+    node->oprop.type = OPT_Method;
+    node->oprop.method.async = True;
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+  }
+  if (Token_check(token, TT_Keyword, "get")) {
+    if (node->oprop.type != OPT_Field) {
+      Error_push("Unexcept token 'get.'",
+                 SourceFile_getLocation(file, token->raw.begin));
+      Buffer_dispose(token);
+      goto failed;
+    }
+    node->oprop.type = OPT_Getter;
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+  }
+
+  if (Token_check(token, TT_Keyword, "set")) {
+    if (node->oprop.type != OPT_Field) {
+      Error_push("Unexcept token 'set.'",
+                 SourceFile_getLocation(file, token->raw.begin));
+      Buffer_dispose(token);
+      goto failed;
+    }
+    node->oprop.type = OPT_Setter;
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+  }
+  if (Token_check(token, TT_Symbol, "*")) {
+    if (node->oprop.type != OPT_Field && node->oprop.type != OPT_Method) {
+      Error_push("Unexcept token '*'.",
+                 SourceFile_getLocation(file, token->raw.begin));
+      Buffer_dispose(token);
+      goto failed;
+    }
+    node->oprop.method.generator = True;
+    node->oprop.type = OPT_Method;
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+  }
+  if (node->oprop.type != OPT_Field) {
+    node->oprop.method.args = List_create(True);
+  }
+  if (Token_check(token, TT_Symbol, "[")) {
+    Buffer_dispose(token);
+    node->oprop.key = AstNode_readCompute(file, selector);
+  } else {
+    Buffer_dispose(token);
+    node->oprop.key = AstNode_readIdentifier(file, selector);
+  }
+  if (!node->oprop.key) {
+    goto failed;
+  }
+  selector = node->oprop.key->position.end;
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (Token_check(token, TT_Symbol, ":")) {
+    if (node->oprop.type != OPT_Field) {
+      Error_push("Unexcept token ':'.",
+                 SourceFile_getLocation(file, token->raw.begin));
+      Buffer_dispose(token);
+      goto failed;
+    }
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    ExpressionContext ectx = ExpressionContext_push();
+    g_ectx->maxLevel = 12;
+    node->oprop.field = AstNode_readExpression(file, selector);
+    ExpressionContext_pop(ectx);
+    if (!node->oprop.field) {
+      goto failed;
+    }
+    selector = node->oprop.field->position.end;
+  } else if (Token_check(token, TT_Symbol, "(")) {
+    if (node->oprop.type == OPT_Field) {
+      node->oprop.type = OPT_Method;
+      node->oprop.method.args = List_create(True);
+    }
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (!Token_check(token, TT_Symbol, ")")) {
+      Buffer_dispose(token);
+      for (;;) {
+        ExpressionContext ectx = ExpressionContext_push();
+        g_ectx->maxLevel = 12;
+        AstNode arg = AstNode_readExpression(file, selector);
+        ExpressionContext_pop(ectx);
+        if (!arg) {
+          goto failed;
+        }
+        List_insert_tail(node->oprop.method.args, arg);
+        selector = arg->position.end;
+        token = Token_readSkipNewline(file, selector);
+        if (!token) {
+          goto failed;
+        }
+        if (Token_check(token, TT_Symbol, ",")) {
+          selector = token->raw.end;
+          Buffer_dispose(token);
+        } else {
+          break;
+        }
+      }
+    }
+
+    if (!Token_check(token, TT_Symbol, ")")) {
+      Error_push("Unexcept token.missing token ')'",
+                 SourceFile_getLocation(file, token->raw.begin));
+      Buffer_dispose(token);
+      goto failed;
+    }
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    node->oprop.method.body = AstNode_readBlockStatement(file, selector);
+    if (!node->oprop.method.body) {
+      goto failed;
+    }
+    selector = node->oprop.method.body->position.end;
+  }
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
+
+CHECKER(AstNode_isObject) { return Token_check(token, TT_Symbol, "{"); }
+READER(AstNode_readObject) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_Object;
+  node->level = -2;
+  node->object.properties = List_create(True);
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (!Token_check(token, TT_Symbol, "}")) {
+    Buffer_dispose(token);
+    for (;;) {
+      AstNode prop = ObjectProperty_read(file, selector);
+      if (!prop) {
+        goto failed;
+      }
+      selector = prop->position.end;
+      List_insert_tail(node->object.properties, prop);
+      token = Token_readSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+      Bool isSplit = False;
+      if (Token_check(token, TT_Symbol, ",")) {
+        selector = token->raw.end;
+        Buffer_dispose(token);
+        token = Token_readSkipNewline(file, selector);
+        isSplit = True;
+      }
+      if (Token_check(token, TT_Symbol, "}") || token->type == TT_Eof) {
+        break;
+      } else if (isSplit) {
+        Buffer_dispose(token);
+      } else {
+        Error_push("Unexcept token.",
+                   SourceFile_getLocation(file, token->raw.begin));
+        Buffer_dispose(token);
+        goto failed;
+      }
+    }
+  }
+  if (!Token_check(token, TT_Symbol, "}")) {
+    Error_push("Unexcept token.missing token '}'",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
 
 // TODO: readClass
 CHECKER(AstNode_isClass) { return False; }

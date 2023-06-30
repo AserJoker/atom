@@ -8,43 +8,48 @@
         "flag": "=",
         "left": {
           "type": "Identifier",
-          "raw": "temp"
+          "raw": "obj"
         },
         "right": {
-          "type": "Template",
-          "tag": "html",
-          "args": [
+          "type": "Object",
+          "properties": [
             {
-              "type": "Binary",
-              "flag": "*",
-              "left": {
+              "key": {
                 "type": "Identifier",
-                "raw": "arg1"
+                "raw": "log"
               },
-              "right": {
-                "type": "Literal",
-                "raw": "2"
-              },
-              "level": 1.000000
+              "type": "Method",
+              "async": true,
+              "generator": true,
+              "args": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              }
             },
             {
-              "type": "Binary",
-              "flag": "*",
-              "left": {
+              "key": {
                 "type": "Identifier",
-                "raw": "arg2"
+                "raw": "data"
               },
-              "right": {
+              "type": "Getter",
+              "args": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": []
+              }
+            },
+            {
+              "key": {
+                "type": "Identifier",
+                "raw": "_data"
+              },
+              "type": "Field",
+              "value": {
                 "type": "Literal",
-                "raw": "3"
-              },
-              "level": 1.000000
+                "raw": "1"
+              }
             }
-          ],
-          "parts": [
-            "`part1${",
-            "}part2${",
-            "}part_end`"
           ]
         },
         "level": 11.000000

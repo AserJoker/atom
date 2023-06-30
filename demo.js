@@ -1,1 +1,9 @@
-temp = html`part1${arg1*2}part_end`
+obj = {
+  async *log() {
+    
+  },
+  get data() {
+    
+  },
+  _data : 1
+}

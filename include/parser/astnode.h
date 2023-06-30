@@ -34,6 +34,23 @@ struct s_AstNode {
       List args;
       List parts;
     } template;
+
+    struct {
+      AstNode key;
+      enum { OPT_Field, OPT_Method, OPT_Getter, OPT_Setter } type;
+      union {
+        AstNode field;
+        struct {
+          Bool async;
+          Bool generator;
+          List args;
+          AstNode body;
+        } method, getter, setter;
+      };
+    } oprop;
+    struct {
+      List properties;
+    } object;
     Token identifier, literal;
   };
 };
@@ -50,6 +67,7 @@ enum {
   ANT_Lambda,
   ANT_Template,
   ANT_Object,
+  ANT_ObjectProperty,
   ANT_Class,
   ANT_OptionalCall,
   ANT_Call,

@@ -117,6 +117,40 @@ JSON_Value JSON_fromTemplate(AstNode node) {
   return obj;
 }
 
+JSON_Value JSON_fromObjectProperty(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "key", JSON_fromAstNode(node->oprop.key));
+  if (node->oprop.type == OPT_Field) {
+    JSON_setField(obj, "type", JSON_createString("Field"));
+    JSON_setField(obj, "value", JSON_fromAstNode(node->oprop.field));
+  } else {
+    if (node->oprop.type == OPT_Method) {
+      JSON_setField(obj, "type", JSON_createString("Method"));
+      JSON_setField(obj, "async", JSON_createBoolean(node->oprop.method.async));
+      JSON_setField(obj, "generator",
+                    JSON_createBoolean(node->oprop.method.generator));
+    } else if (node->oprop.type == OPT_Getter) {
+      JSON_setField(obj, "type", JSON_createString("Getter"));
+    } else {
+      JSON_setField(obj, "type", JSON_createString("Setter"));
+    }
+    JSON_setField(
+        obj, "args",
+        JSON_fromList(node->oprop.method.args, (ToJSON)JSON_fromAstNode));
+    JSON_setField(obj, "body", JSON_fromAstNode(node->oprop.method.body));
+  }
+  return obj;
+}
+
+JSON_Value JSON_fromObject(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Object"));
+  JSON_setField(
+      obj, "properties",
+      JSON_fromList(node->object.properties, (ToJSON)JSON_fromAstNode));
+  return obj;
+}
+
 JSON_Value JSON_fromAstNode(AstNode node) {
   switch (node->type) {
   case ANT_Identifier:
@@ -137,6 +171,10 @@ JSON_Value JSON_fromAstNode(AstNode node) {
     return JSON_fromLambda(node);
   case ANT_Template:
     return JSON_fromTemplate(node);
+  case ANT_Object:
+    return JSON_fromObject(node);
+  case ANT_ObjectProperty:
+    return JSON_fromObjectProperty(node);
   default:
     return JSON_fromCalculate(node);
   }
