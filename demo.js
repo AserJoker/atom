@@ -1,9 +1,1 @@
-obj = {
-  async *log() {
-    
-  },
-  get data() {
-    
-  },
-  _data : 1
-}
+arr = [a,b,c,...d]

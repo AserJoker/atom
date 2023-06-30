@@ -65,6 +65,8 @@ static void AstNode_dispose(AstNode node) {
       Buffer_dispose(node->oprop.method.args);
       Buffer_dispose(node->oprop.method.body);
     }
+  } else if (node->type == ANT_Array) {
+    Buffer_dispose(node->array.items);
   } else {
     Buffer_dispose(node->binary.left);
     Buffer_dispose(node->binary.right);
@@ -881,7 +883,78 @@ failed:
   return NULL;
 }
 
-// TODO: readArray
+CHECKER(AstNode_isArray) { return Token_check(token, TT_Symbol, "["); }
+READER(AstNode_readArray) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_Array;
+  node->level = -2;
+  node->array.items = List_create(True);
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (!Token_check(token, TT_Symbol, "]")) {
+    Buffer_dispose(token);
+    for (;;) {
+      ExpressionContext ectx = ExpressionContext_push();
+      g_ectx->maxLevel = 12;
+      AstNode item = AstNode_readExpression(file, selector);
+      ExpressionContext_pop(ectx);
+      if (!item) {
+        goto failed;
+      }
+      List_insert_tail(node->array.items, item);
+      selector = item->position.end;
+      token = Token_readSkipNewline(file, selector);
+      Bool isSplit = False;
+      if (!token) {
+        goto failed;
+      }
+      if (Token_check(token, TT_Symbol, ",")) {
+        selector = token->raw.end;
+        Buffer_dispose(token);
+        isSplit = True;
+        token = Token_readSkipNewline(file, selector);
+        if (!token) {
+          goto failed;
+        }
+      }
+      if (Token_check(token, TT_Symbol, "]") || token->type == TT_Eof) {
+        break;
+      } else {
+        if (!isSplit) {
+          Error_push("Unexcept token.",
+                     SourceFile_getLocation(file, token->raw.begin));
+          Buffer_dispose(token);
+          goto failed;
+        } else {
+          Buffer_dispose(token);
+        }
+      }
+    }
+  }
+  if (!Token_check(token, TT_Symbol, "]")) {
+    Error_push("Unexcept token.",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
 
 static AstNode ObjectProperty_read(SourceFile file, cstring source) {
   cstring selector = source;
@@ -1196,6 +1269,7 @@ failed:
 }
 
 static ProcessHandle atom_expression_handlers[] = {
+    {AstNode_isArray, AstNode_readArray},
     {AstNode_isObject, AstNode_readObject},
     {AstNode_isClass, AstNode_readClass},
     {AstNode_isTemplate, AstNode_readTemplate},

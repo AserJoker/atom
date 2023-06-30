@@ -8,47 +8,31 @@
         "flag": "=",
         "left": {
           "type": "Identifier",
-          "raw": "obj"
+          "raw": "arr"
         },
         "right": {
-          "type": "Object",
-          "properties": [
+          "type": "Array",
+          "items": [
             {
-              "key": {
-                "type": "Identifier",
-                "raw": "log"
-              },
-              "type": "Method",
-              "async": true,
-              "generator": true,
-              "args": [],
-              "body": {
-                "type": "BlockStatement",
-                "body": []
-              }
+              "type": "Identifier",
+              "raw": "a"
             },
             {
-              "key": {
-                "type": "Identifier",
-                "raw": "data"
-              },
-              "type": "Getter",
-              "args": [],
-              "body": {
-                "type": "BlockStatement",
-                "body": []
-              }
+              "type": "Identifier",
+              "raw": "b"
             },
             {
-              "key": {
+              "type": "Identifier",
+              "raw": "c"
+            },
+            {
+              "type": "Binary",
+              "flag": "...",
+              "right": {
                 "type": "Identifier",
-                "raw": "_data"
+                "raw": "d"
               },
-              "type": "Field",
-              "value": {
-                "type": "Literal",
-                "raw": "1"
-              }
+              "level": -1.000000
             }
           ]
         },

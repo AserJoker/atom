@@ -51,6 +51,9 @@ struct s_AstNode {
     struct {
       List properties;
     } object;
+    struct {
+      List items;
+    } array;
     Token identifier, literal;
   };
 };
@@ -67,6 +70,7 @@ enum {
   ANT_Lambda,
   ANT_Template,
   ANT_Object,
+  ANT_Array,
   ANT_ObjectProperty,
   ANT_Class,
   ANT_OptionalCall,

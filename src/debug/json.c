@@ -151,6 +151,14 @@ JSON_Value JSON_fromObject(AstNode node) {
   return obj;
 }
 
+JSON_Value JSON_fromArray(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("Array"));
+  JSON_setField(obj, "items",
+                JSON_fromList(node->array.items, (ToJSON)JSON_fromAstNode));
+  return obj;
+}
+
 JSON_Value JSON_fromAstNode(AstNode node) {
   switch (node->type) {
   case ANT_Identifier:
@@ -175,6 +183,8 @@ JSON_Value JSON_fromAstNode(AstNode node) {
     return JSON_fromObject(node);
   case ANT_ObjectProperty:
     return JSON_fromObjectProperty(node);
+  case ANT_Array:
+    return JSON_fromArray(node);
   default:
     return JSON_fromCalculate(node);
   }
