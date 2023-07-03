@@ -10,9 +10,9 @@ static TokenContext g_context = NULL;
 
 static cstring g_keywords[] = {
     "assert",     "as",      "await",   "async",  "break",
-    "case",       "catch",   "class",   "const",  "continue",
+    "case",       "catch",   "class", "const",  "continue",
     "debugger",   "default", "delete",  "do",     "else",
-    "export",     "extends", "finally", "for",    "function",
+    "export",     "extends", "finally", "for",    "e_function",
     "from",       "if",      "get",     "import", "in",
     "instanceof", "let",     "new",     "of",     "return",
     "static",     "super",   "switch",  "set",    "this",
@@ -140,7 +140,7 @@ static Token readStringToken(SourceFile file, cstring source) {
       token->type = TT_String;
       return token;
     } else {
-      Error_set(Error_create("Unterminated string literal.",
+      Error_set(Error_create("Unterminated string e_literal.",
                              SourceFile_getLocation(file, selector), NULL));
     }
   }
@@ -301,7 +301,7 @@ static Token readTemplateToken(SourceFile file, cstring source) {
         break;
       }
       if (!*selector) {
-        Error_set(Error_create("Unterminated template literal.",
+        Error_set(Error_create("Unterminated e_template e_literal.",
                                SourceFile_getLocation(file, selector), NULL));
         return NULL;
       }
@@ -330,7 +330,7 @@ static Token readTemplatePartOrEndToken(SourceFile file, cstring source) {
         selector++;
         break;
       } else if (!*selector) {
-        Error_set(Error_create("Unterminated template literal.",
+        Error_set(Error_create("Unterminated e_template e_literal.",
                                SourceFile_getLocation(file, selector), NULL));
         return NULL;
       }

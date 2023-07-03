@@ -4,4 +4,4 @@
 
 void Debug_init();
 
-JSON_Value JSON_fromAstNode(AstNode program);
+JSON_Value JSON_fromAstNode(AstNode s_program);

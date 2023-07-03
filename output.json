@@ -4,39 +4,36 @@
     {
       "type": "ExpressionStatement",
       "expression": {
-        "type": "Binary",
-        "flag": "=",
-        "left": {
-          "type": "Identifier",
-          "raw": "arr"
-        },
-        "right": {
-          "type": "Array",
-          "items": [
-            {
-              "type": "Identifier",
-              "raw": "a"
-            },
-            {
+        "type": "Class",
+        "decorators": [
+          {
+            "type": "Identifier",
+            "raw": "a"
+          },
+          {
+            "type": "Call",
+            "callee": {
               "type": "Identifier",
               "raw": "b"
             },
-            {
-              "type": "Identifier",
-              "raw": "c"
-            },
-            {
-              "type": "Binary",
-              "flag": "...",
-              "right": {
-                "type": "Identifier",
-                "raw": "d"
-              },
-              "level": -1.000000
-            }
-          ]
+            "args": []
+          }
+        ],
+        "name": "A",
+        "extends": {
+          "type": "Binary",
+          "flag": "compute",
+          "left": {
+            "type": "Identifier",
+            "raw": "B"
+          },
+          "right": {
+            "type": "Literal",
+            "raw": "\"aaaa\""
+          },
+          "level": -2.000000
         },
-        "level": 11.000000
+        "properties": []
       }
     }
   ]

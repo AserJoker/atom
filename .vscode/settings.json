@@ -6,12 +6,12 @@
       // 函数参数
       "parameter": "#23b4c5",
       // 类或者结构体
-      "class": {
+      "e_class": {
         "fontStyle": "bold",
         "foreground": "#729de3"
       },
       // 普通函数
-      "function": {
+      "e_function": {
         "foreground": "#bbe524"
       },
       // 临时变量

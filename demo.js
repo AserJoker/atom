@@ -1,1 +1,2 @@
-arr = [a,b,c,...d]
+@a @b()
+class A extends B["aaaa"] { }

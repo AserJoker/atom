@@ -23,17 +23,17 @@ struct s_AstNode {
       Bool generator;
       List args;
       AstNode body;
-    } function;
+    } e_function;
     struct {
       Bool async;
       List args;
       AstNode body;
-    } lambda;
+    } e_lambda;
     struct {
       Token tag;
       List args;
       List parts;
-    } template;
+    } e_template;
 
     struct {
       AstNode key;
@@ -47,14 +47,49 @@ struct s_AstNode {
           AstNode body;
         } method, getter, setter;
       };
-    } oprop;
+    } e_oprop;
     struct {
       List properties;
-    } object;
+    } e_object;
     struct {
       List items;
-    } array;
-    Token identifier, literal;
+    } e_array;
+    struct {
+      List statements;
+    } s_block;
+    struct {
+      List body;
+    } s_program;
+
+    struct {
+      List decorators;
+      AstNode key;
+      enum {
+        CPT_Field,
+        CPT_Method,
+        CPT_Getter,
+        CPT_Setter,
+        CPT_StaticBlock,
+        CPT_Class
+      } type;
+      union {
+        AstNode field, staticBlock;
+        struct {
+          Bool async;
+          Bool generator;
+          Bool isStatic;
+          List args;
+          AstNode body;
+        } method, getter, setter;
+      };
+    } e_cprop;
+    struct {
+      List decorators;
+      List properties;
+      Token name;
+      AstNode extends;
+    } e_class;
+    Token e_identifier, e_literal;
   };
 };
 AstNode AstNode_read(SourceFile file, cstring source);
@@ -73,6 +108,7 @@ enum {
   ANT_Array,
   ANT_ObjectProperty,
   ANT_Class,
+  ANT_ClassProperty,
   ANT_OptionalCall,
   ANT_Call,
   ANT_Binary,
