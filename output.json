@@ -4,128 +4,114 @@
     {
       "type": "ExpressionStatement",
       "expression": {
-        "type": "Class",
-        "decorators": [],
-        "name": "A",
-        "properties": [
+        "type": "Function",
+        "name": "print",
+        "args": [
           {
-            "static": true,
-            "private": false,
-            "key": {
-              "type": "Identifier",
-              "raw": "log"
-            },
-            "decorators": [
-              {
-                "type": "Call",
-                "callee": {
-                  "type": "Identifier",
-                  "raw": "a"
-                },
-                "args": []
-              },
-              {
-                "type": "Call",
-                "callee": {
-                  "type": "Identifier",
-                  "raw": "blur"
-                },
-                "args": []
-              }
-            ],
-            "type": "Method",
-            "async": true,
-            "generator": true,
-            "args": [
-              {
-                "type": "Identifier",
-                "raw": "fmt"
-              },
-              {
-                "type": "Identifier",
-                "raw": "arg"
-              }
-            ],
-            "body": {
-              "type": "BlockStatement",
-              "body": [
-                {
-                  "type": "label",
-                  "label": "test",
-                  "body": {
-                    "type": "ExpressionStatement",
-                    "expression": {
-                      "type": "Call",
-                      "callee": {
-                        "type": "Identifier",
-                        "raw": "print"
-                      },
-                      "args": [
-                        {
-                          "type": "Identifier",
-                          "raw": "fmt"
-                        },
-                        {
-                          "type": "Identifier",
-                          "raw": "arg"
-                        }
-                      ]
-                    }
-                  }
-                },
-                {
-                  "type": "yield",
-                  "value": {
-                    "type": "Literal",
-                    "raw": "1"
-                  }
-                },
-                {
-                  "type": "ExpressionStatement",
-                  "expression": {
-                    "type": "Call",
-                    "callee": {
-                      "type": "Identifier",
-                      "raw": "print"
-                    },
-                    "args": [
-                      {
-                        "type": "Identifier",
-                        "raw": "fmt"
-                      },
-                      {
-                        "type": "Identifier",
-                        "raw": "arg"
-                      },
-                      {
-                        "type": "Identifier",
-                        "raw": "arg"
-                      }
-                    ]
-                  }
-                },
-                {
-                  "type": "return",
-                  "value": {
-                    "type": "Literal",
-                    "raw": "0"
-                  }
-                }
-              ]
-            }
+            "type": "Identifier",
+            "raw": "fmt"
           },
           {
-            "static": false,
-            "private": true,
-            "key": {
+            "type": "Binary",
+            "flag": "...",
+            "right": {
               "type": "Identifier",
-              "raw": "a"
+              "raw": "args"
             },
-            "decorators": [],
-            "type": "Field"
+            "level": -1.000000
           }
         ],
-        "staticBlocks": []
+        "body": {
+          "type": "BlockStatement",
+          "body": [
+            {
+              "type": "assigment",
+              "assigmentType": "const",
+              "body": {
+                "type": "Binary",
+                "flag": "=",
+                "left": {
+                  "type": "Identifier",
+                  "raw": "time"
+                },
+                "right": {
+                  "type": "Call",
+                  "callee": {
+                    "type": "Binary",
+                    "flag": ".",
+                    "left": {
+                      "type": "Identifier",
+                      "raw": "Date"
+                    },
+                    "right": {
+                      "type": "Identifier",
+                      "raw": "now"
+                    },
+                    "level": -2.000000
+                  },
+                  "args": []
+                },
+                "level": 11.000000
+              }
+            },
+            {
+              "type": "ExpressionStatement",
+              "expression": {
+                "type": "Call",
+                "callee": {
+                  "type": "Binary",
+                  "flag": ".",
+                  "left": {
+                    "type": "Identifier",
+                    "raw": "console"
+                  },
+                  "right": {
+                    "type": "Identifier",
+                    "raw": "log"
+                  },
+                  "level": -2.000000
+                },
+                "args": [
+                  {
+                    "type": "Identifier",
+                    "raw": "fmt"
+                  },
+                  {
+                    "type": "Identifier",
+                    "raw": "time"
+                  },
+                  {
+                    "type": "Binary",
+                    "flag": "...",
+                    "right": {
+                      "type": "Identifier",
+                      "raw": "args"
+                    },
+                    "level": -1.000000
+                  }
+                ]
+              }
+            },
+            {
+              "type": "return",
+              "value": {
+                "type": "Binary",
+                "flag": ".",
+                "left": {
+                  "type": "Identifier",
+                  "raw": "args"
+                },
+                "right": {
+                  "type": "Identifier",
+                  "raw": "length"
+                },
+                "level": -2.000000
+              }
+            }
+          ]
+        },
+        "async": false,
+        "generator": false
       }
     }
   ]

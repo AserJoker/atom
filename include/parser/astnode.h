@@ -65,6 +65,13 @@ struct s_AstNode {
       AstNode body;
     } s_label;
     struct {
+      Token label;
+    } s_break, s_continue;
+    struct {
+      enum { AT_Const, AT_Let, AT_Var } type;
+      AstNode body;
+    } s_assigment;
+    struct {
       List body;
     } s_program;
 

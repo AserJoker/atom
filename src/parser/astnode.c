@@ -92,6 +92,11 @@ static void AstNode_dispose(AstNode node) {
   } else if (node->type == ANT_LabelStatement) {
     Buffer_dispose(node->s_label.label);
     Buffer_dispose(node->s_label.body);
+  } else if (node->type == ANT_BreakStatement ||
+             node->type == ANT_ContinueStatement) {
+    Buffer_dispose(node->s_break.label);
+  } else if (node->type == ANT_AssigmentStatement) {
+    Buffer_dispose(node->s_assigment.body);
   } else {
     Buffer_dispose(node->binary.left);
     Buffer_dispose(node->binary.right);
@@ -630,11 +635,11 @@ failed:
 }
 
 CHECKER(AstNode_isFunction) {
-  if (Token_check(token, TT_Keyword, "e_function")) {
+  if (Token_check(token, TT_Keyword, "function")) {
     return True;
   } else if (Token_check(token, TT_Keyword, "async")) {
     token = Token_readSkipNewline(file, token->raw.end);
-    if (token && Token_check(token, TT_Keyword, "e_function")) {
+    if (token && Token_check(token, TT_Keyword, "function")) {
       Buffer_dispose(token);
       return True;
     }
@@ -663,7 +668,7 @@ READER(AstNode_readFunction) {
       goto failed;
     }
   }
-  if (Token_check(token, TT_Keyword, "e_function")) {
+  if (Token_check(token, TT_Keyword, "function")) {
     selector = token->raw.end;
     Buffer_dispose(token);
     token = Token_readSkipNewline(file, selector);
@@ -1918,6 +1923,8 @@ READER(AstNode_readLabelStatement) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_LabelStatement;
+  node->s_label.label = NULL;
+  node->s_label.body = NULL;
   Token token = Token_readSkipNewline(file, selector);
   if (!token) {
     goto failed;
@@ -1942,8 +1949,76 @@ failed:
   Buffer_dispose(node);
   return NULL;
 }
+CHECKER(AstNode_isBreakStatement) {
+  return Token_check(token, TT_Keyword, "break") ||
+         Token_check(token, TT_Keyword, "continue");
+}
+READER(AstNode_readBreakStatement) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_BreakStatement;
+  node->s_break.label = NULL;
+  Token token = Token_readSkipNewline(file, selector);
+  selector = token->raw.end;
+  if (Token_check(token, TT_Keyword, "continue")) {
+    node->type = ANT_ContinueStatement;
+  }
+  Buffer_dispose(token);
+  token = Token_readSkipComment(file, selector);
+  if (token->type == TT_Newline || token->type == TT_MultiLineComment) {
+    Buffer_dispose(token);
+  } else if (token->type == TT_Identifier) {
+    node->s_break.label = token;
+    selector = token->raw.end;
+  } else {
+    Error_push("Unexcept token.",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
+
+CHECKER(AstNode_isAssigmentStatement) {
+  return Token_check(token, TT_Keyword, "const") ||
+         Token_check(token, TT_Keyword, "let") ||
+         Token_check(token, TT_Keyword, "var");
+}
+READER(AstNode_readAssigement) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_AssigmentStatement;
+  node->s_assigment.type = AT_Var;
+  node->s_assigment.body = NULL;
+  Token token = Token_readSkipNewline(file, selector);
+  if (Token_check(token, TT_Keyword, "const")) {
+    node->s_assigment.type = AT_Const;
+  } else if (Token_check(token, TT_Keyword, "let")) {
+    node->s_assigment.type = AT_Let;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  node->s_assigment.body = AstNode_readExpression(file, selector);
+  if (!node->s_assigment.body) {
+    goto failed;
+  }
+  selector = node->s_assigment.body->position.end;
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
 
 static ProcessHandle statement_handlers[] = {
+    {AstNode_isAssigment, AstNode_readAssigement},
+    {AstNode_isBreakStatement, AstNode_readBreakStatement},
     {AstNode_isLabelStatement, AstNode_readLabelStatement},
     {AstNode_isReturnStatement, AstNode_readReturnStatement},
     {AstNode_isBlockStatement, AstNode_readBlockStatement},

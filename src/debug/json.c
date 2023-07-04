@@ -238,6 +238,37 @@ JSON_Value JSON_fromLabel(AstNode node) {
   return obj;
 }
 
+JSON_Value JSON_fromBreak(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("break"));
+  if (node->s_break.label) {
+    JSON_setField(obj, "label", JSON_fromToken(node->s_break.label));
+  }
+  return obj;
+}
+
+JSON_Value JSON_fromContinue(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("break"));
+  if (node->s_break.label) {
+    JSON_setField(obj, "label", JSON_fromToken(node->s_break.label));
+  }
+  return obj;
+}
+JSON_Value JSON_fromAssigment(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("assigment"));
+  if (node->s_assigment.type == AT_Const) {
+    JSON_setField(obj, "assigmentType", JSON_createString("const"));
+  } else if (node->s_assigment.type == AT_Let) {
+    JSON_setField(obj, "assigmentType", JSON_createString("let"));
+  } else {
+    JSON_setField(obj, "assigmentType", JSON_createString("var"));
+  }
+  JSON_setField(obj, "body", JSON_fromAstNode(node->s_assigment.body));
+  return obj;
+}
+
 JSON_Value JSON_fromAstNode(AstNode node) {
   switch (node->type) {
   case ANT_Identifier:
@@ -272,6 +303,12 @@ JSON_Value JSON_fromAstNode(AstNode node) {
     return JSON_fromYield(node);
   case ANT_LabelStatement:
     return JSON_fromLabel(node);
+  case ANT_BreakStatement:
+    return JSON_fromBreak(node);
+  case ANT_ContinueStatement:
+    return JSON_fromContinue(node);
+  case ANT_AssigmentStatement:
+    return JSON_fromAssigment(node);
   default:
     return JSON_fromCalculate(node);
   }
