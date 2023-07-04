@@ -1,2 +1,7 @@
-@a @b()
-class A extends B["aaaa"] { }
+class A {
+  @a() @blur()
+  static async *log(fmt, arg) {
+    print(fmt, arg);
+  }
+  #a = 2;
+}

@@ -5,35 +5,73 @@
       "type": "ExpressionStatement",
       "expression": {
         "type": "Class",
-        "decorators": [
+        "decorators": [],
+        "name": "A",
+        "properties": [
           {
-            "type": "Identifier",
-            "raw": "a"
+            "static": true,
+            "private": false,
+            "key": {
+              "type": "Identifier",
+              "raw": "log"
+            },
+            "decorators": [
+              {
+                "type": "Identifier",
+                "raw": "a"
+              }
+            ],
+            "type": "Method",
+            "async": true,
+            "generator": true,
+            "args": [
+              {
+                "type": "Identifier",
+                "raw": "fmt"
+              },
+              {
+                "type": "Identifier",
+                "raw": "arg"
+              }
+            ],
+            "body": {
+              "type": "BlockStatement",
+              "body": [
+                {
+                  "type": "ExpressionStatement",
+                  "expression": {
+                    "type": "Call",
+                    "callee": {
+                      "type": "Identifier",
+                      "raw": "print"
+                    },
+                    "args": [
+                      {
+                        "type": "Identifier",
+                        "raw": "fmt"
+                      },
+                      {
+                        "type": "Identifier",
+                        "raw": "arg"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
           },
           {
-            "type": "Call",
-            "callee": {
+            "static": false,
+            "private": true,
+            "key": {
               "type": "Identifier",
-              "raw": "b"
+              "raw": "a"
             },
-            "args": []
+            "decorators": [],
+            "type": "Field"
           }
         ],
-        "name": "A",
-        "extends": {
-          "type": "Binary",
-          "flag": "compute",
-          "left": {
-            "type": "Identifier",
-            "raw": "B"
-          },
-          "right": {
-            "type": "Literal",
-            "raw": "\"aaaa\""
-          },
-          "level": -2.000000
-        },
-        "properties": []
+        "staticBlocks": []
       }
     }
   ]

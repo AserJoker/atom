@@ -64,20 +64,14 @@ struct s_AstNode {
     struct {
       List decorators;
       AstNode key;
-      enum {
-        CPT_Field,
-        CPT_Method,
-        CPT_Getter,
-        CPT_Setter,
-        CPT_StaticBlock,
-        CPT_Class
-      } type;
+      Bool isStatic;
+      Bool isPrivate;
+      enum { CPT_Field, CPT_Method, CPT_Getter, CPT_Setter } type;
       union {
-        AstNode field, staticBlock;
+        AstNode field;
         struct {
           Bool async;
           Bool generator;
-          Bool isStatic;
           List args;
           AstNode body;
         } method, getter, setter;
@@ -86,6 +80,7 @@ struct s_AstNode {
     struct {
       List decorators;
       List properties;
+      List staticBlocks;
       Token name;
       AstNode extends;
     } e_class;

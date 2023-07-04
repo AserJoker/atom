@@ -162,7 +162,35 @@ JSON_Value JSON_fromArray(AstNode node) {
   return obj;
 }
 
-JSON_Value JSON_fromClassProperty(AstNode node) { return NULL; }
+JSON_Value JSON_fromClassProperty(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "static", JSON_createBoolean(node->e_cprop.isStatic));
+  JSON_setField(obj, "private", JSON_createBoolean(node->e_cprop.isPrivate));
+  JSON_setField(obj, "key", JSON_fromAstNode(node->e_cprop.key));
+  JSON_setField(
+      obj, "decorators",
+      JSON_fromList(node->e_class.decorators, (ToJSON)JSON_fromAstNode));
+  if (node->e_cprop.type == CPT_Field) {
+    JSON_setField(obj, "type", JSON_createString("Field"));
+  } else {
+    if (node->e_cprop.type == CPT_Method) {
+      JSON_setField(obj, "type", JSON_createString("Method"));
+    } else if (node->e_cprop.type == CPT_Getter) {
+      JSON_setField(obj, "type", JSON_createString("Getter"));
+    } else {
+      JSON_setField(obj, "type", JSON_createString("Setter"));
+    }
+    JSON_setField(obj, "async", JSON_createBoolean(node->e_cprop.method.async));
+    JSON_setField(obj, "generator",
+                  JSON_createBoolean(node->e_cprop.method.generator));
+    JSON_setField(
+        obj, "args",
+        JSON_fromList(node->e_cprop.method.args, (ToJSON)JSON_fromAstNode));
+    JSON_setField(obj, "body",
+                  JSON_fromBlockStatement(node->e_cprop.method.body));
+  }
+  return obj;
+}
 
 JSON_Value JSON_fromClass(AstNode node) {
   JSON_Value obj = JSON_createObject();
@@ -177,6 +205,9 @@ JSON_Value JSON_fromClass(AstNode node) {
   JSON_setField(
       obj, "properties",
       JSON_fromList(node->e_class.properties, (ToJSON)JSON_fromClassProperty));
+  JSON_setField(obj, "staticBlocks",
+                JSON_fromList(node->e_class.staticBlocks,
+                              (ToJSON)JSON_fromBlockStatement));
 
   return obj;
 }
