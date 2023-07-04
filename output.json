@@ -17,8 +17,20 @@
             },
             "decorators": [
               {
-                "type": "Identifier",
-                "raw": "a"
+                "type": "Call",
+                "callee": {
+                  "type": "Identifier",
+                  "raw": "a"
+                },
+                "args": []
+              },
+              {
+                "type": "Call",
+                "callee": {
+                  "type": "Identifier",
+                  "raw": "blur"
+                },
+                "args": []
               }
             ],
             "type": "Method",
@@ -38,6 +50,37 @@
               "type": "BlockStatement",
               "body": [
                 {
+                  "type": "label",
+                  "label": "test",
+                  "body": {
+                    "type": "ExpressionStatement",
+                    "expression": {
+                      "type": "Call",
+                      "callee": {
+                        "type": "Identifier",
+                        "raw": "print"
+                      },
+                      "args": [
+                        {
+                          "type": "Identifier",
+                          "raw": "fmt"
+                        },
+                        {
+                          "type": "Identifier",
+                          "raw": "arg"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "type": "yield",
+                  "value": {
+                    "type": "Literal",
+                    "raw": "1"
+                  }
+                },
+                {
                   "type": "ExpressionStatement",
                   "expression": {
                     "type": "Call",
@@ -53,8 +96,19 @@
                       {
                         "type": "Identifier",
                         "raw": "arg"
+                      },
+                      {
+                        "type": "Identifier",
+                        "raw": "arg"
                       }
                     ]
+                  }
+                },
+                {
+                  "type": "return",
+                  "value": {
+                    "type": "Literal",
+                    "raw": "0"
                   }
                 }
               ]

@@ -5,7 +5,7 @@ static JSON_Value JSON_fromAstList(AstNode iterator, ToJSON toJSON) {
   AstNode it = iterator;
   int index = 0;
   if (it) {
-    while (it->type == ANT_Fake) {
+    while (it->type == ANT_Reserved) {
       JSON_setIndex(arr, index, toJSON(it->binary.left));
       it = it->binary.right;
       index++;
@@ -212,6 +212,32 @@ JSON_Value JSON_fromClass(AstNode node) {
   return obj;
 }
 
+JSON_Value JSON_fromReturn(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("return"));
+  if (node->s_return) {
+    JSON_setField(obj, "value", JSON_fromAstNode(node->s_return));
+  }
+  return obj;
+}
+
+JSON_Value JSON_fromYield(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("yield"));
+  if (node->s_return) {
+    JSON_setField(obj, "value", JSON_fromAstNode(node->s_return));
+  }
+  return obj;
+}
+
+JSON_Value JSON_fromLabel(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("label"));
+  JSON_setField(obj, "label", JSON_fromToken(node->s_label.label));
+  JSON_setField(obj, "body", JSON_fromAstNode(node->s_label.body));
+  return obj;
+}
+
 JSON_Value JSON_fromAstNode(AstNode node) {
   switch (node->type) {
   case ANT_Identifier:
@@ -240,6 +266,12 @@ JSON_Value JSON_fromAstNode(AstNode node) {
     return JSON_fromArray(node);
   case ANT_Class:
     return JSON_fromClass(node);
+  case ANT_ReturnStatement:
+    return JSON_fromReturn(node);
+  case ANT_YieldStatement:
+    return JSON_fromYield(node);
+  case ANT_LabelStatement:
+    return JSON_fromLabel(node);
   default:
     return JSON_fromCalculate(node);
   }

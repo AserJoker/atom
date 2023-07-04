@@ -86,6 +86,12 @@ static void AstNode_dispose(AstNode node) {
       Buffer_dispose(node->e_cprop.method.args);
       Buffer_dispose(node->e_cprop.method.body);
     }
+  } else if (node->type == ANT_ReturnStatement ||
+             node->type == ANT_YieldStatement) {
+    Buffer_dispose(node->s_return);
+  } else if (node->type == ANT_LabelStatement) {
+    Buffer_dispose(node->s_label.label);
+    Buffer_dispose(node->s_label.body);
   } else {
     Buffer_dispose(node->binary.left);
     Buffer_dispose(node->binary.right);
@@ -101,7 +107,7 @@ static AstNode AstNode_create() {
   node->level = 0;
   node->position.begin = 0;
   node->position.end = 0;
-  node->type = ANT_Fake;
+  node->type = ANT_Reserved;
   node->binary.left = 0;
   node->binary.right = 0;
   node->binary.flag = 0;
@@ -1526,6 +1532,9 @@ READER(AstNode_readClass) {
           goto failed;
         }
       }
+      if (Token_check(token, TT_Symbol, "}") || token->type == TT_Eof) {
+        break;
+      }
       Token next = Token_readSkipNewline(file, token->raw.end);
       if (!next) {
         Buffer_dispose(token);
@@ -1552,14 +1561,6 @@ READER(AstNode_readClass) {
         List_insert_tail(node->e_class.properties, property);
         selector = property->position.end;
       }
-      token = Token_readSkipNewline(file, selector);
-      if (!token) {
-        goto failed;
-      }
-      if (Token_check(token, TT_Symbol, "}") || token->type == TT_Eof) {
-        break;
-      }
-      Buffer_dispose(token);
     }
   }
 
@@ -1678,7 +1679,7 @@ static ProcessHandle operator_expression_handlers[] = {
     {AstNode_isOptional, AstNode_readOptional},
     {0, 0}};
 
-static AstNode AstNode_readExpression(SourceFile file, cstring source) {
+READER(AstNode_readExpression) {
   cstring selector = source;
   Token_enableReadRegex();
   for (;;) {
@@ -1714,7 +1715,6 @@ static AstNode AstNode_readExpression(SourceFile file, cstring source) {
 
     if (Token_check(token, TT_Symbol, ";")) {
       if (Expression_isComplete()) {
-        selector = token->raw.end;
         Buffer_dispose(token);
         break;
       } else {
@@ -1780,11 +1780,9 @@ failed:
   }
   return NULL;
 }
-static Bool AstNode_isExpressionStatement(SourceFile file, Token token) {
-  return True;
-}
-static AstNode AstNode_readExpressionStatement(SourceFile file,
-                                               cstring source) {
+CHECKER(AstNode_isExpressionStatement) { return True; }
+
+READER(AstNode_readExpressionStatement) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_ExpressionStatement;
@@ -1804,10 +1802,9 @@ failed:
   return NULL;
 }
 
-static Bool AstNode_isBlockStatement(SourceFile file, Token token) {
-  return Token_check(token, TT_Symbol, "{");
-}
-static AstNode AstNode_readBlockStatement(SourceFile file, cstring source) {
+CHECKER(AstNode_isBlockStatement) { return Token_check(token, TT_Symbol, "{"); }
+
+READER(AstNode_readBlockStatement) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_BlockStatement;
@@ -1825,21 +1822,28 @@ static AstNode AstNode_readBlockStatement(SourceFile file, cstring source) {
   if (!Token_check(token, TT_Symbol, "}")) {
     Buffer_dispose(token);
     for (;;) {
+      token = Token_readSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+      while (Token_check(token, TT_Symbol, ";")) {
+        selector = token->raw.end;
+        Buffer_dispose(token);
+        token = Token_readSkipNewline(file, selector);
+        if (!token) {
+          goto failed;
+        }
+      }
+      if (Token_check(token, TT_Symbol, "}") || token->type == TT_Eof) {
+        break;
+      }
+      Buffer_dispose(token);
       AstNode statement = AstNode_readStatement(file, selector);
       if (!statement) {
         goto failed;
       }
       List_insert_tail(node->s_block.statements, statement);
       selector = statement->position.end;
-      token = Token_readSkipNewline(file, selector);
-      if (!token) {
-        goto failed;
-      }
-      if (Token_check(token, TT_Symbol, "}") || token->type == TT_Eof) {
-        break;
-      } else {
-        Buffer_dispose(token);
-      }
     }
   }
   if (!Token_check(token, TT_Symbol, "}")) {
@@ -1858,30 +1862,95 @@ failed:
   return NULL;
 }
 
-static Bool AstNode_isEmptyStatement(SourceFile file, cstring source) {
-  Token token = Token_readSkipNewline(file, source);
+CHECKER(AstNode_isReturnStatement) {
+  return Token_check(token, TT_Keyword, "return") ||
+         Token_check(token, TT_Keyword, "yield");
+}
+READER(AstNode_readReturnStatement) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  Token token = Token_readSkipNewline(file, selector);
   if (!token) {
-    return False;
+    goto failed;
   }
-  if (Token_check(token, TT_Symbol, ";")) {
-    Buffer_dispose(token);
-    return True;
+  if (Token_check(token, TT_Keyword, "return")) {
+    node->type = ANT_ReturnStatement;
+  } else {
+    node->type = ANT_YieldStatement;
   }
+  selector = token->raw.end;
   Buffer_dispose(token);
+  token = Token_readSkipComment(file, selector);
+  if (token->type == TT_Newline || token->type == TT_MultiLineComment) {
+    Buffer_dispose(token);
+  } else {
+    Buffer_dispose(token);
+    ExpressionContext ectx = ExpressionContext_push();
+    node->s_return = AstNode_readExpression(file, selector);
+    ExpressionContext_pop(ectx);
+    if (!node->s_return) {
+      goto failed;
+    }
+    selector = node->s_return->position.end;
+  }
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(token);
+  return NULL;
+}
+CHECKER(AstNode_isLabelStatement) {
+  if (token->type == TT_Identifier) {
+    Token next = Token_readSkipNewline(file, token->raw.end);
+    if (!next) {
+      return False;
+    }
+    if (Token_check(next, TT_Symbol, ":")) {
+      Buffer_dispose(next);
+      return True;
+    }
+    Buffer_dispose(next);
+  }
   return False;
 }
-
-static AstNode AstNode_readEmptyStatement(SourceFile file, cstring source) {
+READER(AstNode_readLabelStatement) {
+  cstring selector = source;
   AstNode node = AstNode_create();
+  node->type = ANT_LabelStatement;
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  node->s_label.label = token;
+  selector = token->raw.end;
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  node->s_label.body = AstNode_readStatement(file, selector);
+  if (!node->s_label.body) {
+    goto failed;
+  }
+  selector = node->s_label.body->position.end;
+  node->position.begin = source;
+  node->position.end = selector;
   return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
 }
 
 static ProcessHandle statement_handlers[] = {
+    {AstNode_isLabelStatement, AstNode_readLabelStatement},
+    {AstNode_isReturnStatement, AstNode_readReturnStatement},
     {AstNode_isBlockStatement, AstNode_readBlockStatement},
     {AstNode_isExpressionStatement, AstNode_readExpressionStatement},
     {0, 0}};
 
-static AstNode AstNode_readStatement(SourceFile file, cstring source) {
+READER(AstNode_readStatement) {
   int index = 0;
   Token token = Token_readSkipNewline(file, source);
   if (!token) {
@@ -1903,7 +1972,7 @@ static AstNode AstNode_readStatement(SourceFile file, cstring source) {
   }
 }
 
-static AstNode AstNode_readProgram(SourceFile file, cstring source) {
+READER(AstNode_readProgram) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Program;
@@ -1916,22 +1985,29 @@ static AstNode AstNode_readProgram(SourceFile file, cstring source) {
   if (token->type != TT_Eof) {
     Buffer_dispose(token);
     for (;;) {
+      token = Token_readSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+      while (Token_check(token, TT_Symbol, ";")) {
+        selector = token->raw.end;
+        Buffer_dispose(token);
+        token = Token_readSkipNewline(file, selector);
+        if (!token) {
+          goto failed;
+        }
+      }
+      if (token->type == TT_Eof) {
+        Buffer_dispose(token);
+        break;
+      }
+      Buffer_dispose(token);
       AstNode statement = AstNode_readStatement(file, selector);
       if (!statement) {
         goto failed;
       }
       List_insert_tail(node->s_program.body, statement);
       selector = statement->position.end;
-      Token token = Token_readSkipNewline(file, selector);
-      if (!token) {
-        goto failed;
-      }
-      if (token->type == TT_Eof) {
-        Buffer_dispose(token);
-        break;
-      } else {
-        Buffer_dispose(token);
-      }
     }
   } else {
     Buffer_dispose(token);

@@ -1,7 +1,11 @@
 class A {
-  @a() @blur()
+  @a()
+  @blur()
   static async *log(fmt, arg) {
-    print(fmt, arg);
+    test: print(fmt, arg);
+    yield 1;
+    print(fmt, arg, arg);
+    return 0;
   }
   #a = 2;
 }

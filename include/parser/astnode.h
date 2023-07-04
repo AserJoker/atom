@@ -57,6 +57,13 @@ struct s_AstNode {
     struct {
       List statements;
     } s_block;
+
+    AstNode s_return, s_yield;
+
+    struct {
+      Token label;
+      AstNode body;
+    } s_label;
     struct {
       List body;
     } s_program;
@@ -84,16 +91,38 @@ struct s_AstNode {
       Token name;
       AstNode extends;
     } e_class;
+
     Token e_identifier, e_literal;
   };
 };
 AstNode AstNode_read(SourceFile file, cstring source);
 
 enum {
-  ANT_Fake = 0,
+  ANT_Reserved = 0,
+
   ANT_Program,
+
+  ANT_EmptyStatement,
   ANT_ExpressionStatement,
   ANT_BlockStatement,
+  ANT_WithStatement,
+  ANT_IfStatement,
+  ANT_WhileStatement,
+  ANT_DoWhileStatement,
+  ANT_ForStatement,
+  ANT_ForInStatement,
+  ANT_ForOfStatement,
+  ANT_AssigmentStatement,
+  ANT_SwitchStatement,
+  ANT_SwitchPattern,
+  ANT_ExportStatement,
+  ANT_ImportStatement,
+  ANT_ReturnStatement,
+  ANT_YieldStatement,
+  ANT_BreakStatement,
+  ANT_ContinueStatement,
+  ANT_LabelStatement,
+
   ANT_Identifier,
   ANT_Literal,
   ANT_Function,
