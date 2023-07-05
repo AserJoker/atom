@@ -71,6 +71,36 @@ struct s_AstNode {
       enum { AT_Const, AT_Let, AT_Var } type;
       AstNode body;
     } s_assigment;
+
+    struct {
+      AstNode condition;
+      AstNode consequent;
+      AstNode alternate;
+    } s_if;
+
+    struct {
+      AstNode obj;
+      AstNode body;
+    } s_with;
+    struct {
+      AstNode condition;
+      AstNode body;
+    } s_while, s_doWhile;
+    struct {
+      AstNode condition;
+      List body;
+    } s_switch;
+    struct {
+      AstNode condition;
+      List body;
+    } s_switchPattern;
+    struct {
+      List exports;
+    } s_export;
+
+    struct {
+      AstNode item;
+    } s_defualtExport;
     struct {
       List body;
     } s_program;
@@ -116,14 +146,21 @@ enum {
   ANT_IfStatement,
   ANT_WhileStatement,
   ANT_DoWhileStatement,
+
   ANT_ForStatement,
   ANT_ForInStatement,
   ANT_ForOfStatement,
+
   ANT_AssigmentStatement,
+
   ANT_SwitchStatement,
   ANT_SwitchPattern,
+
+  ANT_DefaultExport,
   ANT_ExportStatement,
+
   ANT_ImportStatement,
+
   ANT_ReturnStatement,
   ANT_YieldStatement,
   ANT_BreakStatement,

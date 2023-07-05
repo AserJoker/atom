@@ -2,58 +2,36 @@
   "type": "Program",
   "body": [
     {
-      "type": "ExpressionStatement",
-      "expression": {
-        "type": "Function",
-        "name": "print",
-        "args": [
-          {
-            "type": "Identifier",
-            "raw": "fmt"
+      "type": "switch",
+      "condition": {
+        "type": "Binary",
+        "flag": ".",
+        "left": {
+          "type": "Identifier",
+          "raw": "a"
+        },
+        "right": {
+          "type": "Identifier",
+          "raw": "value"
+        },
+        "level": -2.000000
+      },
+      "cases": [
+        {
+          "type": "case",
+          "conditioin": {
+            "type": "Literal",
+            "raw": "\"data\""
           },
-          {
-            "type": "Binary",
-            "flag": "...",
-            "right": {
-              "type": "Identifier",
-              "raw": "args"
-            },
-            "level": -1.000000
-          }
-        ],
-        "body": {
-          "type": "BlockStatement",
+          "body": []
+        },
+        {
+          "type": "case",
+          "conditioin": {
+            "type": "Literal",
+            "raw": "\"data-old\""
+          },
           "body": [
-            {
-              "type": "assigment",
-              "assigmentType": "const",
-              "body": {
-                "type": "Binary",
-                "flag": "=",
-                "left": {
-                  "type": "Identifier",
-                  "raw": "time"
-                },
-                "right": {
-                  "type": "Call",
-                  "callee": {
-                    "type": "Binary",
-                    "flag": ".",
-                    "left": {
-                      "type": "Identifier",
-                      "raw": "Date"
-                    },
-                    "right": {
-                      "type": "Identifier",
-                      "raw": "now"
-                    },
-                    "level": -2.000000
-                  },
-                  "args": []
-                },
-                "level": 11.000000
-              }
-            },
             {
               "type": "ExpressionStatement",
               "expression": {
@@ -74,45 +52,47 @@
                 "args": [
                   {
                     "type": "Identifier",
-                    "raw": "fmt"
-                  },
-                  {
-                    "type": "Identifier",
-                    "raw": "time"
-                  },
-                  {
-                    "type": "Binary",
-                    "flag": "...",
-                    "right": {
-                      "type": "Identifier",
-                      "raw": "args"
-                    },
-                    "level": -1.000000
+                    "raw": "a"
                   }
                 ]
               }
             },
             {
-              "type": "return",
-              "value": {
-                "type": "Binary",
-                "flag": ".",
-                "left": {
-                  "type": "Identifier",
-                  "raw": "args"
-                },
-                "right": {
-                  "type": "Identifier",
-                  "raw": "length"
-                },
-                "level": -2.000000
-              }
+              "type": "break"
             }
           ]
         },
-        "async": false,
-        "generator": false
-      }
+        {
+          "type": "default",
+          "body": [
+            {
+              "type": "ExpressionStatement",
+              "expression": {
+                "type": "Call",
+                "callee": {
+                  "type": "Binary",
+                  "flag": ".",
+                  "left": {
+                    "type": "Identifier",
+                    "raw": "console"
+                  },
+                  "right": {
+                    "type": "Identifier",
+                    "raw": "log"
+                  },
+                  "level": -2.000000
+                },
+                "args": [
+                  {
+                    "type": "Literal",
+                    "raw": "\"unknown\""
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

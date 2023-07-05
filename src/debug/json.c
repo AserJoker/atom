@@ -268,6 +268,79 @@ JSON_Value JSON_fromAssigment(AstNode node) {
   JSON_setField(obj, "body", JSON_fromAstNode(node->s_assigment.body));
   return obj;
 }
+JSON_Value JSON_fromIf(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("if"));
+  JSON_setField(obj, "condition", JSON_fromAstNode(node->s_if.condition));
+  JSON_setField(obj, "consequent", JSON_fromAstNode(node->s_if.consequent));
+  if (node->s_if.alternate) {
+    JSON_setField(obj, "alternate", JSON_fromAstNode(node->s_if.alternate));
+  }
+  return obj;
+}
+
+JSON_Value JSON_fromWith(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("with"));
+  JSON_setField(obj, "object", JSON_fromAstNode(node->s_with.obj));
+  JSON_setField(obj, "body", JSON_fromAstNode(node->s_with.body));
+  return obj;
+}
+
+JSON_Value JSON_fromWhile(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("while"));
+  JSON_setField(obj, "condition", JSON_fromAstNode(node->s_while.condition));
+  JSON_setField(obj, "body", JSON_fromAstNode(node->s_while.body));
+  return obj;
+}
+
+JSON_Value JSON_fromDoWhile(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("do-while"));
+  JSON_setField(obj, "condition", JSON_fromAstNode(node->s_doWhile.condition));
+  JSON_setField(obj, "body", JSON_fromAstNode(node->s_doWhile.body));
+  return obj;
+}
+
+JSON_Value JSON_fromExport(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("export"));
+  JSON_setField(
+      obj, "exports",
+      JSON_fromList(node->s_export.exports, (ToJSON)JSON_fromAstNode));
+  return obj;
+}
+
+JSON_Value JSON_fromDefaultExport(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("default-export"));
+  JSON_setField(obj, "item", JSON_fromAstNode(node->s_defualtExport.item));
+  return obj;
+}
+JSON_Value JSON_fromSwitchPattern(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  if (node->s_switchPattern.condition) {
+    JSON_setField(obj, "type", JSON_createString("case"));
+    JSON_setField(obj, "conditioin",
+                  JSON_fromAstNode(node->s_switchPattern.condition));
+  } else {
+    JSON_setField(obj, "type", JSON_createString("default"));
+  }
+  JSON_setField(
+      obj, "body",
+      JSON_fromList(node->s_switchPattern.body, (ToJSON)JSON_fromAstNode));
+  return obj;
+}
+JSON_Value JSON_fromSwitch(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("switch"));
+  JSON_setField(obj, "condition", JSON_fromAstNode(node->s_switch.condition));
+  JSON_setField(
+      obj, "cases",
+      JSON_fromList(node->s_switch.body, (ToJSON)JSON_fromSwitchPattern));
+  return obj;
+}
 
 JSON_Value JSON_fromAstNode(AstNode node) {
   switch (node->type) {
@@ -309,6 +382,20 @@ JSON_Value JSON_fromAstNode(AstNode node) {
     return JSON_fromContinue(node);
   case ANT_AssigmentStatement:
     return JSON_fromAssigment(node);
+  case ANT_IfStatement:
+    return JSON_fromIf(node);
+  case ANT_WithStatement:
+    return JSON_fromWith(node);
+  case ANT_WhileStatement:
+    return JSON_fromWhile(node);
+  case ANT_DoWhileStatement:
+    return JSON_fromDoWhile(node);
+  case ANT_ExportStatement:
+    return JSON_fromExport(node);
+  case ANT_DefaultExport:
+    return JSON_fromDefaultExport(node);
+  case ANT_SwitchStatement:
+    return JSON_fromSwitch(node);
   default:
     return JSON_fromCalculate(node);
   }
