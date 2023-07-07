@@ -1,8 +1,1 @@
-switch (a.value) {
-  case "data":
-  case "data-old":
-    console.log(a);
-    break;
-  default:
-    console.log("unknown");
-}
+import d, { a as aa, b, c } from "source" assert { type: "javascript" };

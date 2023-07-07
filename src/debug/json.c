@@ -342,6 +342,44 @@ JSON_Value JSON_fromSwitch(AstNode node) {
   return obj;
 }
 
+JSON_Value JSON_fromImportPattern(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  if (node->s_importPattern.type == IPT_Entity) {
+    JSON_setField(obj, "type", JSON_createString("entity"));
+  } else if (node->s_importPattern.type == IPT_Namespace) {
+    JSON_setField(obj, "type", JSON_createString("namespace"));
+  } else {
+    JSON_setField(obj, "type", JSON_createString("default"));
+  }
+  if (node->s_importPattern.imported) {
+    JSON_setField(obj, "imported",
+                  JSON_fromToken(node->s_importPattern.imported));
+  }
+  if (node->s_importPattern.local) {
+    JSON_setField(obj, "local", JSON_fromToken(node->s_importPattern.local));
+  }
+  return obj;
+}
+JSON_Value JSON_fromImportAttribute(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "key", JSON_fromToken(node->s_importAttribute.key));
+  JSON_setField(obj, "value", JSON_fromToken(node->s_importAttribute.value));
+  return obj;
+}
+
+JSON_Value JSON_fromImport(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("import"));
+  JSON_setField(
+      obj, "imports",
+      JSON_fromList(node->s_import.imports, (ToJSON)JSON_fromImportPattern));
+  JSON_setField(obj, "source", JSON_fromToken(node->s_import.source));
+  JSON_setField(obj, "attributes",
+                JSON_fromList(node->s_import.attributes,
+                              (ToJSON)JSON_fromImportAttribute));
+  return obj;
+}
+
 JSON_Value JSON_fromAstNode(AstNode node) {
   switch (node->type) {
   case ANT_Identifier:
@@ -396,6 +434,8 @@ JSON_Value JSON_fromAstNode(AstNode node) {
     return JSON_fromDefaultExport(node);
   case ANT_SwitchStatement:
     return JSON_fromSwitch(node);
+  case ANT_ImportStatement:
+    return JSON_fromImport(node);
   default:
     return JSON_fromCalculate(node);
   }

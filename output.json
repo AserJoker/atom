@@ -2,95 +2,31 @@
   "type": "Program",
   "body": [
     {
-      "type": "switch",
-      "condition": {
-        "type": "Binary",
-        "flag": ".",
-        "left": {
-          "type": "Identifier",
-          "raw": "a"
-        },
-        "right": {
-          "type": "Identifier",
-          "raw": "value"
-        },
-        "level": -2.000000
-      },
-      "cases": [
-        {
-          "type": "case",
-          "conditioin": {
-            "type": "Literal",
-            "raw": "\"data\""
-          },
-          "body": []
-        },
-        {
-          "type": "case",
-          "conditioin": {
-            "type": "Literal",
-            "raw": "\"data-old\""
-          },
-          "body": [
-            {
-              "type": "ExpressionStatement",
-              "expression": {
-                "type": "Call",
-                "callee": {
-                  "type": "Binary",
-                  "flag": ".",
-                  "left": {
-                    "type": "Identifier",
-                    "raw": "console"
-                  },
-                  "right": {
-                    "type": "Identifier",
-                    "raw": "log"
-                  },
-                  "level": -2.000000
-                },
-                "args": [
-                  {
-                    "type": "Identifier",
-                    "raw": "a"
-                  }
-                ]
-              }
-            },
-            {
-              "type": "break"
-            }
-          ]
-        },
+      "type": "import",
+      "imports": [
         {
           "type": "default",
-          "body": [
-            {
-              "type": "ExpressionStatement",
-              "expression": {
-                "type": "Call",
-                "callee": {
-                  "type": "Binary",
-                  "flag": ".",
-                  "left": {
-                    "type": "Identifier",
-                    "raw": "console"
-                  },
-                  "right": {
-                    "type": "Identifier",
-                    "raw": "log"
-                  },
-                  "level": -2.000000
-                },
-                "args": [
-                  {
-                    "type": "Literal",
-                    "raw": "\"unknown\""
-                  }
-                ]
-              }
-            }
-          ]
+          "local": "d"
+        },
+        {
+          "type": "entity",
+          "imported": "a",
+          "local": "aa"
+        },
+        {
+          "type": "entity",
+          "imported": "b"
+        },
+        {
+          "type": "entity",
+          "imported": "c"
+        }
+      ],
+      "source": "\"source\"",
+      "attributes": [
+        {
+          "key": "type",
+          "value": "\"javascript\""
         }
       ]
     }

@@ -117,6 +117,16 @@ static void AstNode_dispose(AstNode node) {
   } else if (node->type == ANT_SwitchPattern) {
     Buffer_dispose(node->s_switchPattern.condition);
     Buffer_dispose(node->s_switchPattern.body);
+  } else if (node->type == ANT_ImportStatement) {
+    Buffer_dispose(node->s_import.imports);
+    Buffer_dispose(node->s_import.attributes);
+    Buffer_dispose(node->s_import.source);
+  } else if (node->type == ANT_ImportPattern) {
+    Buffer_dispose(node->s_importPattern.imported);
+    Buffer_dispose(node->s_importPattern.local);
+  } else if (node->type == ANT_ImportAttribute) {
+    Buffer_dispose(node->s_importAttribute.key);
+    Buffer_dispose(node->s_importAttribute.value);
   } else {
     Buffer_dispose(node->binary.left);
     Buffer_dispose(node->binary.right);
@@ -2585,7 +2595,358 @@ failed:
   return NULL;
 }
 
+READER(AstNode_readNamespaceImport) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_ImportPattern;
+  node->s_importPattern.type = IPT_Namespace;
+  node->s_importPattern.local = NULL;
+  node->s_importPattern.imported = NULL;
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (!Token_check(token, TT_Keyword, "as")) {
+    Error_push("Unexcept token.missing token 'as'",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (token->type != TT_Identifier) {
+    Error_push("Unexcept token.",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  node->s_importPattern.local = token;
+  selector = token->raw.end;
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
+READER(AstNode_readDefaultImport) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_ImportPattern;
+  node->s_importPattern.type = IPT_Default;
+  node->s_importPattern.imported = NULL;
+  node->s_importPattern.local = NULL;
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  node->s_importPattern.local = token;
+  selector = token->raw.end;
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
+READER(AstNode_readEntityImport) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_ImportPattern;
+  node->s_importPattern.type = IPT_Entity;
+  node->s_importPattern.imported = NULL;
+  node->s_importPattern.local = NULL;
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  node->s_importPattern.imported = token;
+  selector = token->raw.end;
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (Token_check(token, TT_Keyword, "as")) {
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (token->type != TT_Identifier) {
+      Error_push("Unexcept token.",
+                 SourceFile_getLocation(file, token->raw.begin));
+      Buffer_dispose(token);
+      goto failed;
+    }
+    node->s_importPattern.local = token;
+    selector = token->raw.end;
+  } else {
+    Buffer_dispose(token);
+  }
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
+READER(AstNode_readImportAttribute) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_ImportAttribute;
+  node->s_importAttribute.key = NULL;
+  node->s_importAttribute.value = NULL;
+  node->position.begin = source;
+  node->position.end = selector;
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (token->type != TT_Identifier) {
+    Error_push("Unexcept token.",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  node->s_importAttribute.key = token;
+  selector = token->raw.end;
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (!Token_check(token, TT_Symbol, ":")) {
+    Error_push("Unexcept token.",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (token->type != TT_String) {
+    Error_push("Unexcept token.",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  node->s_importAttribute.value = token;
+  selector = token->raw.end;
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
+CHECKER(AstNode_isImport) { return Token_check(token, TT_Keyword, "import"); }
+READER(AstNode_readImport) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_ImportStatement;
+  node->s_import.source = NULL;
+  node->s_import.imports = List_create(True);
+  node->s_import.attributes = List_create(True);
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (Token_check(token, TT_Symbol, "*")) {
+    Buffer_dispose(token);
+    AstNode ns = AstNode_readNamespaceImport(file, selector);
+    if (!ns) {
+      goto failed;
+    }
+    List_insert_tail(node->s_import.imports, ns);
+    selector = ns->position.end;
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+  } else {
+    if (token->type == TT_Identifier) {
+      Buffer_dispose(token);
+      AstNode def = AstNode_readDefaultImport(file, selector);
+      if (!def) {
+        goto failed;
+      }
+      List_insert_tail(node->s_import.imports, def);
+      selector = def->position.end;
+      token = Token_readSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+    }
+    if (Token_check(token, TT_Symbol, ",")) {
+      selector = token->raw.end;
+      Buffer_dispose(token);
+      token = Token_readSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+    }
+    if (Token_check(token, TT_Symbol, "{")) {
+      selector = token->raw.end;
+      Buffer_dispose(token);
+      for (;;) {
+        token = Token_readSkipNewline(file, selector);
+        if (!token) {
+          goto failed;
+        }
+        if (Token_check(token, TT_Symbol, "}") || token->type == TT_Eof) {
+          break;
+        }
+        if (token->type != TT_Identifier) {
+          Error_push("Unexcept token.",
+                     SourceFile_getLocation(file, token->raw.begin));
+          Buffer_dispose(token);
+          goto failed;
+        }
+        Buffer_dispose(token);
+        AstNode e = AstNode_readEntityImport(file, selector);
+        if (!e) {
+          goto failed;
+        }
+        selector = e->position.end;
+        List_insert_tail(node->s_import.imports, e);
+        token = Token_readSkipNewline(file, selector);
+        if (!token) {
+          goto failed;
+        }
+        if (Token_check(token, TT_Symbol, ",")) {
+          selector = token->raw.end;
+          Buffer_dispose(token);
+          token = Token_readSkipNewline(file, selector);
+          if (!token) {
+            goto failed;
+          }
+        }
+        Buffer_dispose(token);
+      }
+      if (!Token_check(token, TT_Symbol, "}")) {
+        Error_push("Unexcept token.",
+                   SourceFile_getLocation(file, token->raw.begin));
+        Buffer_dispose(token);
+        goto failed;
+      }
+      selector = token->raw.end;
+      Buffer_dispose(token);
+      token = Token_readSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+    }
+  }
+
+  if (!List_empty(node->s_import.imports)) {
+    if (!Token_check(token, TT_Keyword, "from")) {
+      Error_push("Unexcept token.",
+                 SourceFile_getLocation(file, token->raw.begin));
+      Buffer_dispose(token);
+      goto failed;
+    }
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+  }
+  if (token->type != TT_String) {
+    Error_push("Unexcept token.",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  node->s_import.source = token;
+  selector = token->raw.end;
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (Token_check(token, TT_Keyword, "assert") ||
+      Token_check(token, TT_Keyword, "with")) {
+    selector = token->raw.end;
+    Buffer_dispose(token);
+
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (!Token_check(token, TT_Symbol, "{")) {
+      Error_push("Unexcept token.",
+                 SourceFile_getLocation(file, token->raw.begin));
+      Buffer_dispose(token);
+      goto failed;
+    }
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    for (;;) {
+      token = Token_readSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+      if (Token_check(token, TT_Symbol, "}") || token->type == TT_Eof) {
+        break;
+      } else {
+        Buffer_dispose(token);
+      }
+      AstNode attr = AstNode_readImportAttribute(file, selector);
+      if (!attr) {
+        goto failed;
+      }
+      selector = attr->position.end;
+      List_insert_tail(node->s_import.attributes, attr);
+      token = Token_readSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+      if (Token_check(token, TT_Symbol, ",")) {
+        selector = token->raw.end;
+      }
+      Buffer_dispose(token);
+    }
+    if (!Token_check(token, TT_Symbol, "}")) {
+      Error_push("Unexcept token.",
+                 SourceFile_getLocation(file, token->raw.begin));
+      Buffer_dispose(token);
+      goto failed;
+    } else {
+      selector = token->raw.end;
+      Buffer_dispose(token);
+    }
+  } else {
+    Buffer_dispose(token);
+  }
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
+
 static ProcessHandle statement_handlers[] = {
+    {AstNode_isImport, AstNode_readImport},
     {AstNode_isSwitch, AstNode_readSwitch},
     {AstNode_isExport, AstNode_readExport},
     {AstNode_isDoWhile, AstNode_readDoWhile},

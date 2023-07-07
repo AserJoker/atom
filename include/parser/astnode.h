@@ -99,6 +99,22 @@ struct s_AstNode {
     } s_export;
 
     struct {
+      List imports;
+      List attributes;
+      Token source;
+    } s_import;
+
+    struct {
+      enum { IPT_Entity, IPT_Default, IPT_Namespace } type;
+      Token local;
+      Token imported;
+    } s_importPattern;
+    struct {
+      Token key;
+      Token value;
+    } s_importAttribute;
+
+    struct {
       AstNode item;
     } s_defualtExport;
     struct {
@@ -152,21 +168,20 @@ enum {
   ANT_ForOfStatement,
 
   ANT_AssigmentStatement,
-
   ANT_SwitchStatement,
   ANT_SwitchPattern,
-
   ANT_DefaultExport,
   ANT_ExportStatement,
 
   ANT_ImportStatement,
+  ANT_ImportPattern,
+  ANT_ImportAttribute,
 
   ANT_ReturnStatement,
   ANT_YieldStatement,
   ANT_BreakStatement,
   ANT_ContinueStatement,
   ANT_LabelStatement,
-
   ANT_Identifier,
   ANT_Literal,
   ANT_Function,
