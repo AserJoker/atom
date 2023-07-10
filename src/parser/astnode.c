@@ -138,15 +138,15 @@ static void AstNode_dispose(AstNode node) {
     Buffer_dispose(node->s_forIn.iterator);
     Buffer_dispose(node->s_forIn.object);
     Buffer_dispose(node->s_for.body);
-  } else if (node->type == ANT_ObjectPattern) {
+  } else if (node->type == ANT_ObjectDestruct) {
     Buffer_dispose(node->e_objectPattern.properties);
-  } else if (node->type == ANT_ObjectPatternProperty) {
+  } else if (node->type == ANT_ObjectDestructProperty) {
     Buffer_dispose(node->e_oPatternProp.field);
     Buffer_dispose(node->e_oPatternProp.alias);
     Buffer_dispose(node->e_oPatternProp.init);
-  } else if (node->type == ANT_ArrayPattern) {
+  } else if (node->type == ANT_ArrayDestruct) {
     Buffer_dispose(node->e_arrayPattern.items);
-  } else if (node->type == ANT_ArrayPatternProperty) {
+  } else if (node->type == ANT_ArrayDestructProperty) {
     Buffer_dispose(node->e_arrPatternProp.name);
     Buffer_dispose(node->e_arrPatternProp.init);
   } else {
@@ -1713,7 +1713,7 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isObjectPattern) {
+CHECKER(AstNode_isObjectDestruct) {
   if (Token_check(token, TT_Symbol, "{")) {
     Token pair =
         Token_pair(file, token->raw.begin, TT_Symbol, "{", TT_Symbol, "}");
@@ -1737,10 +1737,10 @@ CHECKER(AstNode_isObjectPattern) {
   return False;
 }
 
-READER(AstNode_readObjectPatternProp) {
+READER(AstNode_readObjectDestructProp) {
   cstring selector = source;
   AstNode node = AstNode_create();
-  node->type = ANT_ObjectPatternProperty;
+  node->type = ANT_ObjectDestructProperty;
   node->e_oPatternProp.init = NULL;
   node->e_oPatternProp.field = NULL;
   node->e_oPatternProp.alias = NULL;
@@ -1822,10 +1822,10 @@ failed:
   return NULL;
 }
 
-READER(AstNode_readObjectPattern) {
+READER(AstNode_readObjectDestruct) {
   cstring selector = source;
   AstNode node = AstNode_create();
-  node->type = ANT_ObjectPattern;
+  node->type = ANT_ObjectDestruct;
   node->e_objectPattern.properties = List_create(True);
   node->bind = BT_None;
   node->level = -2;
@@ -1850,7 +1850,7 @@ READER(AstNode_readObjectPattern) {
         break;
       }
       Buffer_dispose(token);
-      AstNode prop = AstNode_readObjectPatternProp(file, selector);
+      AstNode prop = AstNode_readObjectDestructProp(file, selector);
       if (!prop) {
         goto failed;
       }
@@ -1889,7 +1889,7 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isArrayPattern) {
+CHECKER(AstNode_isArrayDestruct) {
   if (Token_check(token, TT_Symbol, "[")) {
     Token pair =
         Token_pair(file, token->raw.begin, TT_Symbol, "[", TT_Symbol, "]");
@@ -1913,10 +1913,10 @@ CHECKER(AstNode_isArrayPattern) {
   return False;
 }
 
-READER(AstNode_readArrayPatternProperty) {
+READER(AstNode_readArrayDestructProperty) {
   cstring selector = source;
   AstNode node = AstNode_create();
-  node->type = ANT_ArrayPatternProperty;
+  node->type = ANT_ArrayDestructProperty;
   node->e_arrPatternProp.init = NULL;
   node->e_arrPatternProp.name = NULL;
   Token token = Token_readSkipNewline(file, selector);
@@ -1958,10 +1958,10 @@ failed:
   return NULL;
 }
 
-READER(AstNode_readArrayPattern) {
+READER(AstNode_readArrayDestruct) {
   cstring selector = source;
   AstNode node = AstNode_create();
-  node->type = ANT_ArrayPattern;
+  node->type = ANT_ArrayDestruct;
   node->bind = BT_None;
   node->level = -2;
   node->e_arrayPattern.items = List_create(True);
@@ -1986,7 +1986,7 @@ READER(AstNode_readArrayPattern) {
         break;
       }
       Buffer_dispose(token);
-      AstNode prop = AstNode_readArrayPatternProperty(file, selector);
+      AstNode prop = AstNode_readArrayDestructProperty(file, selector);
       if (!prop) {
         goto failed;
       }
@@ -2025,8 +2025,8 @@ failed:
 }
 
 static ProcessHandle atom_expression_handlers[] = {
-    {AstNode_isObjectPattern, AstNode_readObjectPattern},
-    {AstNode_isArrayPattern, AstNode_readArrayPattern},
+    {AstNode_isObjectDestruct, AstNode_readObjectDestruct},
+    {AstNode_isArrayDestruct, AstNode_readArrayDestruct},
     {AstNode_isArray, AstNode_readArray},
     {AstNode_isObject, AstNode_readObject},
     {AstNode_isClass, AstNode_readClass},

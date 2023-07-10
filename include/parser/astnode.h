@@ -220,10 +220,10 @@ enum {
   ANT_OptionalCall,
   ANT_Call,
   ANT_Binary,
-  ANT_ObjectPattern,
-  ANT_ObjectPatternProperty,
-  ANT_ArrayPattern,
-  ANT_ArrayPatternProperty
+  ANT_ObjectDestruct,
+  ANT_ObjectDestructProperty,
+  ANT_ArrayDestruct,
+  ANT_ArrayDestructProperty
 };
 enum { BT_None, BT_Left, BT_Right, BT_Both };
 
