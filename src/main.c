@@ -1,7 +1,9 @@
+#include "compiler/compiler.h"
 #include "parser/astnode.h"
 #include "util/error.h"
 #include "util/source.h"
 #include "util/strings.h"
+
 
 #ifdef _WIN32
 #include <windows.h>
@@ -25,7 +27,7 @@ int main(int argc, char **argv) {
 #endif
 
   SourceFile sf = SourceFile_read("./demo.js");
-  AstNode node = AstNode_read(sf, sf->_source);
+  AstNode node = compile(sf);
 #ifdef _DEBUG
   if (node) {
     JSON_Value value = JSON_fromAstNode(node);

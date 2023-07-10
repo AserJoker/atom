@@ -138,6 +138,17 @@ static void AstNode_dispose(AstNode node) {
     Buffer_dispose(node->s_forIn.iterator);
     Buffer_dispose(node->s_forIn.object);
     Buffer_dispose(node->s_for.body);
+  } else if (node->type == ANT_ObjectPattern) {
+    Buffer_dispose(node->e_objectPattern.properties);
+  } else if (node->type == ANT_ObjectPatternProperty) {
+    Buffer_dispose(node->e_oPatternProp.field);
+    Buffer_dispose(node->e_oPatternProp.alias);
+    Buffer_dispose(node->e_oPatternProp.init);
+  } else if (node->type == ANT_ArrayPattern) {
+    Buffer_dispose(node->e_arrayPattern.items);
+  } else if (node->type == ANT_ArrayPatternProperty) {
+    Buffer_dispose(node->e_arrPatternProp.name);
+    Buffer_dispose(node->e_arrPatternProp.init);
   } else {
     Buffer_dispose(node->binary.left);
     Buffer_dispose(node->binary.right);
@@ -1715,15 +1726,167 @@ CHECKER(AstNode_isObjectPattern) {
     if (!next) {
       return False;
     }
-    if (Token_check(token, TT_Keyword, "in") ||
-        Token_check(token, TT_Keyword, "of") ||
-        Strings_contains(token->raw, operator_11)) {
+    if (Token_check(next, TT_Keyword, "in") ||
+        Token_check(next, TT_Keyword, "of") ||
+        Strings_contains(next->raw, operator_11)) {
       Buffer_dispose(next);
       return True;
     }
     Buffer_dispose(next);
   }
   return False;
+}
+
+READER(AstNode_readObjectPatternProp) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_ObjectPatternProperty;
+  node->e_oPatternProp.init = NULL;
+  node->e_oPatternProp.field = NULL;
+  node->e_oPatternProp.alias = NULL;
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (token->type == TT_Identifier) {
+    Buffer_dispose(token);
+    ExpressionContext ectx = ExpressionContext_push();
+    AstNode field = AstNode_readIdentifier(file, selector);
+    ExpressionContext_pop(ectx);
+    if (!node) {
+      goto failed;
+    }
+    node->e_oPatternProp.field = field;
+  } else if (Token_check(token, TT_Symbol, "[")) {
+    Buffer_dispose(token);
+    ExpressionContext ectx = ExpressionContext_push();
+    AstNode field = AstNode_readCompute(file, selector);
+    ExpressionContext_pop(ectx);
+    if (!node) {
+      goto failed;
+    }
+    node->e_oPatternProp.field = field;
+  } else {
+    Error_push("object properties destructuring pattern expected.",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  selector = node->e_oPatternProp.field->position.end;
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (Token_check(token, TT_Symbol, ":")) {
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (token->type != TT_Identifier) {
+      Error_push("Identifier expected.",
+                 SourceFile_getLocation(file, token->raw.begin));
+      Buffer_dispose(token);
+      goto failed;
+    }
+    node->e_oPatternProp.alias = token;
+    selector = token->raw.end;
+  } else {
+    Buffer_dispose(token);
+  }
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (Token_check(token, TT_Symbol, "=")) {
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    ExpressionContext ectx = ExpressionContext_push();
+    g_ectx->maxLevel = 12;
+    AstNode init = AstNode_readExpression(file, selector);
+    ExpressionContext_pop(ectx);
+    if (!init) {
+      goto failed;
+    }
+    node->e_oPatternProp.init = init;
+    selector = init->position.end;
+  } else {
+    Buffer_dispose(token);
+  }
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
+
+READER(AstNode_readObjectPattern) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_ObjectPattern;
+  node->e_objectPattern.properties = List_create(True);
+  node->bind = BT_None;
+  node->level = -2;
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (!Token_check(token, TT_Symbol, "}")) {
+    Buffer_dispose(token);
+    for (;;) {
+      token = Token_readSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+      if (Token_check(token, TT_Symbol, "}")) {
+        break;
+      }
+      Buffer_dispose(token);
+      AstNode prop = AstNode_readObjectPatternProp(file, selector);
+      if (!prop) {
+        goto failed;
+      }
+      List_insert_tail(node->e_objectPattern.properties, prop);
+      selector = prop->position.end;
+      token = Token_readSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+      if (Token_check(token, TT_Symbol, ",")) {
+        selector = token->raw.end;
+      } else if (!Token_check(token, TT_Symbol, "}")) {
+        Error_push("Unexcept token.missing token ','",
+                   SourceFile_getLocation(file, token->raw.begin));
+        Buffer_dispose(token);
+        goto failed;
+      }
+      Buffer_dispose(token);
+    }
+  }
+
+  if (!Token_check(token, TT_Symbol, "}")) {
+    Error_push("Unexcept token.missing token '}'",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
 }
 
 CHECKER(AstNode_isArrayPattern) {
@@ -1739,9 +1902,9 @@ CHECKER(AstNode_isArrayPattern) {
     if (!next) {
       return False;
     }
-    if (Token_check(token, TT_Keyword, "in") ||
-        Token_check(token, TT_Keyword, "of") ||
-        Strings_contains(token->raw, operator_11)) {
+    if (Token_check(next, TT_Keyword, "in") ||
+        Token_check(next, TT_Keyword, "of") ||
+        Strings_contains(next->raw, operator_11)) {
       Buffer_dispose(next);
       return True;
     }
@@ -1750,7 +1913,120 @@ CHECKER(AstNode_isArrayPattern) {
   return False;
 }
 
+READER(AstNode_readArrayPatternProperty) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_ArrayPatternProperty;
+  node->e_arrPatternProp.init = NULL;
+  node->e_arrPatternProp.name = NULL;
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (token->type != TT_Identifier) {
+    Error_push("Array element destructuring pattern expected.",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  node->e_arrPatternProp.name = token;
+  selector = token->raw.end;
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (Token_check(token, TT_Symbol, "=")) {
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    ExpressionContext ectx = ExpressionContext_push();
+    g_ectx->maxLevel = 12;
+    AstNode init = AstNode_readExpression(file, selector);
+    ExpressionContext_pop(ectx);
+    if (!init) {
+      goto failed;
+    }
+    node->e_arrPatternProp.init = init;
+    selector = init->position.end;
+  } else {
+    Buffer_dispose(token);
+  }
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
+
+READER(AstNode_readArrayPattern) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_ArrayPattern;
+  node->bind = BT_None;
+  node->level = -2;
+  node->e_arrayPattern.items = List_create(True);
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (!Token_check(token, TT_Symbol, "]")) {
+    Buffer_dispose(token);
+    for (;;) {
+      token = Token_readSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+      if (Token_check(token, TT_Symbol, "]") || token->type == TT_Eof) {
+        break;
+      }
+      Buffer_dispose(token);
+      AstNode prop = AstNode_readArrayPatternProperty(file, selector);
+      if (!prop) {
+        goto failed;
+      }
+      List_insert_tail(node->e_arrayPattern.items, prop);
+      selector = prop->position.end;
+      token = Token_readSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+      if (Token_check(token, TT_Symbol, ",")) {
+        selector = token->raw.end;
+      } else if (!Token_check(token, TT_Symbol, "]") && token->type != TT_Eof) {
+        Error_push("Unexcept token.missing token ','",
+                   SourceFile_getLocation(file, token->raw.begin));
+        Buffer_dispose(token);
+        goto failed;
+      }
+      Buffer_dispose(token);
+    }
+  }
+
+  if (!Token_check(token, TT_Symbol, "]")) {
+    Error_push("Unexcept token.missing token ']'",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
+
 static ProcessHandle atom_expression_handlers[] = {
+    {AstNode_isObjectPattern, AstNode_readObjectPattern},
+    {AstNode_isArrayPattern, AstNode_readArrayPattern},
     {AstNode_isArray, AstNode_readArray},
     {AstNode_isObject, AstNode_readObject},
     {AstNode_isClass, AstNode_readClass},

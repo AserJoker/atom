@@ -1,3 +1,1 @@
-for (const { a: b = 2 } in obj) {
-  console.log(b);
-}
+const [a=data+1,c] = obj;

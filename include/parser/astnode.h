@@ -51,10 +51,10 @@ struct s_AstNode {
     } e_oprop;
     struct {
       List properties;
-    } e_object;
+    } e_object, e_objectPattern;
     struct {
       List items;
-    } e_array;
+    } e_array, e_arrayPattern;
     struct {
       List statements;
     } s_block;
@@ -161,13 +161,22 @@ struct s_AstNode {
       AstNode extends;
     } e_class;
 
+    struct {
+      AstNode field;
+      Token alias;
+      AstNode init;
+    } e_oPatternProp;
+    struct {
+      Token name;
+      AstNode init;
+    } e_arrPatternProp;
     Token e_identifier, e_literal;
   };
 };
 AstNode AstNode_read(SourceFile file, cstring source);
 
 enum {
-  ANT_Reserved = 0,
+  ANT_Reserved,
 
   ANT_Program,
 
@@ -212,7 +221,9 @@ enum {
   ANT_Call,
   ANT_Binary,
   ANT_ObjectPattern,
+  ANT_ObjectPatternProperty,
   ANT_ArrayPattern,
+  ANT_ArrayPatternProperty
 };
 enum { BT_None, BT_Left, BT_Right, BT_Both };
 

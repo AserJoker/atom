@@ -422,6 +422,43 @@ JSON_Value JSON_fromForOf(AstNode node) {
   return obj;
 }
 
+JSON_Value JSON_fromArrayPatternProp(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "name", JSON_fromToken(node->e_arrPatternProp.name));
+  if(node->e_arrPatternProp.init){
+    JSON_setField(obj, "init", JSON_fromAstNode(node->e_arrPatternProp.init));
+  }
+  return obj;
+}
+JSON_Value JSON_fromArrayPattern(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("arrayPattern"));
+  JSON_setField(obj, "items",
+                JSON_fromList(node->e_arrayPattern.items,
+                              (ToJSON)JSON_fromArrayPatternProp));
+  return obj;
+}
+
+JSON_Value JSON_fromObjectPatternProp(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "field", JSON_fromAstNode(node->e_oPatternProp.field));
+  if (node->e_oPatternProp.alias) {
+    JSON_setField(obj, "alias", JSON_fromToken(node->e_oPatternProp.alias));
+  }
+  if (node->e_oPatternProp.init) {
+    JSON_setField(obj, "init", JSON_fromAstNode(node->e_oPatternProp.init));
+  }
+  return obj;
+}
+JSON_Value JSON_fromObjectPattern(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("objectPattern"));
+  JSON_setField(obj, "properties",
+                JSON_fromList(node->e_objectPattern.properties,
+                              (ToJSON)JSON_fromObjectPatternProp));
+  return obj;
+}
+
 JSON_Value JSON_fromAstNode(AstNode node) {
   switch (node->type) {
   case ANT_Identifier:
@@ -484,6 +521,10 @@ JSON_Value JSON_fromAstNode(AstNode node) {
     return JSON_fromForOf(node);
   case ANT_ForInStatement:
     return JSON_fromForIn(node);
+  case ANT_ObjectPattern:
+    return JSON_fromObjectPattern(node);
+  case ANT_ArrayPattern:
+    return JSON_fromArrayPattern(node);
   default:
     return JSON_fromCalculate(node);
   }
