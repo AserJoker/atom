@@ -6,6 +6,7 @@
 #include "util/strings.h"
 struct s_AstNode;
 typedef struct s_AstNode *AstNode;
+typedef enum { AT_Const, AT_Let, AT_Var } AssigmentType;
 struct s_AstNode {
   int type;
   Strings position;
@@ -68,7 +69,7 @@ struct s_AstNode {
       Token label;
     } s_break, s_continue;
     struct {
-      enum { AT_Const, AT_Let, AT_Var } type;
+      AssigmentType type;
       AstNode body;
     } s_assigment;
 
@@ -117,6 +118,21 @@ struct s_AstNode {
     struct {
       AstNode item;
     } s_defualtExport;
+
+    struct {
+      AstNode body;
+      AstNode init;
+      AstNode condition;
+      AstNode update;
+    } s_for;
+
+    struct {
+      AstNode body;
+      AstNode iterator;
+      AstNode object;
+      AssigmentType type;
+    } s_forOf, s_forIn;
+
     struct {
       List body;
     } s_program;
@@ -195,6 +211,8 @@ enum {
   ANT_OptionalCall,
   ANT_Call,
   ANT_Binary,
+  ANT_ObjectPattern,
+  ANT_ArrayPattern,
 };
 enum { BT_None, BT_Left, BT_Right, BT_Both };
 

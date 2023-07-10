@@ -1,5 +1,6 @@
 #include "parser/astnode.h"
 #include <stdarg.h>
+#include <string.h>
 
 typedef struct s_OperatorSet {
   cstring *operators;
@@ -127,6 +128,16 @@ static void AstNode_dispose(AstNode node) {
   } else if (node->type == ANT_ImportAttribute) {
     Buffer_dispose(node->s_importAttribute.key);
     Buffer_dispose(node->s_importAttribute.value);
+  } else if (node->type == ANT_ForStatement) {
+    Buffer_dispose(node->s_for.init);
+    Buffer_dispose(node->s_for.condition);
+    Buffer_dispose(node->s_for.update);
+    Buffer_dispose(node->s_for.body);
+  } else if (node->type == ANT_ForInStatement ||
+             node->type == ANT_ForOfStatement) {
+    Buffer_dispose(node->s_forIn.iterator);
+    Buffer_dispose(node->s_forIn.object);
+    Buffer_dispose(node->s_for.body);
   } else {
     Buffer_dispose(node->binary.left);
     Buffer_dispose(node->binary.right);
@@ -1691,6 +1702,54 @@ failed:
   return NULL;
 }
 
+CHECKER(AstNode_isObjectPattern) {
+  if (Token_check(token, TT_Symbol, "{")) {
+    Token pair =
+        Token_pair(file, token->raw.begin, TT_Symbol, "{", TT_Symbol, "}");
+    if (!pair) {
+      return False;
+    }
+    cstring selector = pair->raw.end;
+    Buffer_dispose(pair);
+    Token next = Token_readSkipNewline(file, selector);
+    if (!next) {
+      return False;
+    }
+    if (Token_check(token, TT_Keyword, "in") ||
+        Token_check(token, TT_Keyword, "of") ||
+        Strings_contains(token->raw, operator_11)) {
+      Buffer_dispose(next);
+      return True;
+    }
+    Buffer_dispose(next);
+  }
+  return False;
+}
+
+CHECKER(AstNode_isArrayPattern) {
+  if (Token_check(token, TT_Symbol, "[")) {
+    Token pair =
+        Token_pair(file, token->raw.begin, TT_Symbol, "[", TT_Symbol, "]");
+    if (!pair) {
+      return False;
+    }
+    cstring selector = pair->raw.end;
+    Buffer_dispose(pair);
+    Token next = Token_readSkipNewline(file, selector);
+    if (!next) {
+      return False;
+    }
+    if (Token_check(token, TT_Keyword, "in") ||
+        Token_check(token, TT_Keyword, "of") ||
+        Strings_contains(token->raw, operator_11)) {
+      Buffer_dispose(next);
+      return True;
+    }
+    Buffer_dispose(next);
+  }
+  return False;
+}
+
 static ProcessHandle atom_expression_handlers[] = {
     {AstNode_isArray, AstNode_readArray},
     {AstNode_isObject, AstNode_readObject},
@@ -2926,7 +2985,7 @@ READER(AstNode_readImport) {
       Buffer_dispose(token);
     }
     if (!Token_check(token, TT_Symbol, "}")) {
-      Error_push("Unexcept token.",
+      Error_push("Unexcept token.missing token '}'",
                  SourceFile_getLocation(file, token->raw.begin));
       Buffer_dispose(token);
       goto failed;
@@ -2945,7 +3004,165 @@ failed:
   return NULL;
 }
 
+CHECKER(AstNode_isFor) { return Token_check(token, TT_Keyword, "for"); }
+READER(AstNode_readFor) {
+  cstring selector = source;
+  AstNode node = AstNode_create();
+  node->type = ANT_ForStatement;
+  node->s_for.init = NULL;
+  node->s_for.condition = NULL;
+  node->s_for.update = NULL;
+  Token token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (!Token_check(token, TT_Symbol, "(")) {
+    Error_push("Unexcept token.missing token '('",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  token = Token_readSkipNewline(file, selector);
+  if (!token) {
+    goto failed;
+  }
+  if (!Token_check(token, TT_Symbol, ";")) {
+    Buffer_dispose(token);
+    AstNode init = AstNode_readStatement(file, selector);
+    if (!init) {
+      goto failed;
+    }
+    selector = init->position.end;
+    if (init->type == ANT_AssigmentStatement) {
+      AstNode body = init->s_assigment.body;
+      if (body->type == ANT_Binary && strcmp(body->binary.flag, "in") == 0) {
+        node->s_forIn.type = init->s_assigment.type;
+        node->s_forIn.iterator = body->binary.left;
+        node->s_forIn.object = body->binary.right;
+        body->binary.left = NULL;
+        body->binary.right = NULL;
+        Buffer_dispose(init);
+        node->type = ANT_ForInStatement;
+      } else if (body->type == ANT_Binary &&
+                 strcmp(body->binary.flag, "of") == 0) {
+        node->s_forIn.type = init->s_assigment.type;
+        node->s_forIn.iterator = body->binary.left;
+        node->s_forIn.object = body->binary.right;
+        body->binary.left = NULL;
+        body->binary.right = NULL;
+        Buffer_dispose(init);
+        node->type = ANT_ForOfStatement;
+      }
+    } else if (init->type == ANT_Binary &&
+               strcmp(init->binary.flag, "in") == 0) {
+      node->s_forIn.type = init->s_assigment.type;
+      node->s_forIn.iterator = init->binary.left;
+      node->s_forIn.object = init->binary.right;
+      init->binary.left = NULL;
+      init->binary.right = NULL;
+      Buffer_dispose(init);
+      node->type = ANT_ForInStatement;
+    } else if (init->type == ANT_Binary &&
+               strcmp(init->binary.flag, "of") == 0) {
+      node->s_forIn.type = init->s_assigment.type;
+      node->s_forIn.iterator = init->binary.left;
+      node->s_forIn.object = init->binary.right;
+      init->binary.left = NULL;
+      init->binary.right = NULL;
+      Buffer_dispose(init);
+      node->type = ANT_ForOfStatement;
+    }
+    if (node->type == ANT_ForStatement) {
+      node->s_for.init = init;
+    }
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+  }
+  if (node->type == ANT_ForStatement) {
+    if (!Token_check(token, TT_Symbol, ";")) {
+      Error_push("Unexcept token.missing token ';'",
+                 SourceFile_getLocation(file, token->raw.begin));
+      Buffer_dispose(token);
+      goto failed;
+    }
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (!Token_check(token, TT_Symbol, ";")) {
+      Buffer_dispose(token);
+      AstNode condition = AstNode_readExpression(file, selector);
+      if (!condition) {
+        goto failed;
+      }
+      node->s_for.condition = condition;
+      selector = condition->position.end;
+      token = Token_readSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+    }
+    if (!Token_check(token, TT_Symbol, ";")) {
+      Error_push("Unexcept token.missing token ';'",
+                 SourceFile_getLocation(file, token->raw.begin));
+      Buffer_dispose(token);
+      goto failed;
+    }
+    selector = token->raw.end;
+    Buffer_dispose(token);
+    token = Token_readSkipNewline(file, selector);
+    if (!token) {
+      goto failed;
+    }
+    if (!Token_check(token, TT_Symbol, ")")) {
+      Buffer_dispose(token);
+      AstNode update = AstNode_readExpression(file, selector);
+      if (!update) {
+        goto failed;
+      }
+      node->s_for.update = update;
+      selector = update->position.end;
+      token = Token_readSkipNewline(file, selector);
+      if (!token) {
+        goto failed;
+      }
+    }
+  }
+  if (!Token_check(token, TT_Symbol, ")")) {
+    Error_push("Unexcept token.missing token ';'",
+               SourceFile_getLocation(file, token->raw.begin));
+    Buffer_dispose(token);
+    goto failed;
+  }
+  selector = token->raw.end;
+  Buffer_dispose(token);
+  node->s_for.body = AstNode_readStatement(file, selector);
+  if (!node->s_for.body) {
+    goto failed;
+  }
+  selector = node->s_for.body->position.end;
+  node->position.begin = source;
+  node->position.end = selector;
+  return node;
+failed:
+  Buffer_dispose(node);
+  return NULL;
+}
+
 static ProcessHandle statement_handlers[] = {
+    {AstNode_isFor, AstNode_readFor},
     {AstNode_isImport, AstNode_readImport},
     {AstNode_isSwitch, AstNode_readSwitch},
     {AstNode_isExport, AstNode_readExport},

@@ -1,1 +1,3 @@
-import d, { a as aa, b, c } from "source" assert { type: "javascript" };
+for (const { a: b = 2 } in obj) {
+  console.log(b);
+}

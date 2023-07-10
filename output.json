@@ -2,33 +2,67 @@
   "type": "Program",
   "body": [
     {
-      "type": "import",
-      "imports": [
-        {
-          "type": "default",
-          "local": "d"
-        },
-        {
-          "type": "entity",
-          "imported": "a",
-          "local": "aa"
-        },
-        {
-          "type": "entity",
-          "imported": "b"
-        },
-        {
-          "type": "entity",
-          "imported": "c"
-        }
-      ],
-      "source": "\"source\"",
-      "attributes": [
-        {
-          "key": "type",
-          "value": "\"javascript\""
-        }
-      ]
+      "type": "forIn",
+      "assigmentType": "const",
+      "iterator": {
+        "type": "Object",
+        "properties": [
+          {
+            "key": {
+              "type": "Identifier",
+              "raw": "a"
+            },
+            "type": "Field",
+            "value": {
+              "type": "Binary",
+              "flag": "=",
+              "left": {
+                "type": "Identifier",
+                "raw": "b"
+              },
+              "right": {
+                "type": "Literal",
+                "raw": "2"
+              },
+              "level": 11.000000
+            }
+          }
+        ]
+      },
+      "object": {
+        "type": "Identifier",
+        "raw": "obj"
+      },
+      "body": {
+        "type": "BlockStatement",
+        "body": [
+          {
+            "type": "ExpressionStatement",
+            "expression": {
+              "type": "Call",
+              "callee": {
+                "type": "Binary",
+                "flag": ".",
+                "left": {
+                  "type": "Identifier",
+                  "raw": "console"
+                },
+                "right": {
+                  "type": "Identifier",
+                  "raw": "log"
+                },
+                "level": -2.000000
+              },
+              "args": [
+                {
+                  "type": "Identifier",
+                  "raw": "b"
+                }
+              ]
+            }
+          }
+        ]
+      }
     }
   ]
 }

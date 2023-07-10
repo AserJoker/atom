@@ -380,6 +380,48 @@ JSON_Value JSON_fromImport(AstNode node) {
   return obj;
 }
 
+JSON_Value JSON_fromFor(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("for"));
+  JSON_setField(obj, "init", JSON_fromAstNode(node->s_for.init));
+  JSON_setField(obj, "condition", JSON_fromAstNode(node->s_for.condition));
+  JSON_setField(obj, "update", JSON_fromAstNode(node->s_for.update));
+  JSON_setField(obj, "body", JSON_fromAstNode(node->s_forIn.body));
+  return obj;
+}
+
+JSON_Value JSON_fromForIn(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("forIn"));
+  if (node->s_forIn.type == AT_Const) {
+    JSON_setField(obj, "assigmentType", JSON_createString("const"));
+  } else if (node->s_forIn.type == AT_Let) {
+    JSON_setField(obj, "assigmentType", JSON_createString("let"));
+  } else {
+    JSON_setField(obj, "assigmentType", JSON_createString("var"));
+  }
+  JSON_setField(obj, "iterator", JSON_fromAstNode(node->s_forIn.iterator));
+  JSON_setField(obj, "object", JSON_fromAstNode(node->s_forIn.object));
+  JSON_setField(obj, "body", JSON_fromAstNode(node->s_forIn.body));
+  return obj;
+}
+
+JSON_Value JSON_fromForOf(AstNode node) {
+  JSON_Value obj = JSON_createObject();
+  JSON_setField(obj, "type", JSON_createString("forOf"));
+  if (node->s_forIn.type == AT_Const) {
+    JSON_setField(obj, "assigmentType", JSON_createString("const"));
+  } else if (node->s_forIn.type == AT_Let) {
+    JSON_setField(obj, "assigmentType", JSON_createString("let"));
+  } else {
+    JSON_setField(obj, "assigmentType", JSON_createString("var"));
+  }
+  JSON_setField(obj, "iterator", JSON_fromAstNode(node->s_forIn.iterator));
+  JSON_setField(obj, "object", JSON_fromAstNode(node->s_forIn.object));
+  JSON_setField(obj, "body", JSON_fromAstNode(node->s_forIn.body));
+  return obj;
+}
+
 JSON_Value JSON_fromAstNode(AstNode node) {
   switch (node->type) {
   case ANT_Identifier:
@@ -436,6 +478,12 @@ JSON_Value JSON_fromAstNode(AstNode node) {
     return JSON_fromSwitch(node);
   case ANT_ImportStatement:
     return JSON_fromImport(node);
+  case ANT_ForStatement:
+    return JSON_fromFor(node);
+  case ANT_ForOfStatement:
+    return JSON_fromForOf(node);
+  case ANT_ForInStatement:
+    return JSON_fromForIn(node);
   default:
     return JSON_fromCalculate(node);
   }
