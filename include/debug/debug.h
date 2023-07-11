@@ -1,5 +1,5 @@
 #pragma once
-#include "parser/astnode.h"
+#include "compiler/astnode.h"
 #include "util/json.h"
 
 void Debug_init();

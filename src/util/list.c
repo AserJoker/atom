@@ -89,7 +89,7 @@ Bool List_remove(List list, List_Node node) {
       node->last->next = node->next;
       node->next->last = node->last;
     }
-    List_Node_dispose(node);
+    Buffer_dispose(node);
     list->size--;
     return True;
   }
@@ -113,4 +113,13 @@ void *List_set(List_Node node, void *data) {
   void *result = node->data;
   node->data = data;
   return result;
+}
+
+Bool List_contains(List list, Buffer data) {
+  LIST_LOOP(list) {
+    if (it->data == data) {
+      return True;
+    }
+  }
+  return False;
 }

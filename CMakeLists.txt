@@ -7,8 +7,8 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src SOURCE)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/util UTIL)
-aux_source_directory(${PROJECT_SOURCE_DIR}/src/parser PARSER)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/compiler COMPILER)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/engine ENGINE)
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/include HEADERS)
 
@@ -19,4 +19,4 @@ if(CMAKE_BUILD_TYPE STREQUAL Debug)
     aux_source_directory(${PROJECT_SOURCE_DIR}/src/debug DEBUG)
 endif()
 
-add_executable(${ATOM_COMPILER_NAME} ${SOURCE} ${DEBUG} ${UTIL} ${PARSER} ${COMPILER})
+add_executable(${ATOM_COMPILER_NAME} ${SOURCE} ${DEBUG} ${UTIL} ${COMPILER} ${ENGINE})

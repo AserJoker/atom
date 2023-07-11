@@ -1,4 +1,4 @@
-#include "parser/tokenizer.h"
+#include "compiler/tokenizer.h"
 #include "util/error.h"
 
 struct s_TokenContext {
