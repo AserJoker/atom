@@ -150,10 +150,10 @@ static void AstNode_dispose(AstNode node) {
     Buffer_dispose(node->e_arrPatternProp.name);
     Buffer_dispose(node->e_arrPatternProp.init);
   } else {
-    Buffer_dispose(node->binary.left);
-    Buffer_dispose(node->binary.right);
-    if (node->binary.flag) {
-      Buffer_dispose(node->binary.flag);
+    Buffer_dispose(node->e_binary.left);
+    Buffer_dispose(node->e_binary.right);
+    if (node->e_binary.flag) {
+      Buffer_dispose(node->e_binary.flag);
     }
   }
 }
@@ -165,39 +165,10 @@ static AstNode AstNode_create() {
   node->position.begin = 0;
   node->position.end = 0;
   node->type = ANT_Reserved;
-  node->binary.left = 0;
-  node->binary.right = 0;
-  node->binary.flag = 0;
+  node->e_binary.left = 0;
+  node->e_binary.right = 0;
+  node->e_binary.flag = 0;
   return node;
-}
-
-static AstNode AstNode_insertToList(AstNode iterator, AstNode node) {
-  if (iterator->binary.right == NULL) {
-    iterator->binary.right = node;
-    return iterator;
-  } else {
-    AstNode it = AstNode_create();
-    it->binary.left = iterator->binary.right;
-    it->binary.right = node;
-    iterator->binary.right = it;
-    return it;
-  }
-}
-
-static void AstNode_toList(AstNode iterator, AstNode node, ...) {
-  AstNode it = iterator;
-  va_list list;
-  va_start(list, node);
-  AstNode next = va_arg(list, AstNode);
-  for (;;) {
-    it = AstNode_insertToList(it, node);
-    if (!next) {
-      break;
-    }
-    node = next;
-    next = va_arg(list, AstNode);
-  }
-  va_end(list);
 }
 
 typedef struct s_ProcessHandle {
@@ -237,18 +208,18 @@ static void Expression_insert(AstNode expr) {
     g_ectx->root = expr;
   } else {
     if (g_ectx->current) {
-      g_ectx->current->binary.right = expr;
+      g_ectx->current->e_binary.right = expr;
     } else {
       if (g_ectx->root->level <= expr->level) {
-        expr->binary.left = g_ectx->root;
+        expr->e_binary.left = g_ectx->root;
         g_ectx->root = expr;
       } else {
         AstNode iterator = g_ectx->root;
-        while (iterator->binary.right->level > expr->level) {
-          iterator = iterator->binary.right;
+        while (iterator->e_binary.right->level > expr->level) {
+          iterator = iterator->e_binary.right;
         }
-        expr->binary.left = iterator->binary.right;
-        iterator->binary.right = expr;
+        expr->e_binary.left = iterator->e_binary.right;
+        iterator->e_binary.right = expr;
       }
     }
   }
@@ -260,10 +231,10 @@ static void Expression_insert(AstNode expr) {
   }
 }
 
-static AstNode AstNode_readExpression(SourceFile file, cstring source);
-static AstNode AstNode_readStatement(SourceFile file, cstring source);
-static AstNode AstNode_readBlockStatement(SourceFile file, cstring source);
-CHECKER(AstNode_isLiteral) {
+static AstNode JS_Compile_readExpression(SourceFile file, cstring source);
+static AstNode JS_Compile_readStatement(SourceFile file, cstring source);
+static AstNode JS_Compile_readBlockStatement(SourceFile file, cstring source);
+CHECKER(JS_Compile_isLiteral) {
   if (!token) {
     return False;
   }
@@ -281,7 +252,7 @@ CHECKER(AstNode_isLiteral) {
   }
   return False;
 }
-READER(AstNode_readLiteral) {
+READER(JS_Compile_readLiteral) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Literal;
@@ -299,9 +270,9 @@ failed:
   Buffer_dispose(node);
   return NULL;
 }
-CHECKER(AstNode_isIdentifier) { return token->type == TT_Identifier; }
+CHECKER(JS_Compile_isIdentifier) { return token->type == TT_Identifier; }
 
-READER(AstNode_readIdentifier) {
+READER(JS_Compile_readIdentifier) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->level = -2;
@@ -321,7 +292,7 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isCalculate) {
+CHECKER(JS_Compile_isCalculate) {
   if (Token_check(token, TT_Keyword, "instanceof") ||
       Token_check(token, TT_Keyword, "in") ||
       Token_check(token, TT_Keyword, "of")) {
@@ -346,10 +317,10 @@ CHECKER(AstNode_isCalculate) {
   }
 }
 
-READER(AstNode_readCalculate) {
+READER(JS_Compile_readCalculate) {
   Token token = Token_readSkipNewline(file, source);
   AstNode expr = AstNode_create();
-  expr->binary.flag = cstring_from(token->raw);
+  expr->e_binary.flag = cstring_from(token->raw);
   if (Token_check(token, TT_Keyword, "instanceof") ||
       Token_check(token, TT_Keyword, "in") ||
       Token_check(token, TT_Keyword, "of")) {
@@ -372,11 +343,11 @@ READER(AstNode_readCalculate) {
   return expr;
 }
 
-CHECKER(AstNode_isUnary) {
+CHECKER(JS_Compile_isUnary) {
   return Strings_contains(token->raw, unaryOperators);
 }
 
-READER(AstNode_readUnary) {
+READER(JS_Compile_readUnary) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Binary;
@@ -387,7 +358,7 @@ READER(AstNode_readUnary) {
     goto failed;
   }
   selector = token->raw.end;
-  node->binary.flag = cstring_from(token->raw);
+  node->e_binary.flag = cstring_from(token->raw);
   Buffer_dispose(token);
   node->position.begin = source;
   node->position.end = selector;
@@ -397,11 +368,11 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isUpdate) {
+CHECKER(JS_Compile_isUpdate) {
   return Strings_contains(token->raw, updateOperators);
 }
 
-READER(AstNode_readUpdate) {
+READER(JS_Compile_readUpdate) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Binary;
@@ -412,7 +383,7 @@ READER(AstNode_readUpdate) {
     goto failed;
   }
   selector = token->raw.end;
-  node->binary.flag = cstring_from(token->raw);
+  node->e_binary.flag = cstring_from(token->raw);
   Buffer_dispose(token);
   node->position.begin = source;
   node->position.end = selector;
@@ -422,8 +393,8 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isBracket) { return Token_check(token, TT_Symbol, "("); }
-READER(AstNode_readBracket) {
+CHECKER(JS_Compile_isBracket) { return Token_check(token, TT_Symbol, "("); }
+READER(JS_Compile_readBracket) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Binary;
@@ -435,14 +406,14 @@ READER(AstNode_readBracket) {
   selector = token->raw.end;
   Buffer_dispose(token);
   ExpressionContext ectx = ExpressionContext_push();
-  AstNode bracket = AstNode_readExpression(file, selector);
+  AstNode bracket = JS_Compile_readExpression(file, selector);
   ExpressionContext_pop(ectx);
   if (!bracket) {
     goto failed;
   }
-  node->binary.left = bracket;
+  node->e_binary.left = bracket;
   selector = bracket->position.end;
-  node->binary.flag = (cstring)cstring_toBuffer("()");
+  node->e_binary.flag = (cstring)cstring_toBuffer("()");
   token = Token_readSkipNewline(file, selector);
   if (!token) {
     goto failed;
@@ -463,14 +434,15 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isCall) { return Token_check(token, TT_Symbol, "("); }
-READER(AstNode_readCall) {
+CHECKER(JS_Compile_isCall) { return Token_check(token, TT_Symbol, "("); }
+READER(JS_Compile_readCall) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Call;
   node->level = -2;
   node->bind = BT_Left;
-  AstNode iterator = node;
+  node->e_call.callee = NULL;
+  node->e_call.args = List_create(True);
   Token token = Token_readSkipNewline(file, selector);
   if (!token) {
     goto failed;
@@ -486,12 +458,12 @@ READER(AstNode_readCall) {
     for (;;) {
       ExpressionContext ectx = ExpressionContext_push();
       g_ectx->maxLevel = 12;
-      AstNode arg = AstNode_readExpression(file, selector);
+      AstNode arg = JS_Compile_readExpression(file, selector);
       ExpressionContext_pop(ectx);
       if (!arg) {
         goto failed;
       }
-      iterator = AstNode_insertToList(iterator, arg);
+      List_insert_tail(node->e_call.args, arg);
       selector = arg->position.end;
       token = Token_readSkipNewline(file, selector);
       if (!token) {
@@ -525,8 +497,8 @@ failed:
   Buffer_dispose(node);
   return NULL;
 }
-CHECKER(AstNode_isMember) { return Token_check(token, TT_Symbol, "."); }
-READER(AstNode_readMember) {
+CHECKER(JS_Compile_isMember) { return Token_check(token, TT_Symbol, "."); }
+READER(JS_Compile_readMember) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Binary;
@@ -537,7 +509,7 @@ READER(AstNode_readMember) {
     goto failed;
   }
   selector = token->raw.end;
-  node->binary.flag = cstring_from(token->raw);
+  node->e_binary.flag = cstring_from(token->raw);
   Buffer_dispose(token);
   node->position.begin = source;
   node->position.end = selector;
@@ -548,8 +520,8 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isCompute) { return Token_check(token, TT_Symbol, "["); }
-READER(AstNode_readCompute) {
+CHECKER(JS_Compile_isCompute) { return Token_check(token, TT_Symbol, "["); }
+READER(JS_Compile_readCompute) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Binary;
@@ -562,14 +534,14 @@ READER(AstNode_readCompute) {
   selector = token->raw.end;
   Buffer_dispose(token);
   ExpressionContext ectx = ExpressionContext_push();
-  AstNode key = AstNode_readExpression(file, selector);
+  AstNode key = JS_Compile_readExpression(file, selector);
   ExpressionContext_pop(ectx);
   if (!key) {
     goto failed;
   }
   selector = key->position.end;
-  node->binary.right = key;
-  node->binary.flag = cstring_toBuffer("compute");
+  node->e_binary.right = key;
+  node->e_binary.flag = cstring_toBuffer("compute");
   token = Token_readSkipNewline(file, selector);
   if (!token) {
     goto failed;
@@ -590,8 +562,8 @@ failed:
   Buffer_dispose(node);
   return NULL;
 }
-CHECKER(AstNode_isOptional) { return Token_check(token, TT_Symbol, "?."); }
-READER(AstNode_readOptional) {
+CHECKER(JS_Compile_isOptional) { return Token_check(token, TT_Symbol, "?."); }
+READER(JS_Compile_readOptional) {
   cstring selector = source;
   Token token = Token_readSkipNewline(file, selector);
   if (!token) {
@@ -605,7 +577,7 @@ READER(AstNode_readOptional) {
   }
   if (Token_check(token, TT_Symbol, "(")) {
     Buffer_dispose(token);
-    AstNode node = AstNode_readCall(file, selector);
+    AstNode node = JS_Compile_readCall(file, selector);
     if (!node) {
       return NULL;
     }
@@ -613,12 +585,12 @@ READER(AstNode_readOptional) {
     return node;
   } else if (Token_check(token, TT_Symbol, "[")) {
     Buffer_dispose(token);
-    AstNode node = AstNode_readCompute(file, selector);
+    AstNode node = JS_Compile_readCompute(file, selector);
     if (!node) {
       return NULL;
     }
-    Buffer_dispose(node->binary.flag);
-    node->binary.flag = cstring_toBuffer("optional-compute");
+    Buffer_dispose(node->e_binary.flag);
+    node->e_binary.flag = cstring_toBuffer("optional-compute");
     return node;
   } else {
     Buffer_dispose(token);
@@ -626,19 +598,19 @@ READER(AstNode_readOptional) {
     node->type = ANT_Binary;
     node->level = -2;
     node->bind = BT_Both;
-    node->binary.flag = cstring_toBuffer("?.");
+    node->e_binary.flag = cstring_toBuffer("?.");
     node->position.begin = source;
     node->position.end = selector;
     return node;
   }
   return NULL;
 }
-CHECKER(AstNode_isPrefix) {
+CHECKER(JS_Compile_isPrefix) {
   return Token_check(token, TT_Keyword, "await") ||
          Token_check(token, TT_Keyword, "new") ||
          Token_check(token, TT_Keyword, "delete");
 }
-READER(AstNode_readPrefix) {
+READER(JS_Compile_readPrefix) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Binary;
@@ -649,7 +621,7 @@ READER(AstNode_readPrefix) {
     goto failed;
   }
   selector = token->raw.end;
-  node->binary.flag = cstring_from(token->raw);
+  node->e_binary.flag = cstring_from(token->raw);
   Buffer_dispose(token);
   node->position.begin = source;
   node->position.end = selector;
@@ -659,12 +631,12 @@ failed:
   Buffer_dispose(node);
   return NULL;
 }
-CHECKER(AstNode_isAssigment) {
+CHECKER(JS_Compile_isAssigment) {
   return Token_check(token, TT_Keyword, "const") ||
          Token_check(token, TT_Keyword, "let") ||
          Token_check(token, TT_Keyword, "var");
 }
-READER(AstNode_readAssigment) {
+READER(JS_Compile_readAssigment) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Binary;
@@ -675,7 +647,7 @@ READER(AstNode_readAssigment) {
     goto failed;
   }
   selector = token->raw.end;
-  node->binary.flag = cstring_from(token->raw);
+  node->e_binary.flag = cstring_from(token->raw);
   Buffer_dispose(token);
   node->position.begin = source;
   node->position.end = selector;
@@ -686,7 +658,7 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isFunction) {
+CHECKER(JS_Compile_isFunction) {
   if (Token_check(token, TT_Keyword, "function")) {
     return True;
   } else if (Token_check(token, TT_Keyword, "async")) {
@@ -699,7 +671,7 @@ CHECKER(AstNode_isFunction) {
   }
   return False;
 }
-READER(AstNode_readFunction) {
+READER(JS_Compile_readFunction) {
   Bool async = False;
   Bool generator = False;
   cstring selector = source;
@@ -763,7 +735,7 @@ READER(AstNode_readFunction) {
     for (;;) {
       ExpressionContext ectx = ExpressionContext_push();
       g_ectx->maxLevel = 12;
-      AstNode arg = AstNode_readExpression(file, selector);
+      AstNode arg = JS_Compile_readExpression(file, selector);
       ExpressionContext_pop(ectx);
       if (!arg) {
         goto failed;
@@ -790,7 +762,7 @@ READER(AstNode_readFunction) {
   }
   selector = token->raw.end;
   Buffer_dispose(token);
-  node->e_function.body = AstNode_readBlockStatement(file, selector);
+  node->e_function.body = JS_Compile_readBlockStatement(file, selector);
   if (!node->e_function.body) {
     goto failed;
   }
@@ -803,7 +775,7 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isLambda) {
+CHECKER(JS_Compile_isLambda) {
   Token it = token;
   cstring selector = token->raw.begin;
   if (Token_check(it, TT_Keyword, "async")) {
@@ -853,7 +825,7 @@ CHECKER(AstNode_isLambda) {
   return False;
 }
 
-READER(AstNode_readLambda) {
+READER(JS_Compile_readLambda) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Lambda;
@@ -875,7 +847,7 @@ READER(AstNode_readLambda) {
   if (token->type == TT_Identifier) {
     Buffer_dispose(token);
     ExpressionContext ectx = ExpressionContext_push();
-    AstNode arg = AstNode_readIdentifier(file, selector);
+    AstNode arg = JS_Compile_readIdentifier(file, selector);
     ExpressionContext_pop(ectx);
     if (!arg) {
       goto failed;
@@ -900,7 +872,7 @@ READER(AstNode_readLambda) {
       for (;;) {
         ExpressionContext ectx = ExpressionContext_push();
         g_ectx->maxLevel = 12;
-        AstNode arg = AstNode_readExpression(file, selector);
+        AstNode arg = JS_Compile_readExpression(file, selector);
         ExpressionContext_pop(ectx);
         if (!arg) {
           goto failed;
@@ -945,11 +917,11 @@ READER(AstNode_readLambda) {
     goto failed;
   }
   if (Token_check(token, TT_Symbol, "{")) {
-    node->e_lambda.body = AstNode_readStatement(file, selector);
+    node->e_lambda.body = JS_Compile_readStatement(file, selector);
   } else {
     ExpressionContext ectx = ExpressionContext_push();
     g_ectx->maxLevel = 12;
-    node->e_lambda.body = AstNode_readExpression(file, selector);
+    node->e_lambda.body = JS_Compile_readExpression(file, selector);
     ExpressionContext_pop(ectx);
   }
   Buffer_dispose(token);
@@ -965,8 +937,8 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isArray) { return Token_check(token, TT_Symbol, "["); }
-READER(AstNode_readArray) {
+CHECKER(JS_Compile_isArray) { return Token_check(token, TT_Symbol, "["); }
+READER(JS_Compile_readArray) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Array;
@@ -987,7 +959,7 @@ READER(AstNode_readArray) {
     for (;;) {
       ExpressionContext ectx = ExpressionContext_push();
       g_ectx->maxLevel = 12;
-      AstNode item = AstNode_readExpression(file, selector);
+      AstNode item = JS_Compile_readExpression(file, selector);
       ExpressionContext_pop(ectx);
       if (!item) {
         goto failed;
@@ -1117,10 +1089,10 @@ static AstNode ObjectProperty_read(SourceFile file, cstring source) {
   }
   if (Token_check(token, TT_Symbol, "[")) {
     Buffer_dispose(token);
-    node->e_oprop.key = AstNode_readCompute(file, selector);
+    node->e_oprop.key = JS_Compile_readCompute(file, selector);
   } else {
     Buffer_dispose(token);
-    node->e_oprop.key = AstNode_readIdentifier(file, selector);
+    node->e_oprop.key = JS_Compile_readIdentifier(file, selector);
   }
   if (!node->e_oprop.key) {
     goto failed;
@@ -1141,7 +1113,7 @@ static AstNode ObjectProperty_read(SourceFile file, cstring source) {
     Buffer_dispose(token);
     ExpressionContext ectx = ExpressionContext_push();
     g_ectx->maxLevel = 12;
-    node->e_oprop.field = AstNode_readExpression(file, selector);
+    node->e_oprop.field = JS_Compile_readExpression(file, selector);
     ExpressionContext_pop(ectx);
     if (!node->e_oprop.field) {
       goto failed;
@@ -1163,7 +1135,7 @@ static AstNode ObjectProperty_read(SourceFile file, cstring source) {
       for (;;) {
         ExpressionContext ectx = ExpressionContext_push();
         g_ectx->maxLevel = 12;
-        AstNode arg = AstNode_readExpression(file, selector);
+        AstNode arg = JS_Compile_readExpression(file, selector);
         ExpressionContext_pop(ectx);
         if (!arg) {
           goto failed;
@@ -1191,7 +1163,7 @@ static AstNode ObjectProperty_read(SourceFile file, cstring source) {
     }
     selector = token->raw.end;
     Buffer_dispose(token);
-    node->e_oprop.method.body = AstNode_readBlockStatement(file, selector);
+    node->e_oprop.method.body = JS_Compile_readBlockStatement(file, selector);
     if (!node->e_oprop.method.body) {
       goto failed;
     }
@@ -1205,8 +1177,8 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isObject) { return Token_check(token, TT_Symbol, "{"); }
-READER(AstNode_readObject) {
+CHECKER(JS_Compile_isObject) { return Token_check(token, TT_Symbol, "{"); }
+READER(JS_Compile_readObject) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Object;
@@ -1270,7 +1242,7 @@ failed:
   return NULL;
 }
 
-READER(AstNode_readClassProperty) {
+READER(JS_Compile_readClassProperty) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_ClassProperty;
@@ -1293,7 +1265,7 @@ READER(AstNode_readClassProperty) {
         break;
       }
       ExpressionContext ectx = ExpressionContext_push();
-      AstNode dec = AstNode_readExpression(file, selector);
+      AstNode dec = JS_Compile_readExpression(file, selector);
       ExpressionContext_pop(ectx);
       if (!dec) {
         goto failed;
@@ -1367,7 +1339,7 @@ READER(AstNode_readClassProperty) {
   }
   if (token->type == TT_Identifier) {
     Buffer_dispose(token);
-    node->e_cprop.key = AstNode_readIdentifier(file, selector);
+    node->e_cprop.key = JS_Compile_readIdentifier(file, selector);
     if (!node->e_cprop.key) {
       goto failed;
     }
@@ -1379,7 +1351,7 @@ READER(AstNode_readClassProperty) {
   } else if (Token_check(token, TT_Symbol, "[")) {
     selector = token->raw.end;
     Buffer_dispose(token);
-    node->e_cprop.key = AstNode_readExpression(file, selector);
+    node->e_cprop.key = JS_Compile_readExpression(file, selector);
     if (!node->e_cprop.key) {
       goto failed;
     }
@@ -1415,7 +1387,7 @@ READER(AstNode_readClassProperty) {
     }
     Buffer_dispose(token);
     ExpressionContext ectx = ExpressionContext_push();
-    node->e_cprop.field = AstNode_readExpression(file, selector);
+    node->e_cprop.field = JS_Compile_readExpression(file, selector);
     ExpressionContext_pop(ectx);
     if (!node->e_cprop.field) {
       goto failed;
@@ -1437,7 +1409,7 @@ READER(AstNode_readClassProperty) {
       for (;;) {
         ExpressionContext ectx = ExpressionContext_push();
         g_ectx->maxLevel = 12;
-        AstNode arg = AstNode_readExpression(file, selector);
+        AstNode arg = JS_Compile_readExpression(file, selector);
         ExpressionContext_pop(ectx);
         if (!arg) {
           goto failed;
@@ -1471,7 +1443,7 @@ READER(AstNode_readClassProperty) {
     }
     selector = token->raw.end;
     Buffer_dispose(token);
-    node->e_cprop.method.body = AstNode_readBlockStatement(file, selector);
+    node->e_cprop.method.body = JS_Compile_readBlockStatement(file, selector);
     if (!node->e_cprop.method.body) {
       goto failed;
     }
@@ -1484,11 +1456,11 @@ failed:
   Buffer_dispose(node);
   return NULL;
 }
-CHECKER(AstNode_isClass) {
+CHECKER(JS_Compile_isClass) {
   return Token_check(token, TT_Symbol, "@") ||
          Token_check(token, TT_Keyword, "class");
 }
-READER(AstNode_readClass) {
+READER(JS_Compile_readClass) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Class;
@@ -1512,7 +1484,7 @@ READER(AstNode_readClass) {
         break;
       }
       ExpressionContext ectx = ExpressionContext_push();
-      AstNode dec = AstNode_readExpression(file, selector);
+      AstNode dec = JS_Compile_readExpression(file, selector);
       ExpressionContext_pop(ectx);
       if (!dec) {
         goto failed;
@@ -1551,7 +1523,7 @@ READER(AstNode_readClass) {
     selector = token->raw.end;
     Buffer_dispose(token);
     ExpressionContext ectx = ExpressionContext_push();
-    node->e_class.extends = AstNode_readExpression(file, selector);
+    node->e_class.extends = JS_Compile_readExpression(file, selector);
     ExpressionContext_pop(ectx);
     if (!node->e_class.extends) {
       goto failed;
@@ -1602,7 +1574,7 @@ READER(AstNode_readClass) {
         Buffer_dispose(next);
         selector = token->raw.end;
         Buffer_dispose(token);
-        AstNode block = AstNode_readBlockStatement(file, selector);
+        AstNode block = JS_Compile_readBlockStatement(file, selector);
         if (!block) {
           goto failed;
         }
@@ -1611,7 +1583,7 @@ READER(AstNode_readClass) {
       } else {
         Buffer_dispose(token);
         Buffer_dispose(next);
-        AstNode property = AstNode_readClassProperty(file, selector);
+        AstNode property = JS_Compile_readClassProperty(file, selector);
         if (!property) {
           goto failed;
         }
@@ -1637,7 +1609,7 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isTemplate) {
+CHECKER(JS_Compile_isTemplate) {
   if (token->type == TT_Identifier) {
     Token next = Token_readSkipNewline(file, token->raw.end);
     if (!next) {
@@ -1652,7 +1624,7 @@ CHECKER(AstNode_isTemplate) {
   }
   return token->type == TT_Template || token->type == TT_TemplateStart;
 }
-READER(AstNode_readTemplate) {
+READER(JS_Compile_readTemplate) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Template;
@@ -1678,7 +1650,7 @@ READER(AstNode_readTemplate) {
     for (;;) {
       ExpressionContext ectx = ExpressionContext_push();
       Token_enableReadTemplate();
-      AstNode arg = AstNode_readExpression(file, selector);
+      AstNode arg = JS_Compile_readExpression(file, selector);
       ExpressionContext_pop(ectx);
       if (!arg) {
         goto failed;
@@ -1713,7 +1685,7 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isObjectDestruct) {
+CHECKER(JS_Compile_isObjectDestruct) {
   if (Token_check(token, TT_Symbol, "{")) {
     Token pair =
         Token_pair(file, token->raw.begin, TT_Symbol, "{", TT_Symbol, "}");
@@ -1737,7 +1709,7 @@ CHECKER(AstNode_isObjectDestruct) {
   return False;
 }
 
-READER(AstNode_readObjectDestructProp) {
+READER(JS_Compile_readObjectDestructProp) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_ObjectDestructProperty;
@@ -1751,7 +1723,7 @@ READER(AstNode_readObjectDestructProp) {
   if (token->type == TT_Identifier) {
     Buffer_dispose(token);
     ExpressionContext ectx = ExpressionContext_push();
-    AstNode field = AstNode_readIdentifier(file, selector);
+    AstNode field = JS_Compile_readIdentifier(file, selector);
     ExpressionContext_pop(ectx);
     if (!node) {
       goto failed;
@@ -1760,7 +1732,7 @@ READER(AstNode_readObjectDestructProp) {
   } else if (Token_check(token, TT_Symbol, "[")) {
     Buffer_dispose(token);
     ExpressionContext ectx = ExpressionContext_push();
-    AstNode field = AstNode_readCompute(file, selector);
+    AstNode field = JS_Compile_readCompute(file, selector);
     ExpressionContext_pop(ectx);
     if (!node) {
       goto failed;
@@ -1804,7 +1776,7 @@ READER(AstNode_readObjectDestructProp) {
     Buffer_dispose(token);
     ExpressionContext ectx = ExpressionContext_push();
     g_ectx->maxLevel = 12;
-    AstNode init = AstNode_readExpression(file, selector);
+    AstNode init = JS_Compile_readExpression(file, selector);
     ExpressionContext_pop(ectx);
     if (!init) {
       goto failed;
@@ -1822,7 +1794,7 @@ failed:
   return NULL;
 }
 
-READER(AstNode_readObjectDestruct) {
+READER(JS_Compile_readObjectDestruct) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_ObjectDestruct;
@@ -1850,7 +1822,7 @@ READER(AstNode_readObjectDestruct) {
         break;
       }
       Buffer_dispose(token);
-      AstNode prop = AstNode_readObjectDestructProp(file, selector);
+      AstNode prop = JS_Compile_readObjectDestructProp(file, selector);
       if (!prop) {
         goto failed;
       }
@@ -1889,7 +1861,7 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isArrayDestruct) {
+CHECKER(JS_Compile_isArrayDestruct) {
   if (Token_check(token, TT_Symbol, "[")) {
     Token pair =
         Token_pair(file, token->raw.begin, TT_Symbol, "[", TT_Symbol, "]");
@@ -1913,7 +1885,7 @@ CHECKER(AstNode_isArrayDestruct) {
   return False;
 }
 
-READER(AstNode_readArrayDestructProperty) {
+READER(JS_Compile_readArrayDestructProperty) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_ArrayDestructProperty;
@@ -1940,7 +1912,7 @@ READER(AstNode_readArrayDestructProperty) {
     Buffer_dispose(token);
     ExpressionContext ectx = ExpressionContext_push();
     g_ectx->maxLevel = 12;
-    AstNode init = AstNode_readExpression(file, selector);
+    AstNode init = JS_Compile_readExpression(file, selector);
     ExpressionContext_pop(ectx);
     if (!init) {
       goto failed;
@@ -1958,7 +1930,7 @@ failed:
   return NULL;
 }
 
-READER(AstNode_readArrayDestruct) {
+READER(JS_Compile_readArrayDestruct) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_ArrayDestruct;
@@ -1986,7 +1958,7 @@ READER(AstNode_readArrayDestruct) {
         break;
       }
       Buffer_dispose(token);
-      AstNode prop = AstNode_readArrayDestructProperty(file, selector);
+      AstNode prop = JS_Compile_readArrayDestructProperty(file, selector);
       if (!prop) {
         goto failed;
       }
@@ -2025,31 +1997,31 @@ failed:
 }
 
 static ProcessHandle atom_expression_handlers[] = {
-    {AstNode_isObjectDestruct, AstNode_readObjectDestruct},
-    {AstNode_isArrayDestruct, AstNode_readArrayDestruct},
-    {AstNode_isArray, AstNode_readArray},
-    {AstNode_isObject, AstNode_readObject},
-    {AstNode_isClass, AstNode_readClass},
-    {AstNode_isTemplate, AstNode_readTemplate},
-    {AstNode_isLambda, AstNode_readLambda},
-    {AstNode_isFunction, AstNode_readFunction},
-    {AstNode_isAssigment, AstNode_readAssigment},
-    {AstNode_isBracket, AstNode_readBracket},
-    {AstNode_isIdentifier, AstNode_readIdentifier},
-    {AstNode_isLiteral, AstNode_readLiteral},
-    {AstNode_isUnary, AstNode_readUnary},
-    {AstNode_isPrefix, AstNode_readPrefix},
+    {JS_Compile_isObjectDestruct, JS_Compile_readObjectDestruct},
+    {JS_Compile_isArrayDestruct, JS_Compile_readArrayDestruct},
+    {JS_Compile_isArray, JS_Compile_readArray},
+    {JS_Compile_isObject, JS_Compile_readObject},
+    {JS_Compile_isClass, JS_Compile_readClass},
+    {JS_Compile_isTemplate, JS_Compile_readTemplate},
+    {JS_Compile_isLambda, JS_Compile_readLambda},
+    {JS_Compile_isFunction, JS_Compile_readFunction},
+    {JS_Compile_isAssigment, JS_Compile_readAssigment},
+    {JS_Compile_isBracket, JS_Compile_readBracket},
+    {JS_Compile_isIdentifier, JS_Compile_readIdentifier},
+    {JS_Compile_isLiteral, JS_Compile_readLiteral},
+    {JS_Compile_isUnary, JS_Compile_readUnary},
+    {JS_Compile_isPrefix, JS_Compile_readPrefix},
     {0, 0}};
 static ProcessHandle operator_expression_handlers[] = {
-    {AstNode_isUpdate, AstNode_readUpdate},
-    {AstNode_isCalculate, AstNode_readCalculate},
-    {AstNode_isCall, AstNode_readCall},
-    {AstNode_isMember, AstNode_readMember},
-    {AstNode_isCompute, AstNode_readCompute},
-    {AstNode_isOptional, AstNode_readOptional},
+    {JS_Compile_isUpdate, JS_Compile_readUpdate},
+    {JS_Compile_isCalculate, JS_Compile_readCalculate},
+    {JS_Compile_isCall, JS_Compile_readCall},
+    {JS_Compile_isMember, JS_Compile_readMember},
+    {JS_Compile_isCompute, JS_Compile_readCompute},
+    {JS_Compile_isOptional, JS_Compile_readOptional},
     {0, 0}};
 
-READER(AstNode_readExpression) {
+READER(JS_Compile_readExpression) {
   cstring selector = source;
   Token_enableReadRegex();
   for (;;) {
@@ -2150,20 +2122,20 @@ failed:
   }
   return NULL;
 }
-CHECKER(AstNode_isExpressionStatement) { return True; }
+CHECKER(JS_Compile_isExpressionStatement) { return True; }
 
-READER(AstNode_readExpressionStatement) {
+READER(JS_Compile_readExpressionStatement) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_ExpressionStatement;
   ExpressionContext ectx = ExpressionContext_push();
-  AstNode expr = AstNode_readExpression(file, source);
+  AstNode expr = JS_Compile_readExpression(file, source);
   ExpressionContext_pop(ectx);
   if (!expr) {
     goto failed;
   }
   selector = expr->position.end;
-  node->binary.left = expr;
+  node->e_binary.left = expr;
   node->position.begin = source;
   node->position.end = selector;
   return node;
@@ -2172,9 +2144,11 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isBlockStatement) { return Token_check(token, TT_Symbol, "{"); }
+CHECKER(JS_Compile_isBlockStatement) {
+  return Token_check(token, TT_Symbol, "{");
+}
 
-READER(AstNode_readBlockStatement) {
+READER(JS_Compile_readBlockStatement) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_BlockStatement;
@@ -2208,7 +2182,7 @@ READER(AstNode_readBlockStatement) {
         break;
       }
       Buffer_dispose(token);
-      AstNode statement = AstNode_readStatement(file, selector);
+      AstNode statement = JS_Compile_readStatement(file, selector);
       if (!statement) {
         goto failed;
       }
@@ -2232,11 +2206,11 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isReturnStatement) {
+CHECKER(JS_Compile_isReturnStatement) {
   return Token_check(token, TT_Keyword, "return") ||
          Token_check(token, TT_Keyword, "yield");
 }
-READER(AstNode_readReturnStatement) {
+READER(JS_Compile_readReturnStatement) {
   cstring selector = source;
   AstNode node = AstNode_create();
   Token token = Token_readSkipNewline(file, selector);
@@ -2256,7 +2230,7 @@ READER(AstNode_readReturnStatement) {
   } else {
     Buffer_dispose(token);
     ExpressionContext ectx = ExpressionContext_push();
-    node->s_return = AstNode_readExpression(file, selector);
+    node->s_return = JS_Compile_readExpression(file, selector);
     ExpressionContext_pop(ectx);
     if (!node->s_return) {
       goto failed;
@@ -2270,7 +2244,7 @@ failed:
   Buffer_dispose(token);
   return NULL;
 }
-CHECKER(AstNode_isLabelStatement) {
+CHECKER(JS_Compile_isLabelStatement) {
   if (token->type == TT_Identifier) {
     Token next = Token_readSkipNewline(file, token->raw.end);
     if (!next) {
@@ -2284,7 +2258,7 @@ CHECKER(AstNode_isLabelStatement) {
   }
   return False;
 }
-READER(AstNode_readLabelStatement) {
+READER(JS_Compile_readLabelStatement) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_LabelStatement;
@@ -2302,7 +2276,7 @@ READER(AstNode_readLabelStatement) {
   }
   selector = token->raw.end;
   Buffer_dispose(token);
-  node->s_label.body = AstNode_readStatement(file, selector);
+  node->s_label.body = JS_Compile_readStatement(file, selector);
   if (!node->s_label.body) {
     goto failed;
   }
@@ -2314,11 +2288,11 @@ failed:
   Buffer_dispose(node);
   return NULL;
 }
-CHECKER(AstNode_isBreakStatement) {
+CHECKER(JS_Compile_isBreakStatement) {
   return Token_check(token, TT_Keyword, "break") ||
          Token_check(token, TT_Keyword, "continue");
 }
-READER(AstNode_readBreakStatement) {
+READER(JS_Compile_readBreakStatement) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_BreakStatement;
@@ -2350,12 +2324,12 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isAssigmentStatement) {
+CHECKER(JS_Compile_isAssigmentStatement) {
   return Token_check(token, TT_Keyword, "const") ||
          Token_check(token, TT_Keyword, "let") ||
          Token_check(token, TT_Keyword, "var");
 }
-READER(AstNode_readAssigement) {
+READER(JS_Compile_readAssigement) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_AssigmentStatement;
@@ -2369,7 +2343,7 @@ READER(AstNode_readAssigement) {
   }
   selector = token->raw.end;
   Buffer_dispose(token);
-  node->s_assigment.body = AstNode_readExpression(file, selector);
+  node->s_assigment.body = JS_Compile_readExpression(file, selector);
   if (!node->s_assigment.body) {
     goto failed;
   }
@@ -2382,8 +2356,8 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isIf) { return Token_check(token, TT_Keyword, "if"); }
-READER(AstNode_readIf) {
+CHECKER(JS_Compile_isIf) { return Token_check(token, TT_Keyword, "if"); }
+READER(JS_Compile_readIf) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_IfStatement;
@@ -2409,7 +2383,7 @@ READER(AstNode_readIf) {
   selector = token->raw.end;
   Buffer_dispose(token);
   ExpressionContext ectx = ExpressionContext_push();
-  node->s_if.condition = AstNode_readExpression(file, selector);
+  node->s_if.condition = JS_Compile_readExpression(file, selector);
   ExpressionContext_pop(ectx);
   if (!node->s_if.condition) {
     goto failed;
@@ -2427,7 +2401,7 @@ READER(AstNode_readIf) {
   }
   selector = token->raw.end;
   Buffer_dispose(token);
-  node->s_if.consequent = AstNode_readStatement(file, selector);
+  node->s_if.consequent = JS_Compile_readStatement(file, selector);
   if (!node->s_if.consequent) {
     goto failed;
   }
@@ -2453,7 +2427,7 @@ READER(AstNode_readIf) {
   if (Token_check(token, TT_Keyword, "else")) {
     selector = token->raw.end;
     Buffer_dispose(token);
-    node->s_if.alternate = AstNode_readStatement(file, selector);
+    node->s_if.alternate = JS_Compile_readStatement(file, selector);
     if (!node->s_if.alternate) {
       goto failed;
     }
@@ -2468,8 +2442,8 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isWith) { return Token_check(token, TT_Keyword, "with"); }
-READER(AstNode_readWith) {
+CHECKER(JS_Compile_isWith) { return Token_check(token, TT_Keyword, "with"); }
+READER(JS_Compile_readWith) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_WithStatement;
@@ -2494,7 +2468,7 @@ READER(AstNode_readWith) {
   selector = token->raw.end;
   Buffer_dispose(token);
   ExpressionContext ectx = ExpressionContext_push();
-  node->s_with.obj = AstNode_readExpression(file, selector);
+  node->s_with.obj = JS_Compile_readExpression(file, selector);
   ExpressionContext_pop(ectx);
   if (!node->s_with.obj) {
     goto failed;
@@ -2514,7 +2488,7 @@ READER(AstNode_readWith) {
   }
   selector = token->raw.end;
   Buffer_dispose(token);
-  node->s_with.body = AstNode_readBlockStatement(file, selector);
+  node->s_with.body = JS_Compile_readBlockStatement(file, selector);
   if (!node->s_with.body) {
     goto failed;
   }
@@ -2527,8 +2501,8 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isWhile) { return Token_check(token, TT_Keyword, "while"); }
-READER(AstNode_readWhile) {
+CHECKER(JS_Compile_isWhile) { return Token_check(token, TT_Keyword, "while"); }
+READER(JS_Compile_readWhile) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_WhileStatement;
@@ -2554,7 +2528,7 @@ READER(AstNode_readWhile) {
   selector = token->raw.end;
   Buffer_dispose(token);
   ExpressionContext ectx = ExpressionContext_push();
-  node->s_while.condition = AstNode_readExpression(file, selector);
+  node->s_while.condition = JS_Compile_readExpression(file, selector);
   ExpressionContext_pop(ectx);
   if (!node->s_while.condition) {
     goto failed;
@@ -2575,7 +2549,7 @@ READER(AstNode_readWhile) {
   selector = token->raw.end;
   Buffer_dispose(token);
 
-  node->s_while.body = AstNode_readBlockStatement(file, selector);
+  node->s_while.body = JS_Compile_readBlockStatement(file, selector);
   if (!node->s_while.body) {
     goto failed;
   }
@@ -2588,8 +2562,8 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isDoWhile) { return Token_check(token, TT_Keyword, "do"); }
-READER(AstNode_readDoWhile) {
+CHECKER(JS_Compile_isDoWhile) { return Token_check(token, TT_Keyword, "do"); }
+READER(JS_Compile_readDoWhile) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_DoWhileStatement;
@@ -2601,7 +2575,7 @@ READER(AstNode_readDoWhile) {
   }
   selector = token->raw.end;
   Buffer_dispose(token);
-  node->s_doWhile.body = AstNode_readBlockStatement(file, selector);
+  node->s_doWhile.body = JS_Compile_readBlockStatement(file, selector);
   if (!node->s_doWhile.body) {
     goto failed;
   }
@@ -2631,7 +2605,7 @@ READER(AstNode_readDoWhile) {
   selector = token->raw.end;
   Buffer_dispose(token);
   ExpressionContext ectx = ExpressionContext_push();
-  node->s_doWhile.condition = AstNode_readExpression(file, selector);
+  node->s_doWhile.condition = JS_Compile_readExpression(file, selector);
   ExpressionContext_pop(ectx);
   if (!node->s_doWhile.condition) {
     goto failed;
@@ -2663,9 +2637,11 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isExport) { return Token_check(token, TT_Keyword, "export"); }
+CHECKER(JS_Compile_isExport) {
+  return Token_check(token, TT_Keyword, "export");
+}
 
-READER(AstNode_readExport) {
+READER(JS_Compile_readExport) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_ExportStatement;
@@ -2684,7 +2660,7 @@ READER(AstNode_readExport) {
     selector = token->raw.end;
     Buffer_dispose(token);
     for (;;) {
-      AstNode item = AstNode_readIdentifier(file, selector);
+      AstNode item = JS_Compile_readIdentifier(file, selector);
       if (!item) {
         goto failed;
       }
@@ -2712,7 +2688,7 @@ READER(AstNode_readExport) {
     selector = token->raw.end;
     Buffer_dispose(token);
     ExpressionContext ectx = ExpressionContext_push();
-    AstNode item = AstNode_readExpression(file, selector);
+    AstNode item = JS_Compile_readExpression(file, selector);
     ExpressionContext_pop(ectx);
     if (!item) {
       goto failed;
@@ -2722,25 +2698,25 @@ READER(AstNode_readExport) {
     defaultNode->s_defualtExport.item = item;
     List_insert_tail(node->s_export.exports, defaultNode);
     selector = item->position.end;
-  } else if (AstNode_isAssigment(file, token)) {
+  } else if (JS_Compile_isAssigment(file, token)) {
     Buffer_dispose(token);
-    AstNode item = AstNode_readAssigment(file, selector);
+    AstNode item = JS_Compile_readAssigment(file, selector);
     if (!item) {
       goto failed;
     }
     List_insert_tail(node->s_export.exports, item);
     selector = item->position.end;
-  } else if (AstNode_isClass(file, token)) {
+  } else if (JS_Compile_isClass(file, token)) {
     Buffer_dispose(token);
-    AstNode item = AstNode_readClass(file, selector);
+    AstNode item = JS_Compile_readClass(file, selector);
     if (!item) {
       goto failed;
     }
     List_insert_tail(node->s_export.exports, item);
     selector = item->position.end;
-  } else if (AstNode_isFunction(file, token)) {
+  } else if (JS_Compile_isFunction(file, token)) {
     Buffer_dispose(token);
-    AstNode item = AstNode_readFunction(file, selector);
+    AstNode item = JS_Compile_readFunction(file, selector);
     if (!item) {
       goto failed;
     }
@@ -2760,7 +2736,7 @@ failed:
   return NULL;
 }
 
-READER(AstNode_readSwitchPattern) {
+READER(JS_Compile_readSwitchPattern) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_SwitchPattern;
@@ -2774,7 +2750,7 @@ READER(AstNode_readSwitchPattern) {
     selector = token->raw.end;
     Buffer_dispose(token);
     ExpressionContext ectx = ExpressionContext_push();
-    node->s_switchPattern.condition = AstNode_readExpression(file, selector);
+    node->s_switchPattern.condition = JS_Compile_readExpression(file, selector);
     ExpressionContext_pop(ectx);
     if (!node->s_switchPattern.condition) {
       goto failed;
@@ -2822,7 +2798,7 @@ READER(AstNode_readSwitchPattern) {
     } else {
       Buffer_dispose(token);
     }
-    AstNode item = AstNode_readStatement(file, selector);
+    AstNode item = JS_Compile_readStatement(file, selector);
     if (!item) {
       goto failed;
     }
@@ -2837,8 +2813,10 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isSwitch) { return Token_check(token, TT_Keyword, "switch"); }
-READER(AstNode_readSwitch) {
+CHECKER(JS_Compile_isSwitch) {
+  return Token_check(token, TT_Keyword, "switch");
+}
+READER(JS_Compile_readSwitch) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_SwitchStatement;
@@ -2863,7 +2841,7 @@ READER(AstNode_readSwitch) {
   selector = token->raw.end;
   Buffer_dispose(token);
   ExpressionContext ectx = ExpressionContext_push();
-  node->s_switch.condition = AstNode_readExpression(file, selector);
+  node->s_switch.condition = JS_Compile_readExpression(file, selector);
   ExpressionContext_pop(ectx);
   if (!node->s_switch.condition) {
     goto failed;
@@ -2894,7 +2872,7 @@ READER(AstNode_readSwitch) {
   selector = token->raw.end;
   Buffer_dispose(token);
   for (;;) {
-    AstNode pattern = AstNode_readSwitchPattern(file, selector);
+    AstNode pattern = JS_Compile_readSwitchPattern(file, selector);
     if (!pattern) {
       goto failed;
     }
@@ -2930,7 +2908,7 @@ failed:
   return NULL;
 }
 
-READER(AstNode_readNamespaceImport) {
+READER(JS_Compile_readNamespaceImport) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_ImportPattern;
@@ -2974,7 +2952,7 @@ failed:
   Buffer_dispose(node);
   return NULL;
 }
-READER(AstNode_readDefaultImport) {
+READER(JS_Compile_readDefaultImport) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_ImportPattern;
@@ -2994,7 +2972,7 @@ failed:
   Buffer_dispose(node);
   return NULL;
 }
-READER(AstNode_readEntityImport) {
+READER(JS_Compile_readEntityImport) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_ImportPattern;
@@ -3036,7 +3014,7 @@ failed:
   Buffer_dispose(node);
   return NULL;
 }
-READER(AstNode_readImportAttribute) {
+READER(JS_Compile_readImportAttribute) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_ImportAttribute;
@@ -3087,8 +3065,10 @@ failed:
   Buffer_dispose(node);
   return NULL;
 }
-CHECKER(AstNode_isImport) { return Token_check(token, TT_Keyword, "import"); }
-READER(AstNode_readImport) {
+CHECKER(JS_Compile_isImport) {
+  return Token_check(token, TT_Keyword, "import");
+}
+READER(JS_Compile_readImport) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_ImportStatement;
@@ -3107,7 +3087,7 @@ READER(AstNode_readImport) {
   }
   if (Token_check(token, TT_Symbol, "*")) {
     Buffer_dispose(token);
-    AstNode ns = AstNode_readNamespaceImport(file, selector);
+    AstNode ns = JS_Compile_readNamespaceImport(file, selector);
     if (!ns) {
       goto failed;
     }
@@ -3120,7 +3100,7 @@ READER(AstNode_readImport) {
   } else {
     if (token->type == TT_Identifier) {
       Buffer_dispose(token);
-      AstNode def = AstNode_readDefaultImport(file, selector);
+      AstNode def = JS_Compile_readDefaultImport(file, selector);
       if (!def) {
         goto failed;
       }
@@ -3157,7 +3137,7 @@ READER(AstNode_readImport) {
           goto failed;
         }
         Buffer_dispose(token);
-        AstNode e = AstNode_readEntityImport(file, selector);
+        AstNode e = JS_Compile_readEntityImport(file, selector);
         if (!e) {
           goto failed;
         }
@@ -3245,7 +3225,7 @@ READER(AstNode_readImport) {
       } else {
         Buffer_dispose(token);
       }
-      AstNode attr = AstNode_readImportAttribute(file, selector);
+      AstNode attr = JS_Compile_readImportAttribute(file, selector);
       if (!attr) {
         goto failed;
       }
@@ -3280,8 +3260,8 @@ failed:
   return NULL;
 }
 
-CHECKER(AstNode_isFor) { return Token_check(token, TT_Keyword, "for"); }
-READER(AstNode_readFor) {
+CHECKER(JS_Compile_isFor) { return Token_check(token, TT_Keyword, "for"); }
+READER(JS_Compile_readFor) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_ForStatement;
@@ -3312,47 +3292,47 @@ READER(AstNode_readFor) {
   }
   if (!Token_check(token, TT_Symbol, ";")) {
     Buffer_dispose(token);
-    AstNode init = AstNode_readStatement(file, selector);
+    AstNode init = JS_Compile_readStatement(file, selector);
     if (!init) {
       goto failed;
     }
     selector = init->position.end;
     if (init->type == ANT_AssigmentStatement) {
       AstNode body = init->s_assigment.body;
-      if (body->type == ANT_Binary && strcmp(body->binary.flag, "in") == 0) {
+      if (body->type == ANT_Binary && strcmp(body->e_binary.flag, "in") == 0) {
         node->s_forIn.type = init->s_assigment.type;
-        node->s_forIn.iterator = body->binary.left;
-        node->s_forIn.object = body->binary.right;
-        body->binary.left = NULL;
-        body->binary.right = NULL;
+        node->s_forIn.iterator = body->e_binary.left;
+        node->s_forIn.object = body->e_binary.right;
+        body->e_binary.left = NULL;
+        body->e_binary.right = NULL;
         Buffer_dispose(init);
         node->type = ANT_ForInStatement;
       } else if (body->type == ANT_Binary &&
-                 strcmp(body->binary.flag, "of") == 0) {
+                 strcmp(body->e_binary.flag, "of") == 0) {
         node->s_forIn.type = init->s_assigment.type;
-        node->s_forIn.iterator = body->binary.left;
-        node->s_forIn.object = body->binary.right;
-        body->binary.left = NULL;
-        body->binary.right = NULL;
+        node->s_forIn.iterator = body->e_binary.left;
+        node->s_forIn.object = body->e_binary.right;
+        body->e_binary.left = NULL;
+        body->e_binary.right = NULL;
         Buffer_dispose(init);
         node->type = ANT_ForOfStatement;
       }
     } else if (init->type == ANT_Binary &&
-               strcmp(init->binary.flag, "in") == 0) {
+               strcmp(init->e_binary.flag, "in") == 0) {
       node->s_forIn.type = init->s_assigment.type;
-      node->s_forIn.iterator = init->binary.left;
-      node->s_forIn.object = init->binary.right;
-      init->binary.left = NULL;
-      init->binary.right = NULL;
+      node->s_forIn.iterator = init->e_binary.left;
+      node->s_forIn.object = init->e_binary.right;
+      init->e_binary.left = NULL;
+      init->e_binary.right = NULL;
       Buffer_dispose(init);
       node->type = ANT_ForInStatement;
     } else if (init->type == ANT_Binary &&
-               strcmp(init->binary.flag, "of") == 0) {
+               strcmp(init->e_binary.flag, "of") == 0) {
       node->s_forIn.type = init->s_assigment.type;
-      node->s_forIn.iterator = init->binary.left;
-      node->s_forIn.object = init->binary.right;
-      init->binary.left = NULL;
-      init->binary.right = NULL;
+      node->s_forIn.iterator = init->e_binary.left;
+      node->s_forIn.object = init->e_binary.right;
+      init->e_binary.left = NULL;
+      init->e_binary.right = NULL;
       Buffer_dispose(init);
       node->type = ANT_ForOfStatement;
     }
@@ -3379,7 +3359,7 @@ READER(AstNode_readFor) {
     }
     if (!Token_check(token, TT_Symbol, ";")) {
       Buffer_dispose(token);
-      AstNode condition = AstNode_readExpression(file, selector);
+      AstNode condition = JS_Compile_readExpression(file, selector);
       if (!condition) {
         goto failed;
       }
@@ -3404,7 +3384,7 @@ READER(AstNode_readFor) {
     }
     if (!Token_check(token, TT_Symbol, ")")) {
       Buffer_dispose(token);
-      AstNode update = AstNode_readExpression(file, selector);
+      AstNode update = JS_Compile_readExpression(file, selector);
       if (!update) {
         goto failed;
       }
@@ -3424,7 +3404,7 @@ READER(AstNode_readFor) {
   }
   selector = token->raw.end;
   Buffer_dispose(token);
-  node->s_for.body = AstNode_readStatement(file, selector);
+  node->s_for.body = JS_Compile_readStatement(file, selector);
   if (!node->s_for.body) {
     goto failed;
   }
@@ -3438,23 +3418,23 @@ failed:
 }
 
 static ProcessHandle statement_handlers[] = {
-    {AstNode_isFor, AstNode_readFor},
-    {AstNode_isImport, AstNode_readImport},
-    {AstNode_isSwitch, AstNode_readSwitch},
-    {AstNode_isExport, AstNode_readExport},
-    {AstNode_isDoWhile, AstNode_readDoWhile},
-    {AstNode_isWhile, AstNode_readWhile},
-    {AstNode_isWith, AstNode_readWith},
-    {AstNode_isIf, AstNode_readIf},
-    {AstNode_isAssigment, AstNode_readAssigement},
-    {AstNode_isBreakStatement, AstNode_readBreakStatement},
-    {AstNode_isLabelStatement, AstNode_readLabelStatement},
-    {AstNode_isReturnStatement, AstNode_readReturnStatement},
-    {AstNode_isBlockStatement, AstNode_readBlockStatement},
-    {AstNode_isExpressionStatement, AstNode_readExpressionStatement},
+    {JS_Compile_isFor, JS_Compile_readFor},
+    {JS_Compile_isImport, JS_Compile_readImport},
+    {JS_Compile_isSwitch, JS_Compile_readSwitch},
+    {JS_Compile_isExport, JS_Compile_readExport},
+    {JS_Compile_isDoWhile, JS_Compile_readDoWhile},
+    {JS_Compile_isWhile, JS_Compile_readWhile},
+    {JS_Compile_isWith, JS_Compile_readWith},
+    {JS_Compile_isIf, JS_Compile_readIf},
+    {JS_Compile_isAssigment, JS_Compile_readAssigement},
+    {JS_Compile_isBreakStatement, JS_Compile_readBreakStatement},
+    {JS_Compile_isLabelStatement, JS_Compile_readLabelStatement},
+    {JS_Compile_isReturnStatement, JS_Compile_readReturnStatement},
+    {JS_Compile_isBlockStatement, JS_Compile_readBlockStatement},
+    {JS_Compile_isExpressionStatement, JS_Compile_readExpressionStatement},
     {0, 0}};
 
-READER(AstNode_readStatement) {
+READER(JS_Compile_readStatement) {
   int index = 0;
   Token token = Token_readSkipNewline(file, source);
   if (!token) {
@@ -3476,7 +3456,7 @@ READER(AstNode_readStatement) {
   }
 }
 
-READER(AstNode_readProgram) {
+READER(JS_Compile_readProgram) {
   cstring selector = source;
   AstNode node = AstNode_create();
   node->type = ANT_Program;
@@ -3506,7 +3486,7 @@ READER(AstNode_readProgram) {
         break;
       }
       Buffer_dispose(token);
-      AstNode statement = AstNode_readStatement(file, selector);
+      AstNode statement = JS_Compile_readStatement(file, selector);
       if (!statement) {
         goto failed;
       }
@@ -3524,10 +3504,10 @@ failed:
   return NULL;
 }
 
-AstNode AstNode_read(SourceFile file, cstring source) {
+AstNode JS_Compile_read(SourceFile file, cstring source) {
   TokenContext tctx = Token_pushTokenContext();
   ExpressionContext ectx = ExpressionContext_push();
-  AstNode node = AstNode_readProgram(file, source);
+  AstNode node = JS_Compile_readProgram(file, source);
   ExpressionContext_pop(ectx);
   Token_popTokenContext(tctx);
   return node;

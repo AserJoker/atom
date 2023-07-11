@@ -17,7 +17,12 @@ struct s_AstNode {
       AstNode left;
       AstNode right;
       cstring flag;
-    } binary;
+    } e_binary;
+
+    struct {
+      AstNode callee;
+      List args;
+    } e_call;
     struct {
       cstring name;
       Bool async;
@@ -173,7 +178,7 @@ struct s_AstNode {
     Token e_identifier, e_literal;
   };
 };
-AstNode AstNode_read(SourceFile file, cstring source);
+AstNode JS_Compile_read(SourceFile file, cstring source);
 
 enum {
   ANT_Reserved,

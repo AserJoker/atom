@@ -1,5 +1,5 @@
 #include "compiler/compiler.h"
-AstNode compile(SourceFile file) {
-  AstNode node = AstNode_read(file, file->_source);
+AstNode JS_compile(SourceFile file) {
+  AstNode node = JS_Compile_read(file, file->_source);
   return node;
 }

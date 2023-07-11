@@ -1,1 +1,1 @@
-const [a=data+1,c] = obj;
+log("abc",123)

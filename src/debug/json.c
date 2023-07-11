@@ -6,8 +6,8 @@ static JSON_Value JSON_fromAstList(AstNode iterator, ToJSON toJSON) {
   int index = 0;
   if (it) {
     while (it->type == ANT_Reserved) {
-      JSON_setIndex(arr, index, toJSON(it->binary.left));
-      it = it->binary.right;
+      JSON_setIndex(arr, index, toJSON(it->e_binary.left));
+      it = it->e_binary.right;
       index++;
     }
     JSON_setIndex(arr, index, toJSON(it));
@@ -44,20 +44,20 @@ static JSON_Value JSON_fromLiteral(AstNode node) {
 static JSON_Value JSON_fromExpressionStatement(AstNode node) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("ExpressionStatement"));
-  JSON_setField(obj, "expression", JSON_fromAstNode(node->binary.left));
+  JSON_setField(obj, "expression", JSON_fromAstNode(node->e_binary.left));
   return obj;
 }
 static JSON_Value JSON_fromCalculate(AstNode node) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Binary"));
-  if (node->binary.flag) {
-    JSON_setField(obj, "flag", JSON_createString(node->binary.flag));
+  if (node->e_binary.flag) {
+    JSON_setField(obj, "flag", JSON_createString(node->e_binary.flag));
   }
-  if (node->binary.left) {
-    JSON_setField(obj, "left", JSON_fromAstNode(node->binary.left));
+  if (node->e_binary.left) {
+    JSON_setField(obj, "left", JSON_fromAstNode(node->e_binary.left));
   }
-  if (node->binary.right) {
-    JSON_setField(obj, "right", JSON_fromAstNode(node->binary.right));
+  if (node->e_binary.right) {
+    JSON_setField(obj, "right", JSON_fromAstNode(node->e_binary.right));
   }
   JSON_setField(obj, "level", JSON_createDouble(node->level));
   return obj;
@@ -74,9 +74,9 @@ JSON_Value JSON_fromBlockStatement(AstNode node) {
 JSON_Value JSON_fromCallExpression(AstNode node) {
   JSON_Value obj = JSON_createObject();
   JSON_setField(obj, "type", JSON_createString("Call"));
-  JSON_setField(obj, "callee", JSON_fromAstNode(node->binary.left));
+  JSON_setField(obj, "callee", JSON_fromAstNode(node->e_call.callee));
   JSON_setField(obj, "args",
-                JSON_fromAstList(node->binary.right, (ToJSON)JSON_fromAstNode));
+                JSON_fromList(node->e_call.args, (ToJSON)JSON_fromAstNode));
 
   return obj;
 }

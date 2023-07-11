@@ -4,7 +4,6 @@
 #include "util/source.h"
 #include "util/strings.h"
 
-
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -27,7 +26,7 @@ int main(int argc, char **argv) {
 #endif
 
   SourceFile sf = SourceFile_read("./demo.js");
-  AstNode node = compile(sf);
+  AstNode node = JS_compile(sf);
 #ifdef _DEBUG
   if (node) {
     JSON_Value value = JSON_fromAstNode(node);
