@@ -1,5 +1,6 @@
 #include "compiler/compiler.h"
 #include "engine/atom.h"
+#include "engine/value.h"
 #include "util/error.h"
 #include "util/source.h"
 #include "util/strings.h"
@@ -38,14 +39,18 @@ int main(int argc, char **argv) {
   // #endif
   //   Buffer_dispose(node);
   //   Buffer_dispose(sf);
-  JS_AtomGroup root = JS_AtomGroup_create(NULL);
-  JS_AtomGroup group = JS_AtomGroup_create(root);
-  JS_AtomGroup group2 = JS_AtomGroup_create(group);
-  JS_Atom o1 = JS_Atom_create(group);
-  JS_Atom o2 = JS_Atom_create(group2);
-  JS_Atom_addRef(o1, o2); // o1.o2 = o2
-  JS_Atom_addRef(o2, o1); // o1.o2 = o2
-  Buffer_dispose(root);
+  JS_Scope scope = JS_Scope_create(NULL);
+  JS_Scope scope2 = JS_Scope_create(scope);
+  
+  JS_Atom str =
+      JS_Scope_define(scope, "str", (JS_Value)JS_createString("hello world"));
+  
+  JS_Atom str2 = JS_Scope_checkout(scope2, "str");
+  cstring s = NULL;
+  if (JS_getString(str2, &s)) {
+    printf("%s\n",s);
+  }
+  Buffer_dispose(scope);
   // Error error = Error_get();
   // if (error) {
   //   Error_print(error);
