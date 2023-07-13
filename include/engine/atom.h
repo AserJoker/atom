@@ -14,6 +14,7 @@ typedef struct s_JS_AtomGroup {
 
 struct s_JS_Atom {
   List refs;
+  List deRefs;
   List groups;
   Buffer data;
 };

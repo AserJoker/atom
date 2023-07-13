@@ -95,6 +95,16 @@ Bool List_remove(List list, List_Node node) {
   }
   return False;
 }
+
+Bool List_erase(List list, void *data) {
+  LIST_LOOP(list) {
+    if (List_get(it) == data) {
+      List_remove(list, it);
+      return True;
+    }
+  }
+  return False;
+}
 uint32_t List_size(List list) { return list->size; }
 List_Node List_find(List list, Finder_t finder) {
   for (List_Node it = list->head; it != list->tail; it = it->next) {

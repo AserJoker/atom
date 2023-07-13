@@ -1,34 +1,57 @@
 #include "engine/atom.h"
 #include <string.h>
 
-static Bool JS_Atom_tryDispose(JS_Atom atom) {
+static Bool JS_Atom_isAlone(JS_Atom atom) {
   List queue = List_create(False);
   List cache = List_create(False);
   List_insert_tail(queue, atom);
-  Bool isValueLived = False;
+  Bool isAtomAlone = True;
   while (!List_empty(queue)) {
     List_Node it = List_head(queue);
     JS_Atom val = List_get(it);
     if (!List_contains(cache, val)) {
       if (!List_empty(val->groups)) {
-        isValueLived = True;
+        isAtomAlone = False; // find a path to root
         break;
       }
-      LIST_LOOP(val->refs) {
-        JS_Atom val = List_get(it);
-        List_insert_tail(queue, val);
-      }
+      LIST_LOOP(val->refs) { List_insert_tail(queue, List_get(it)); }
       List_insert_tail(cache, val);
     }
     List_remove(queue, it);
   }
   Buffer_dispose(cache);
   Buffer_dispose(queue);
-  if (!isValueLived) {
-    Buffer_dispose(atom);
-    return True;
+  return isAtomAlone;
+}
+
+static void JS_Atom_autoRelease(JS_Atom atom) {
+  List queue = List_create(False);
+  List cache = List_create(False);
+  List destroy_list = List_create(True);
+  List_insert_tail(queue, atom);
+  while (!List_empty(queue)) {
+    List_Node it = List_head(queue);
+    JS_Atom current = List_get(it);
+    if (!List_contains(cache, current)) {
+      List_insert_tail(cache, current);
+      if (JS_Atom_isAlone(current)) {
+        while (!List_empty(current->deRefs)) {
+          List_Node it = List_head(current->deRefs);
+          JS_Atom deRef = List_get(it);
+          List_erase(deRef->refs, current);
+          List_insert_tail(queue, deRef);
+          List_remove(current->deRefs, it);
+        }
+        if (!List_contains(destroy_list, current)) {
+          List_insert_tail(destroy_list, current);
+        }
+      }
+    }
+    List_remove(queue, it);
   }
-  return False;
+  Buffer_dispose(queue);
+  Buffer_dispose(cache);
+  Buffer_dispose(destroy_list);
 }
 
 static void JS_AtomGroup_dispose(JS_AtomGroup group) {
@@ -42,42 +65,15 @@ static void JS_AtomGroup_dispose(JS_AtomGroup group) {
       }
     }
   }
-  List gc_list = List_create(False);
-  LIST_LOOP(group->values) {
+  while (!List_empty(group->values)) {
+    List_Node it = List_head(group->values);
     JS_Atom atom = (JS_Atom)List_get(it);
-    LIST_LOOP(atom->groups) {
-      if (List_get(it) == group) {
-        List_remove(atom->groups, it);
-        break;
-      }
-    }
+    List_erase(atom->groups, group);
     if (List_empty(atom->groups)) {
-      List_insert_tail(gc_list, atom);
+      JS_Atom_autoRelease(atom);
     }
+    List_remove(group->values, it);
   }
-  List cache = List_create(False);
-  while (!List_empty(gc_list)) {
-    List_Node it = List_head(gc_list);
-    JS_Atom atom = (JS_Atom)List_get(it);
-    LIST_LOOP(atom->refs) {
-      JS_Atom ref = (JS_Atom)List_get(it);
-      if (List_contains(cache, ref)) {
-        List_Node tmp = it;
-        it = List_next(it);
-        List_remove(atom->refs, tmp);
-        if (List_empty(atom->refs)) {
-          break;
-        }
-        it = List_last(it);
-      }
-    }
-    if (JS_Atom_tryDispose(atom)) {
-      List_insert_tail(cache, atom);
-    }
-    List_remove(gc_list, it);
-  }
-  Buffer_dispose(cache);
-  Buffer_dispose(gc_list);
   Buffer_dispose(group->values);
 }
 
@@ -107,7 +103,7 @@ void JS_AtomGroup_remove(JS_AtomGroup group, JS_Atom atom) {
     }
   }
   if (List_empty(atom->groups)) {
-    JS_Atom_tryDispose(atom);
+    JS_Atom_autoRelease(atom);
   }
 }
 
@@ -125,6 +121,7 @@ static void JS_Atom_dispose(JS_Atom atom) {
   Buffer_dispose(atom->data);
   Buffer_dispose(atom->groups);
   Buffer_dispose(atom->refs);
+  Buffer_dispose(atom->deRefs);
 }
 
 JS_Atom JS_Atom_create(JS_AtomGroup group) {
@@ -133,19 +130,22 @@ JS_Atom JS_Atom_create(JS_AtomGroup group) {
   atom->data = NULL;
   atom->refs = List_create(False);
   atom->groups = List_create(False);
+  atom->deRefs = List_create(False);
   JS_AtomGroup_add(group, atom);
   return atom;
 }
 
 void JS_Atom_addRef(JS_Atom parent, JS_Atom obj) {
   List_insert_tail(obj->refs, parent);
+  List_insert_tail(parent->deRefs, obj);
 }
 JS_Atom JS_Atom_removeRef(JS_Atom parent, JS_Atom obj) {
   LIST_LOOP(obj->refs) {
     if (List_get(it) == parent) {
       List_remove(obj->refs, it);
+      List_erase(parent->deRefs, obj);
       if (List_empty(obj->groups)) {
-        JS_Atom_tryDispose(obj);
+        JS_Atom_autoRelease(obj);
       }
       break;
     }

@@ -38,13 +38,14 @@ int main(int argc, char **argv) {
   // #endif
   //   Buffer_dispose(node);
   //   Buffer_dispose(sf);
-  JS_AtomGroup group = JS_AtomGroup_create(NULL);
-  // JS_AtomGroup scope2 = JS_AtomGroup_create(NULL);
+  JS_AtomGroup root = JS_AtomGroup_create(NULL);
+  JS_AtomGroup group = JS_AtomGroup_create(root);
+  JS_AtomGroup group2 = JS_AtomGroup_create(group);
   JS_Atom o1 = JS_Atom_create(group);
-  JS_Atom o2 = JS_Atom_create(group);
-  List_insert_tail(o2->refs, o1);
-  // Buffer_dispose(scope2);
-  Buffer_dispose(group);
+  JS_Atom o2 = JS_Atom_create(group2);
+  JS_Atom_addRef(o1, o2); // o1.o2 = o2
+  JS_Atom_addRef(o2, o1); // o1.o2 = o2
+  Buffer_dispose(root);
   // Error error = Error_get();
   // if (error) {
   //   Error_print(error);
