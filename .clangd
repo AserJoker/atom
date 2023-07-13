@@ -4,4 +4,10 @@ Diagnostics:
     Remove: modernize-use-trailing-return-type
     CheckOptions:
       WarnOnFloatingPointNarrowingConversion: false
-  Suppress: [builtin_definition, ovl_diff_return_type, static_non_static]
+  Suppress:
+    [
+      builtin_definition,
+      ovl_diff_return_type,
+      static_non_static,
+      bugprone-easily-swappable-parameters,
+    ]

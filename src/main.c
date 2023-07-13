@@ -1,5 +1,5 @@
 #include "compiler/compiler.h"
-#include "engine/value.h"
+#include "engine/atom.h"
 #include "util/error.h"
 #include "util/source.h"
 #include "util/strings.h"
@@ -38,14 +38,13 @@ int main(int argc, char **argv) {
   // #endif
   //   Buffer_dispose(node);
   //   Buffer_dispose(sf);
-  JS_Scope scope = JS_Scope_create(NULL);
-  JS_Scope scope2 = JS_Scope_create(NULL);
-  JS_Value o1 = JS_Value_createObject(scope);
-  JS_Value o2 = JS_Value_createObject(scope2);
-  JS_Object_setField(o1, "o2", o2);
-  Buffer_dispose(scope2);
-  JS_Value o3 = JS_Object_getField(o1, "o2");
-  Buffer_dispose(scope);
+  JS_AtomGroup group = JS_AtomGroup_create(NULL);
+  // JS_AtomGroup scope2 = JS_AtomGroup_create(NULL);
+  JS_Atom o1 = JS_Atom_create(group);
+  JS_Atom o2 = JS_Atom_create(group);
+  List_insert_tail(o2->refs, o1);
+  // Buffer_dispose(scope2);
+  Buffer_dispose(group);
   // Error error = Error_get();
   // if (error) {
   //   Error_print(error);
