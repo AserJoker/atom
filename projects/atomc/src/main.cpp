@@ -1,5 +1,6 @@
 #include "runtime/include/context.hpp"
 #include "runtime/include/eventloop.hpp"
+#include "runtime/include/function.hpp"
 #include "runtime/include/handle.hpp"
 #include "runtime/include/object.hpp"
 #include "runtime/include/stack.hpp"
@@ -10,14 +11,14 @@
 using namespace atom::runtime;
 void run_main() {
   context *ctx = new context();
-  value *obj = ctx->get_scope()->create_object();
-  ctx->push_scope();
-  value *str = ctx->get_scope()->create("hello world");
-  object *o = (object *)obj->get_data();
-  o->define("data", str);
-  ctx->pop_scope();
-  str = o->get(ctx->get_scope(), "data");
-  std::cout << str->get_string() << std::endl;
+  value *fn = ctx->get_scope()->create_function(
+      [](context *ctx, value *self, std::vector<value *> &args) -> value * {
+        std::cout << "hello world" << std::endl;
+        return ctx->get_scope()->create_undefined();
+      },
+      0, "fn");
+  function *func = (function *)fn->get_data();
+  func->call(ctx, nullptr );
   delete ctx;
 }
 int main(int argc, char *argv[]) {

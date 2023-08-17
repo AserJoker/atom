@@ -1,8 +1,8 @@
 #pragma once
 #include "base.hpp"
-#include "handle.hpp"
 #include "scope.hpp"
-#include "value_type.hpp"
+#include "handle.hpp"
+#include "type.hpp"
 #include <cstdint>
 #include <string>
 namespace atom::runtime {
@@ -52,7 +52,7 @@ public:
   ~value() override;
   value_type get_type();
   base *get_data();
-  handle* get_handle();
+  handle *get_handle();
   std::string &get_string();
   double &get_number();
   int32_t &get_integer();

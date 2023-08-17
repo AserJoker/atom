@@ -1,4 +1,5 @@
 #include "runtime/include/scope.hpp"
+#include "runtime/include/function.hpp"
 #include "runtime/include/object.hpp"
 #include "runtime/include/value.hpp"
 #include <algorithm>
@@ -111,5 +112,15 @@ value *scope::create_object() {
   handle *hobject = new handle(_stack, nullptr);
   hobject->set_object(new value::type_base(VT_OBJECT, new object(hobject)));
   val->_handle = hobject;
+  return val;
+}
+value *scope::create_function(cfunction callee, int32_t length,
+                              const std::string &name) {
+  value *val = new value;
+  connect_value(val);
+  handle *hfunction = new handle(_stack, nullptr);
+  hfunction->set_object(new value::type_base(
+      VT_FUNCTION, new function(hfunction, callee, length, name)));
+  val->_handle = hfunction;
   return val;
 }

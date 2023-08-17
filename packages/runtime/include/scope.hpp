@@ -1,11 +1,16 @@
 #pragma once
 #include "base.hpp"
 #include "stack.hpp"
-#include "value_type.hpp"
+#include "type.hpp"
 #include <cstdint>
+#include <functional>
 #include <string>
 namespace atom::runtime {
+class function;
 class value;
+class context;
+using cfunction =
+    std::function<value *(context *, value *, std::vector<value *> &args)>;
 class scope : public base {
 private:
   std::list<value *> _values;
@@ -30,7 +35,8 @@ public:
   value *create_null();
   value *create_object();
   value *create_array();
-  value *create_function();
+  value *create_function(cfunction callee, int32_t length,
+                         const std::string &name);
   stack *get_stack();
 };
 }; // namespace atom::runtime

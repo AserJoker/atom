@@ -11,4 +11,4 @@ enum value_type {
   VT_ARRAY,
   VT_FUNCTION
 };
-}
+} // namespace atom::runtime
