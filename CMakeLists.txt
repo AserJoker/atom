@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.12)
+project(atom)
+include(tools/filesystem.cmake)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR})
+set(CMAKE_CXX_STANDARD 20)
+set(ROOT_PROJECT_NAME ${PROJECT_NAME})
+
+find_package(fmt REQUIRED)
+
+include_directories(${PROJECT_SOURCE_DIR}/packages)
+ListDirectories(packages ${PROJECT_SOURCE_DIR}/packages)
+ListDirectories(projects ${PROJECT_SOURCE_DIR}/projects)
+add_subdirectory(packages)
+add_subdirectory(projects)
