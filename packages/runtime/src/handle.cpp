@@ -1,18 +1,14 @@
 #include "runtime/include/handle.hpp"
 #include <algorithm>
-#include <iostream>
 #include <set>
 using namespace atom::runtime;
 handle::handle(stack *stack, base *object) : _object(object) {
   stack->add_handle(this);
-  std::cout << "handle" << std::endl;
 }
 handle::handle(handle *parent, base *object) : _object(object) {
   parent->add_ref(this);
-  std::cout << "handle" << std::endl;
 }
 handle::~handle() {
-  std::cout << "~handle" << std::endl;
   if (_object) {
     delete _object;
     _object = nullptr;
@@ -25,8 +21,14 @@ void handle::add_ref(handle *child) {
   child->_parents.push_back(this);
 }
 void handle::remove_ref(handle *child) {
-  std::erase(_children, child);
-  std::erase(child->_parents, this);
+  auto cit = std::find(_children.begin(), _children.end(), child);
+  if (cit != _children.end()) {
+    _children.erase(cit);
+  }
+  auto pit = std::find(child->_parents.begin(), child->_parents.end(), this);
+  if (pit != child->_parents.end()) {
+    child->_parents.erase(pit);
+  }
   if (!_stacks.size()) {
     auto_dispose();
   }
@@ -63,12 +65,20 @@ void handle::auto_dispose() {
     cache.insert(handle);
     if (!handle->check()) {
       for (auto &child : handle->_children) {
-        std::erase(child->_parents, handle);
+        auto cit =
+            std::find(child->_parents.begin(), child->_parents.end(), handle);
+        if (cit != child->_parents.end()) {
+          child->_parents.erase(cit);
+        }
         queue.push_back(child);
       }
       handle->_children.clear();
       for (auto &parent : handle->_parents) {
-        std::erase(parent->_children, handle);
+        auto pit =
+            std::find(handle->_parents.begin(), handle->_parents.end(), handle);
+        if (pit != handle->_parents.end()) {
+          parent->_children.erase(pit);
+        }
       }
       handle->_parents.clear();
       destories.insert(handle);

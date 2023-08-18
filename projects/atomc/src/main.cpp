@@ -13,12 +13,19 @@ void run_main() {
   context *ctx = new context();
   value *fn = ctx->get_scope()->create_function(
       [](context *ctx, value *self, std::vector<value *> &args) -> value * {
-        std::cout << "hello world" << std::endl;
-        return ctx->get_scope()->create_undefined();
+        static int32_t data = 0;
+        return ctx->get_scope()->create(data++);
       },
       0, "fn");
-  function *func = (function *)fn->get_data();
-  func->call(ctx, nullptr );
+  value *vobj = ctx->get_scope()->create_object();
+  object *obj = (object *)vobj->get_data();
+  obj->define("data", fn, nullptr);
+  value *data = obj->get(ctx, "data");
+  std::cout << data->get_integer() << std::endl;
+  data = obj->get(ctx, "data");
+  std::cout << data->get_integer() << std::endl;
+  data = obj->get(ctx, "data");
+  std::cout << data->get_integer() << std::endl;
   delete ctx;
 }
 int main(int argc, char *argv[]) {

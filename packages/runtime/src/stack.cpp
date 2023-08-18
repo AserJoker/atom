@@ -17,7 +17,11 @@ stack::~stack() {
     remove_handle(handle);
   }
   if (_parent) {
-    std::erase(_parent->_children, this);
+    auto it =
+        std::find(_parent->_children.begin(), _parent->_children.end(), this);
+    if (it != _parent->_children.end()) {
+      _parent->_children.erase(it);
+    }
   }
 }
 void stack::add_handle(handle *handle) {
@@ -25,9 +29,15 @@ void stack::add_handle(handle *handle) {
   handle->get_stacks().push_back(this);
 }
 void stack::remove_handle(handle *handle) {
-  std::erase(_handles, handle);
+  auto hit = std::find(_handles.begin(), _handles.end(), handle);
+  if (hit != _handles.end()) {
+    _handles.erase(hit);
+  }
   auto &stacks = handle->get_stacks();
-  std::erase(stacks, this);
+  auto sit = std::find(stacks.begin(), stacks.end(), this);
+  if (sit != stacks.end()) {
+    stacks.erase(sit);
+  }
   if (!stacks.size()) {
     handle->auto_dispose();
   }

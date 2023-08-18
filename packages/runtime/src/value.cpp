@@ -4,10 +4,8 @@ using namespace atom::runtime;
 value::type_base::type_base(value_type type, base *data) {
   _type = type;
   _data = data;
-  std::cout << "type_base" << std::endl;
 }
 value::type_base::~type_base() {
-  std::cout << "~type_base" << std::endl;
   if (_data) {
     delete _data;
   }
@@ -30,7 +28,7 @@ value::~value() {
     scope->get_stack()->remove_handle(_handle);
   }
 }
-handle *value::get_handle(){return _handle;}
+handle *value::get_handle() { return _handle; }
 std::string &value::get_string() {
   string *vdata = (string *)get_data();
   return vdata->data;

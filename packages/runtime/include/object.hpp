@@ -1,4 +1,5 @@
 #pragma once
+#include "context.hpp"
 #include "scope.hpp"
 #include "value.hpp"
 #include <map>
@@ -38,6 +39,7 @@ private:
   bool _isSealed;
   bool _isFrozen;
   std::map<key, property> _properties;
+
 protected:
   handle *_handle;
 
@@ -50,10 +52,10 @@ public:
   bool isFrozen();
   bool define(const std::string &key, value *value);
   bool define(const std::string &key, value *getter, value *setter);
-  bool set(const std::string &key, value *value);
-  value *get(scope *scope, const std::string &key);
-  bool set(value *symbol, value *value);
-  value *get(scope *sp, value *symbol);
+  bool set(context *ctx, const std::string &key, value *value);
+  value *get(context *ctx, const std::string &key);
+  bool set(context *ctx, value *symbol, value *value);
+  value *get(context *ctx, value *symbol);
   property *getProperty(const std::string &key);
   property *getProperty(value *symbol);
 };

@@ -1,11 +1,10 @@
 #include "runtime/include/object.hpp"
+#include "runtime/include/function.hpp"
 #include <iostream>
 using namespace atom::runtime;
 object::object(handle *handle)
-    : _isSealed(false), _isFrozen(false), _handle(handle) {
-  std::cout << "object" << std::endl;
-};
-object::~object() { std::cout << "~object" << std::endl; }
+    : _isSealed(false), _isFrozen(false), _handle(handle){};
+object::~object() {  }
 void object::seal() { _isSealed = true; }
 void object::freeze() { _isFrozen = true; }
 bool object::isSealed() { return _isSealed; }
@@ -39,7 +38,7 @@ bool object::define(const std::string &field, value *getter, value *setter) {
   _properties.insert({{k, prop}});
   return true;
 }
-bool object::set(const std::string &field, value *val) {
+bool object::set(context *ctx, const std::string &field, value *val) {
   auto *prop = getProperty(field);
   if (!prop) {
     return false;
@@ -53,23 +52,36 @@ bool object::set(const std::string &field, value *val) {
     _handle->remove_ref(prop->_value);
     prop->_value = h;
   } else {
-    // TODO: setter
+    ctx->push_scope();
+    value *self = ctx->get_scope()->create(_handle);
+    value *vsetter = ctx->get_scope()->create(prop->_setter);
+    function *fn = (function *)vsetter->get_data();
+    value *result = fn->call(ctx, self, {val});
+    bool res = result->get_boolean();
+    ctx->pop_scope();
+    return res;
   }
   return true;
 }
-value *object::get(scope *scope, const std::string &field) {
+value *object::get(context *ctx, const std::string &field) {
   auto *prop = getProperty(field);
   if (!prop) {
     return nullptr;
   }
   if (prop->_value) {
-    return scope->create(prop->_value);
+    return ctx->get_scope()->create(prop->_value);
   } else {
-    // getter
+    value *self = ctx->get_scope()->create(_handle);
+    value *vgetter = ctx->get_scope()->create(prop->_getter);
+    function *fn = (function *)vgetter->get_data();
+    value *result = fn->call(ctx, self, {});
+    delete vgetter;
+    delete self;
+    return result;
   }
   return nullptr;
 }
-bool object::set(value *s, value *val) {
+bool object::set(context *ctx, value *s, value *val) {
   auto *prop = getProperty(s);
   if (!prop) {
     return false;
@@ -83,19 +95,32 @@ bool object::set(value *s, value *val) {
     _handle->remove_ref(prop->_value);
     prop->_value = h;
   } else {
-    // TODO: setter
+    ctx->push_scope();
+    value *self = ctx->get_scope()->create(_handle);
+    value *vsetter = ctx->get_scope()->create(prop->_setter);
+    function *fn = (function *)vsetter->get_data();
+    value *result = fn->call(ctx, self, {val});
+    bool res = result->get_boolean();
+    ctx->pop_scope();
+    return res;
   }
   return true;
 }
-value *object::get(scope *sp, value *s) {
+value *object::get(context *ctx, value *s) {
   auto *prop = getProperty(s);
   if (!prop) {
     return nullptr;
   }
   if (prop->_value) {
-    return sp->create(prop->_value);
+    return ctx->get_scope()->create(prop->_value);
   } else {
-    // getter
+    value *vgetter = ctx->get_scope()->create(prop->_getter);
+    value *self = ctx->get_scope()->create(_handle);
+    function *getter = (function *)vgetter->get_data();
+    value *result = getter->call(ctx, self, {});
+    delete self;
+    delete vgetter;
+    return result;
   }
   return nullptr;
 }
