@@ -1,10 +1,4 @@
-#include "runtime/include/context.hpp"
-#include "runtime/include/eventloop.hpp"
-#include "runtime/include/memory/handle.hpp"
-#include "runtime/include/memory/stack.hpp"
-#include "runtime/include/value/function.hpp"
-#include "runtime/include/value/object.hpp"
-#include "runtime/include/value/value.hpp"
+#include "runtime/runtime.hpp"
 #include <fmt/format.h>
 #include <iostream>
 #include <stdio.h>
@@ -17,14 +11,12 @@ void run_main() {
         return ctx->get_scope()->create(data++);
       },
       0, "fn");
-  value *vobj = ctx->get_scope()->create_object();
-  object *obj = vobj->get_object();
-  value *vobj2 = ctx->get_scope()->create_object(vobj);
-  auto *obj2 = vobj2->get_object();
-  obj->define("data", fn, nullptr);
-  std::cout << obj->get(ctx, "data")->get_integer() << std::endl;
-  std::cout << obj2->get(ctx, "data")->get_integer() << std::endl;
-  std::cout << obj->get(ctx, "data")->get_integer() << std::endl;
+  value *obj = ctx->get_scope()->create_object();
+  value *obj2 = ctx->get_scope()->create_object(obj);
+  obj->get_object()->define("data", fn, nullptr);
+  std::cout << obj->get_object()->get(ctx, "data")->get_integer() << std::endl;
+  std::cout << obj2->get_object()->get(ctx, "data")->get_integer() << std::endl;
+  std::cout << obj->get_object()->get(ctx, "data")->get_integer() << std::endl;
   delete ctx;
 }
 int main(int argc, char *argv[]) {
