@@ -11,7 +11,7 @@ private:
   cfunction _callee;
 
 public:
-  function(handle *hfunction, cfunction callee, int32_t len,
+  function(handle *hfunction,handle *proto, cfunction callee, int32_t len,
            const std::string &name);
   value *call(context *ctx, value *self, std::vector<value *> args = {});
   value *bind(context *ctx, value *self);

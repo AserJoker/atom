@@ -1,11 +1,13 @@
 #pragma once
 #include "base.hpp"
-#include "scope.hpp"
 #include "handle.hpp"
+#include "scope.hpp"
 #include "type.hpp"
 #include <cstdint>
 #include <string>
 namespace atom::runtime {
+class object;
+class function;
 class value : public base {
 public:
   class string : public base {
@@ -29,7 +31,6 @@ public:
     boolean(const bool &data) : data(data) {}
   };
 
-private:
   class type_base : public base {
   private:
     value_type _type;
@@ -57,5 +58,7 @@ public:
   double &get_number();
   int32_t &get_integer();
   bool &get_boolean();
+  object *get_object();
+  function *get_function();
 };
 } // namespace atom::runtime

@@ -2,9 +2,11 @@
 #include "runtime/include/function.hpp"
 #include <iostream>
 using namespace atom::runtime;
-object::object(handle *handle)
-    : _isSealed(false), _isFrozen(false), _handle(handle){};
-object::~object() {  }
+object::object(handle *hobject, handle *proto)
+    : _isSealed(false), _isFrozen(false), _handle(hobject), _proto_(proto) {
+  _handle->add_ref(_proto_);
+};
+object::~object() {}
 void object::seal() { _isSealed = true; }
 void object::freeze() { _isFrozen = true; }
 bool object::isSealed() { return _isSealed; }
@@ -64,7 +66,20 @@ bool object::set(context *ctx, const std::string &field, value *val) {
   return true;
 }
 value *object::get(context *ctx, const std::string &field) {
-  auto *prop = getProperty(field);
+  property *prop = nullptr;
+  auto *obj = this;
+  while (!prop) {
+    prop = obj->getProperty(field);
+    if (prop) {
+      break;
+    }
+    auto *vobj = (value::type_base *)_proto_->get_object();
+    if (vobj->get_type() >= VT_OBJECT) {
+      obj = (object *)vobj->get_data();
+    } else {
+      break;
+    }
+  }
   if (!prop) {
     return nullptr;
   }
@@ -107,7 +122,20 @@ bool object::set(context *ctx, value *s, value *val) {
   return true;
 }
 value *object::get(context *ctx, value *s) {
-  auto *prop = getProperty(s);
+  property *prop = nullptr;
+  auto *obj = this;
+  while (!prop) {
+    prop = obj->getProperty(s);
+    if (prop) {
+      break;
+    }
+    auto *vobj = (value::type_base *)_proto_->get_object();
+    if (vobj->get_type() >= VT_OBJECT) {
+      obj = (object *)vobj->get_data();
+    } else {
+      break;
+    }
+  }
   if (!prop) {
     return nullptr;
   }
@@ -137,4 +165,7 @@ object::property *object::getProperty(value *field) {
     return &_properties.at(k);
   }
   return nullptr;
+}
+value *object::getOwnPrototype(context *ctx) {
+  return ctx->get_scope()->create(_proto_);
 }

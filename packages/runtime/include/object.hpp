@@ -39,12 +39,13 @@ private:
   bool _isSealed;
   bool _isFrozen;
   std::map<key, property> _properties;
+  handle *_proto_;
 
 protected:
   handle *_handle;
 
 public:
-  object(handle *handle);
+  object(handle *hobject, handle *_proto_);
   ~object() override;
   void seal();
   bool isSealed();
@@ -58,5 +59,6 @@ public:
   value *get(context *ctx, value *symbol);
   property *getProperty(const std::string &key);
   property *getProperty(value *symbol);
+  value *getOwnPrototype(context *ctx);
 };
 } // namespace atom::runtime

@@ -18,14 +18,13 @@ void run_main() {
       },
       0, "fn");
   value *vobj = ctx->get_scope()->create_object();
-  object *obj = (object *)vobj->get_data();
+  object *obj = vobj->get_object();
+  value *vobj2 = ctx->get_scope()->create_object(vobj);
+  auto *obj2 = vobj2->get_object();
   obj->define("data", fn, nullptr);
-  value *data = obj->get(ctx, "data");
-  std::cout << data->get_integer() << std::endl;
-  data = obj->get(ctx, "data");
-  std::cout << data->get_integer() << std::endl;
-  data = obj->get(ctx, "data");
-  std::cout << data->get_integer() << std::endl;
+  std::cout << obj->get(ctx, "data")->get_integer() << std::endl;
+  std::cout << obj2->get(ctx, "data")->get_integer() << std::endl;
+  std::cout << obj->get(ctx, "data")->get_integer() << std::endl;
   delete ctx;
 }
 int main(int argc, char *argv[]) {

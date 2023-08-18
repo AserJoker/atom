@@ -106,12 +106,20 @@ value *scope::create(handle *handle) {
   _stack->add_handle(handle);
   return val;
 }
-value *scope::create_object() {
+value *scope::create_object(value *proto) {
   value *val = new value();
   connect_value(val);
   handle *hobject = new handle(_stack, nullptr);
-  hobject->set_object(new value::type_base(VT_OBJECT, new object(hobject)));
-  val->_handle = hobject;
+  if (!proto) {
+    value *null = create_null();
+    hobject->set_object(new value::type_base(
+        VT_OBJECT, new object(hobject, null->get_handle())));
+    val->_handle = hobject;
+    delete null;
+  } else {
+    hobject->set_object(new value::type_base(VT_OBJECT,new object(hobject,proto->get_handle())));
+    val->_handle =  hobject;
+  }
   return val;
 }
 value *scope::create_function(cfunction callee, int32_t length,
@@ -119,8 +127,11 @@ value *scope::create_function(cfunction callee, int32_t length,
   value *val = new value;
   connect_value(val);
   handle *hfunction = new handle(_stack, nullptr);
+  value *null = create_null();
   hfunction->set_object(new value::type_base(
-      VT_FUNCTION, new function(hfunction, callee, length, name)));
+      VT_FUNCTION,
+      new function(hfunction, null->get_handle(), callee, length, name)));
   val->_handle = hfunction;
+  delete null;
   return val;
 }

@@ -33,7 +33,7 @@ public:
   value *create(const bool &data);
   value *create_undefined();
   value *create_null();
-  value *create_object();
+  value *create_object(value *proto = nullptr);
   value *create_array();
   value *create_function(cfunction callee, int32_t length,
                          const std::string &name);

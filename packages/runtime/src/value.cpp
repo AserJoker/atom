@@ -1,4 +1,5 @@
 #include "runtime/include/value.hpp"
+#include "runtime/include/function.hpp"
 #include <iostream>
 using namespace atom::runtime;
 value::type_base::type_base(value_type type, base *data) {
@@ -45,3 +46,6 @@ bool &value::get_boolean() {
   boolean *vdata = (boolean *)get_data();
   return vdata->data;
 }
+object *value::get_object() { return (object *)get_data(); }
+
+function *value::get_function(){return (function *)get_data();}
