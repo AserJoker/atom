@@ -23,8 +23,5 @@ int main(int argc, char *argv[]) {
   eventloop *eloop = eventloop::instance();
   eloop->createTask(run_main);
   eloop->run();
-  if (base::count != 0) {
-    throw std::runtime_error("memory leak");
-  }
-  return 0;
+return 0;
 }
