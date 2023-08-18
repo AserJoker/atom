@@ -1,7 +1,7 @@
 #pragma once
-#include "base.hpp"
-#include "handle.hpp"
-#include "scope.hpp"
+#include "runtime/include/base.hpp"
+#include "runtime/include/memory/handle.hpp"
+#include "runtime/include/value/scope.hpp"
 #include "type.hpp"
 #include <cstdint>
 #include <string>

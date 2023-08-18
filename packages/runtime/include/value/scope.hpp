@@ -1,7 +1,7 @@
 #pragma once
-#include "base.hpp"
-#include "stack.hpp"
-#include "type.hpp"
+#include "runtime/include/base.hpp"
+#include "runtime/include/memory/stack.hpp"
+#include "runtime/include/value/type.hpp"
 #include <cstdint>
 #include <functional>
 #include <string>

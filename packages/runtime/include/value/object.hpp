@@ -1,6 +1,6 @@
 #pragma once
-#include "context.hpp"
-#include "scope.hpp"
+#include "runtime/include/context.hpp"
+#include "runtime/include/value/scope.hpp"
 #include "value.hpp"
 #include <map>
 namespace atom::runtime {

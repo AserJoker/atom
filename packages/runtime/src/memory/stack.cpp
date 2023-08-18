@@ -1,5 +1,5 @@
-#include "runtime/include/stack.hpp"
-#include "runtime/include/handle.hpp"
+#include "runtime/include/memory/stack.hpp"
+#include "runtime/include/memory/handle.hpp"
 #include <algorithm>
 using namespace atom::runtime;
 stack::stack(stack *parent) : _parent(parent) {

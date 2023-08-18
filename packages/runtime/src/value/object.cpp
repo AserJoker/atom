@@ -1,5 +1,5 @@
-#include "runtime/include/object.hpp"
-#include "runtime/include/function.hpp"
+#include "runtime/include/value/object.hpp"
+#include "runtime/include/value/function.hpp"
 #include <iostream>
 using namespace atom::runtime;
 object::object(handle *hobject, handle *proto)

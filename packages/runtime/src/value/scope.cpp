@@ -1,7 +1,7 @@
-#include "runtime/include/scope.hpp"
-#include "runtime/include/function.hpp"
-#include "runtime/include/object.hpp"
-#include "runtime/include/value.hpp"
+#include "runtime/include/value/scope.hpp"
+#include "runtime/include/value/value.hpp"
+#include "runtime/include/value/function.hpp"
+#include "runtime/include/value/object.hpp"
 #include <algorithm>
 using namespace atom::runtime;
 scope::scope(scope *parent) {
@@ -117,8 +117,9 @@ value *scope::create_object(value *proto) {
     val->_handle = hobject;
     delete null;
   } else {
-    hobject->set_object(new value::type_base(VT_OBJECT,new object(hobject,proto->get_handle())));
-    val->_handle =  hobject;
+    hobject->set_object(new value::type_base(
+        VT_OBJECT, new object(hobject, proto->get_handle())));
+    val->_handle = hobject;
   }
   return val;
 }

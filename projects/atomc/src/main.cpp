@@ -1,10 +1,10 @@
 #include "runtime/include/context.hpp"
 #include "runtime/include/eventloop.hpp"
-#include "runtime/include/function.hpp"
-#include "runtime/include/handle.hpp"
-#include "runtime/include/object.hpp"
-#include "runtime/include/stack.hpp"
-#include "runtime/include/value.hpp"
+#include "runtime/include/memory/handle.hpp"
+#include "runtime/include/memory/stack.hpp"
+#include "runtime/include/value/function.hpp"
+#include "runtime/include/value/object.hpp"
+#include "runtime/include/value/value.hpp"
 #include <fmt/format.h>
 #include <iostream>
 #include <stdio.h>
