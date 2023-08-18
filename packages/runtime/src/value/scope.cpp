@@ -1,7 +1,7 @@
 #include "runtime/include/value/scope.hpp"
-#include "runtime/include/value/value.hpp"
 #include "runtime/include/value/function.hpp"
 #include "runtime/include/value/object.hpp"
+#include "runtime/include/value/value.hpp"
 #include <algorithm>
 using namespace atom::runtime;
 scope::scope(scope *parent) {
@@ -124,14 +124,15 @@ value *scope::create_object(value *proto) {
   return val;
 }
 value *scope::create_function(cfunction callee, int32_t length,
-                              const std::string &name) {
+                              const std::string &name,
+                              const std::string &filename) {
   value *val = new value;
   connect_value(val);
   handle *hfunction = new handle(_stack, nullptr);
   value *null = create_null();
   hfunction->set_object(new value::type_base(
       VT_FUNCTION,
-      new function(hfunction, null->get_handle(), callee, length, name)));
+      new function(hfunction, null->get_handle(), callee, length, name,filename)));
   val->_handle = hfunction;
   delete null;
   return val;

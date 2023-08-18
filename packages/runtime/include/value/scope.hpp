@@ -36,7 +36,8 @@ public:
   value *create_object(value *proto = nullptr);
   value *create_array();
   value *create_function(cfunction callee, int32_t length,
-                         const std::string &name);
+                         const std::string &name,
+                         const std::string &filename = "<anonymous>");
   stack *get_stack();
 };
 }; // namespace atom::runtime

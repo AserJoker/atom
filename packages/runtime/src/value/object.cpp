@@ -58,7 +58,7 @@ bool object::set(context *ctx, const std::string &field, value *val) {
     value *self = ctx->get_scope()->create(_handle);
     value *vsetter = ctx->get_scope()->create(prop->_setter);
     function *fn = (function *)vsetter->get_data();
-    value *result = fn->call(ctx, self, {val});
+    value *result = fn->call(0, 0, ctx, self, {val});
     bool res = result->get_boolean();
     ctx->pop_scope();
     return res;
@@ -89,7 +89,7 @@ value *object::get(context *ctx, const std::string &field) {
     value *self = ctx->get_scope()->create(_handle);
     value *vgetter = ctx->get_scope()->create(prop->_getter);
     function *fn = (function *)vgetter->get_data();
-    value *result = fn->call(ctx, self, {});
+    value *result = fn->call(0, 0, ctx, self, {});
     delete vgetter;
     delete self;
     return result;
@@ -114,7 +114,7 @@ bool object::set(context *ctx, value *s, value *val) {
     value *self = ctx->get_scope()->create(_handle);
     value *vsetter = ctx->get_scope()->create(prop->_setter);
     function *fn = (function *)vsetter->get_data();
-    value *result = fn->call(ctx, self, {val});
+    value *result = fn->call(0,0,ctx, self, {val});
     bool res = result->get_boolean();
     ctx->pop_scope();
     return res;
@@ -145,7 +145,7 @@ value *object::get(context *ctx, value *s) {
     value *vgetter = ctx->get_scope()->create(prop->_getter);
     value *self = ctx->get_scope()->create(_handle);
     function *getter = (function *)vgetter->get_data();
-    value *result = getter->call(ctx, self, {});
+    value *result = getter->call(0, 0, ctx, self, {});
     delete self;
     delete vgetter;
     return result;
