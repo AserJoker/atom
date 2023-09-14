@@ -1,4 +1,5 @@
 #include "runtime/include/value/object_variable.hpp"
+#include "value/function_variable.hpp"
 #include "value/simple_variable.hpp"
 using namespace atom::runtime;
 object_variable::object_variable() : base_variable(variable_type::VT_OBJECT) {}
@@ -52,11 +53,20 @@ bool object_variable::set(context *ctx, variable *value,
   object_variable *obj = (object_variable *)value->get_data();
   for (auto &[k, v] : obj->_properties) {
     if (k.field == name) {
-      value->get_node()->add_node(field->get_node());
       if (v.value) {
+        value->get_node()->add_node(field->get_node());
         value->get_node()->remove_node(v.value);
       } else {
-        // TODO: setter
+        if (v.setter) {
+          auto *setter = ctx->get_scope()->create_variable(v.setter);
+          auto *result = function_variable::call(ctx, setter, value, {field});
+          delete setter;
+          bool blresult =
+              dynamic_cast<boolean_variable *>(result->get_data())->get_value();
+          delete result;
+          return blresult;
+        }
+        return false;
       }
       v.value = field->get_node();
       v.enumable = enumable;
@@ -94,7 +104,10 @@ variable *object_variable::get(context *ctx, variable *value,
       if (v.value) {
         return ctx->get_scope()->create_variable(v.value);
       } else {
-        // TODO: setter 
+        auto *getter = ctx->get_scope()->create_variable(v.getter);
+        auto *result = function_variable::call(ctx, getter, value);
+        delete getter;
+        return result;
       }
     }
   }
