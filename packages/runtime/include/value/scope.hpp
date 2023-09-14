@@ -1,43 +1,19 @@
 #pragma once
-#include "runtime/include/base.hpp"
-#include "runtime/include/memory/stack.hpp"
-#include "runtime/include/value/type.hpp"
-#include <cstdint>
-#include <functional>
-#include <string>
+#include "core/include/object.hpp"
+#include "runtime/include/memory/chunk.hpp"
+#include "variable.hpp"
+#include <list>
 namespace atom::runtime {
-class function;
-class value;
-class context;
-using cfunction =
-    std::function<value *(context *, value *, std::vector<value *> &args)>;
-class scope : public base {
+class scope : public core::object {
 private:
-  std::list<value *> _values;
-  stack *_stack;
-
-private:
-  void connect_value(value *val);
-  value *create_value(value_type type, base *data);
+  std::list<variable *> _variables;
+  chunk *_chunk;
 
 public:
-  scope(scope *parent = nullptr);
-  ~scope() override;
-  void remove(value *value);
-  value *create(handle *handle);
-  value *create(value *source);
-  value *create(const char *data);
-  value *create(const std::string &data);
-  value *create(const int32_t &data);
-  value *create(const double &data);
-  value *create(const bool &data);
-  value *create_undefined();
-  value *create_null();
-  value *create_object(value *proto = nullptr);
-  value *create_array();
-  value *create_function(cfunction callee, int32_t length,
-                         const std::string &name,
-                         const std::string &filename = "<anonymous>");
-  stack *get_stack();
+  scope(scope * = nullptr);
+  ~scope();
+  variable * create_variable(base_variable * = nullptr);
+  variable * create_variable(node *);
+  void remove_variable(variable *);
 };
-}; // namespace atom::runtime
+} // namespace atom::runtime

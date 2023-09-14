@@ -1,4 +1,4 @@
 *.json
-atomc.out
+*.out
 .cache
 build
