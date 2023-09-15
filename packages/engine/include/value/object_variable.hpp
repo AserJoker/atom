@@ -32,14 +32,15 @@ private:
     bool enumable;
   };
   std::map<key, property> _properties;
-  node *_proto;
 
-private:
+protected:
+  node *_proto;
+  node *_prototype;
   object_variable();
 
 public:
   ~object_variable() override;
-  static variable *create(context *ctx, variable *proto);
+  static variable *create(context *ctx, variable *proto  = nullptr);
   static std::vector<std::string> keys(variable *obj);
   static variable *getOwnProperty(context *ctx, variable *value,
                                   const std::string &name);
@@ -56,4 +57,4 @@ public:
                      bool writable = true, bool enumable = true);
   static bool remove(variable *obj, const std::string &name);
 };
-} // namespace atom::runtime
+} // namespace atom::engine

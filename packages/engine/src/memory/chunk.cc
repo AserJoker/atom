@@ -11,6 +11,7 @@ chunk::chunk(chunk *parent) {
 chunk::~chunk() {
   for (auto &c : _children) {
     c->_parent = nullptr;
+    delete c;
   }
   _children.clear();
   for (auto &n : _nodes) {

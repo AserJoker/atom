@@ -32,12 +32,12 @@ void node::remove_node(node *n) {
 }
 std::list<chunk *> &node::get_chunks() { return _chunks; }
 void node::auto_release() {
-  if (!_chunks.empty() || !_parents.empty()) {
+  if (!_chunks.empty()) {
     return;
   }
   static uint64_t gc_time = 0;
   std::set<core::auto_release<node>> release_list;
-  std::list<core::auto_release<node>> worker_queue = {this};
+  std::list<node *> worker_queue = {this};
   _gc_time = ++gc_time;
   while (!worker_queue.empty()) {
     auto n = *worker_queue.begin();
@@ -46,8 +46,8 @@ void node::auto_release() {
       for (auto &c : n->_children) {
         if (c->_gc_time != gc_time) {
           c->_gc_time = gc_time;
-        }
         worker_queue.push_back(c);
+        }
       }
       release_list.insert(n);
     }

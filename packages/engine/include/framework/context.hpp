@@ -8,6 +8,8 @@ class context : public core::object {
 private:
   scope *_scope;
   core::auto_release<runtime> _runtime;
+  variable *_object_prototype;
+  variable *_function_prototype;
 
 public:
   scope *get_scope();
@@ -17,6 +19,8 @@ public:
   ~context();
   variable *undefined();
   variable *null();
+  variable *object_prototype();
+  variable *function_prototype();
   const core::auto_release<runtime> &get_runtime();
 };
-} // namespace atom::runtime
+} // namespace atom::engine

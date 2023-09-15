@@ -17,9 +17,9 @@ engine::variable *print(engine::context *ctx, engine::variable *self,
   return ctx->undefined();
 }
 void atom_main() {
-  core::auto_release rt = new engine::runtime();
-  core::auto_release ctx = new engine::context(rt);
-  auto proto = engine::object_variable::create(ctx.get(), ctx->null());
+  core::auto_release runtime = new engine::runtime;
+  core::auto_release ctx = new engine::context(runtime);
+  auto proto = engine::object_variable::create(ctx.get());
   auto obj = engine::object_variable::create(ctx.get(), proto);
   engine::object_variable::define(
       proto, "data",

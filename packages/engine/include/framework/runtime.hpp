@@ -16,4 +16,4 @@ public:
   node *undefined();
   node *null();
 };
-} // namespace atom::runtime
+} // namespace atom::engine

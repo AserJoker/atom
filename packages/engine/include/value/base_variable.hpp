@@ -15,7 +15,7 @@ public:
     VT_NULL
   };
 
-private:
+protected:
   variable_type _type;
 
 public:
@@ -23,4 +23,4 @@ public:
   virtual ~base_variable();
   const variable_type &get_type() const;
 };
-} // namespace atom::runtime
+} // namespace atom::engine

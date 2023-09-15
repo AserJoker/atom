@@ -3,10 +3,15 @@
 #include "engine/include/value/simple_variable.hpp"
 using namespace atom::engine;
 variable *object_variable::create(context *ctx, variable *proto) {
-  object_variable *obj = new object_variable;
+  if (!proto) {
+    proto = ctx->object_prototype();
+  }
+  object_variable *obj = new object_variable();
   obj->_proto = proto->get_node();
   variable *val = ctx->get_scope()->create_variable(obj);
   obj->_proto->add_node(val->get_node());
+  obj->_prototype = obj->_proto;
+  obj->_prototype->add_node(val->get_node());
   return val;
 }
 object_variable::object_variable() : base_variable(variable_type::VT_OBJECT) {}
