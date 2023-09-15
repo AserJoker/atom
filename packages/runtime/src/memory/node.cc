@@ -3,13 +3,9 @@
 #include <set>
 using namespace atom::runtime;
 using namespace atom;
-node::node(chunk *c, base_variable *d) : _data(d) {
-  c->add_node(this);
-  fmt::print("node\n");
-}
+node::node(chunk *c, base_variable *d) : _data(d) { c->add_node(this); }
 node::node(node *p, base_variable *d) : _data(d) { p->add_node(this); }
 node::~node() {
-  fmt::print("~node\n");
   if (_data) {
     delete _data;
     _data = nullptr;

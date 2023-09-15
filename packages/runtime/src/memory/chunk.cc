@@ -7,7 +7,6 @@ chunk::chunk(chunk *parent) {
   if (_parent != nullptr) {
     _parent->_children.push_back(this);
   }
-  fmt::print("chunk\n");
 }
 chunk::~chunk() {
   for (auto &c : _children) {
@@ -22,7 +21,6 @@ chunk::~chunk() {
   if (_parent != nullptr) {
     std::erase(_parent->_children, this);
   }
-  fmt::print("~chunk\n");
 }
 void chunk::add_node(node *n) {
   _nodes.push_back(n);
