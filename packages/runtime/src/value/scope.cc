@@ -16,10 +16,17 @@ variable *scope::create_variable(node *n) {
   v->_scope = this;
   return v;
 }
-scope::~scope() { delete _chunk; }
+scope::~scope() {
+  while (_variables.size()) {
+    auto *val = *_variables.begin();
+    delete val;
+  }
+  delete _chunk;
+}
 scope::scope(scope *s) { _chunk = new chunk(s ? s->_chunk : nullptr); }
 void scope::remove_variable(variable *v) {
   v->_scope = nullptr;
   _chunk->remove_node(v->_node);
   std::erase(_variables, v);
 }
+chunk *scope::get_chunk() { return _chunk; }

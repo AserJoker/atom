@@ -4,7 +4,7 @@
 #include "runtime/include/value/base_variable.hpp"
 namespace atom::runtime {
 class scope;
-class variable  {
+class variable :public core::object {
 private:
   friend class scope;
 

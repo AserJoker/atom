@@ -1,6 +1,7 @@
 #pragma once
+#include "core/include/object.hpp"
 namespace atom::runtime {
-class base_variable {
+class base_variable : public core::object {
 public:
   enum class variable_type {
     VT_NUMBER,

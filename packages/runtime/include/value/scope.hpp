@@ -14,6 +14,7 @@ public:
   ~scope();
   variable * create_variable(base_variable * = nullptr);
   variable * create_variable(node *);
+  chunk* get_chunk();
   void remove_variable(variable *);
 };
 } // namespace atom::runtime

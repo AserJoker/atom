@@ -2,6 +2,13 @@
 #include "value/function_variable.hpp"
 #include "value/simple_variable.hpp"
 using namespace atom::runtime;
+variable *object_variable::create(context *ctx, variable *proto) {
+  object_variable *obj = new object_variable;
+  obj->_proto = proto->get_node();
+  variable *val = ctx->get_scope()->create_variable(obj);
+  obj->_proto->add_node(val->get_node());
+  return val;
+}
 object_variable::object_variable() : base_variable(variable_type::VT_OBJECT) {}
 object_variable::~object_variable() {}
 bool object_variable::define(variable *value, const std::string &name,
@@ -47,9 +54,8 @@ bool object_variable::define(variable *value, const std::string &name,
   obj->_properties[k] = prop;
   return true;
 }
-bool object_variable::set(context *ctx, variable *value,
-                          const std::string &name, variable *field,
-                          bool configurable, bool writable, bool enumable) {
+bool object_variable::setProperty(context *ctx, variable *value,
+                                  const std::string &name, variable *field) {
   object_variable *obj = (object_variable *)value->get_data();
   for (auto &[k, v] : obj->_properties) {
     if (k.field == name) {
@@ -69,9 +75,6 @@ bool object_variable::set(context *ctx, variable *value,
         return false;
       }
       v.value = field->get_node();
-      v.enumable = enumable;
-      v.configurable = configurable;
-      v.writable = writable;
       return true;
     }
   }
@@ -96,8 +99,8 @@ bool object_variable::remove(variable *value, const std::string &name) {
   }
   return false;
 }
-variable *object_variable::get(context *ctx, variable *value,
-                               const std::string &name) {
+variable *object_variable::getOwnProperty(context *ctx, variable *value,
+                                          const std::string &name) {
   object_variable *obj = (object_variable *)value->get_data();
   for (auto &[k, v] : obj->_properties) {
     if (k.field == name) {
@@ -111,7 +114,31 @@ variable *object_variable::get(context *ctx, variable *value,
       }
     }
   }
-  return ctx->get_scope()->create_variable(new undefined_variable());
+  return ctx->undefined();
+}
+variable *object_variable::getProperty(context *ctx, variable *value,
+                                       const std::string &name) {
+  variable *field = object_variable::getOwnProperty(ctx, value, name);
+  if (field->get_data()->get_type()!=variable_type::VT_UNDEFINED) {
+    return field;
+  }
+  variable *proto = object_variable::getPrototypeOf(ctx, value);
+  while (proto->get_data()->get_type() == variable_type::VT_OBJECT) {
+    field = object_variable::getOwnProperty(ctx, proto, name);
+    if (!field) {
+      auto *oldproto = proto;
+      proto = object_variable::getPrototypeOf(ctx, oldproto);
+      delete oldproto;
+    } else {
+      break;
+    }
+  }
+  delete proto;
+  return field;
+}
+variable *object_variable::getPrototypeOf(context *ctx, variable *value) {
+  auto *obj = (object_variable *)value->get_data();
+  return ctx->get_scope()->create_variable(obj->_proto);
 }
 std::vector<std::string> object_variable::keys(variable *value) {
   object_variable *obj = (object_variable *)value->get_data();
