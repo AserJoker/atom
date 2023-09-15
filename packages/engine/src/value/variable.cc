@@ -1,6 +1,6 @@
-#include "value/variable.hpp"
-#include "value/scope.hpp"
-using namespace atom::runtime;
+#include "engine/include/value/variable.hpp"
+#include "engine/include/value/scope.hpp"
+using namespace atom::engine;
 base_variable *variable::get_data() { return _node->get_data(); }
 variable::~variable() {
   if (_scope) {

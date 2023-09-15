@@ -1,8 +1,8 @@
-#include "runtime/include/value/scope.hpp"
-#include "runtime/include/value/variable.hpp"
+#include "engine/include/value/scope.hpp"
+#include "engine/include/value/variable.hpp"
 #include <iostream>
 #include <optional>
-using namespace atom::runtime;
+using namespace atom::engine;
 using namespace atom;
 variable *scope::create_variable(base_variable *data) {
   variable *v = new variable(new node(_chunk, data));

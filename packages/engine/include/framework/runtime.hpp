@@ -1,9 +1,9 @@
 #pragma once
 #include "core/include/object.hpp"
-#include "runtime/include/memory/node.hpp"
-#include "runtime/include/value/scope.hpp"
-namespace atom::runtime {
-class runtime:public core::object {
+#include "engine/include/memory/node.hpp"
+#include "engine/include/value/scope.hpp"
+namespace atom::engine {
+class runtime : public core::object {
 private:
   scope *_scope;
   node *_undefined;

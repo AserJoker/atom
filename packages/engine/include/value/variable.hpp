@@ -1,10 +1,10 @@
 #pragma once
 #include "core/include/object.hpp"
-#include "runtime/include/memory/node.hpp"
-#include "runtime/include/value/base_variable.hpp"
-namespace atom::runtime {
+#include "engine/include/memory/node.hpp"
+#include "engine/include/value/base_variable.hpp"
+namespace atom::engine {
 class scope;
-class variable :public core::object {
+class variable : public core::object {
 private:
   friend class scope;
 
@@ -18,4 +18,4 @@ public:
   ~variable();
   node *get_node();
 };
-} // namespace atom::runtime
+} // namespace atom::engin

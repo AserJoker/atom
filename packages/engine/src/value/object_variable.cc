@@ -1,7 +1,7 @@
-#include "runtime/include/value/object_variable.hpp"
-#include "value/function_variable.hpp"
-#include "value/simple_variable.hpp"
-using namespace atom::runtime;
+#include "engine/include/value/object_variable.hpp"
+#include "engine/include/value/function_variable.hpp"
+#include "engine/include/value/simple_variable.hpp"
+using namespace atom::engine;
 variable *object_variable::create(context *ctx, variable *proto) {
   object_variable *obj = new object_variable;
   obj->_proto = proto->get_node();
@@ -119,7 +119,7 @@ variable *object_variable::getOwnProperty(context *ctx, variable *value,
 variable *object_variable::getProperty(context *ctx, variable *value,
                                        const std::string &name) {
   variable *field = object_variable::getOwnProperty(ctx, value, name);
-  if (field->get_data()->get_type()!=variable_type::VT_UNDEFINED) {
+  if (field->get_data()->get_type() != variable_type::VT_UNDEFINED) {
     return field;
   }
   variable *proto = object_variable::getPrototypeOf(ctx, value);

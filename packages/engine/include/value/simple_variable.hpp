@@ -1,8 +1,8 @@
 #pragma once
-#include "runtime/include/value/base_variable.hpp"
+#include "engine/include/value/base_variable.hpp"
 #include <cstdint>
 #include <string>
-namespace atom::runtime {
+namespace atom::engine {
 template <class T, base_variable::variable_type vt>
 class simple_variable : public base_variable {
 private:

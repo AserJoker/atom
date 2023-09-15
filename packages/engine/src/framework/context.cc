@@ -1,6 +1,7 @@
-#include "framework/context.hpp"
-using namespace atom::runtime;
-context::context(runtime *rt) : _runtime(rt) {
+#include "engine/include/framework/context.hpp"
+using namespace atom::engine;
+using namespace atom;
+context::context(const core::auto_release<runtime> &rt) : _runtime(rt) {
   _scope = new scope(rt->get_scope());
 }
 context::~context() { delete _scope; }
@@ -17,4 +18,9 @@ void context::pop_scope(scope *s) {
 variable *context::undefined() {
   return get_scope()->create_variable(_runtime->undefined());
 }
-variable *context::null(){return get_scope()->create_variable(_runtime->null());}
+variable *context::null() {
+  return get_scope()->create_variable(_runtime->null());
+}
+const core::auto_release<class runtime> &context::get_runtime() {
+  return _runtime;
+}
