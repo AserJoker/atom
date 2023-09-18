@@ -14,7 +14,7 @@ variable *object_variable::create(context *ctx, variable *proto) {
 }
 variable *object_variable::construct(context *ctx, variable *constructor,
                                      const std::vector<variable *> &args) {
-  auto prototype = object_variable::getProperty(ctx, constructor, "prototype");
+  auto prototype = object_variable::get_property(ctx, constructor, "prototype");
   auto obj = object_variable::create(ctx, prototype);
   delete function_variable::call(ctx, constructor, obj, args);
   return obj;
@@ -64,8 +64,8 @@ bool object_variable::define(variable *value, const std::string &name,
   obj->_properties[k] = prop;
   return true;
 }
-bool object_variable::setProperty(context *ctx, variable *value,
-                                  const std::string &name, variable *field) {
+bool object_variable::set_property(context *ctx, variable *value,
+                                   const std::string &name, variable *field) {
   object_variable *obj = (object_variable *)value->get_data();
   for (auto &[k, v] : obj->_properties) {
     if (k.field == name) {
@@ -109,8 +109,8 @@ bool object_variable::remove(variable *value, const std::string &name) {
   }
   return false;
 }
-variable *object_variable::getOwnProperty(context *ctx, variable *value,
-                                          const std::string &name) {
+variable *object_variable::get_own_property(context *ctx, variable *value,
+                                            const std::string &name) {
   object_variable *obj = (object_variable *)value->get_data();
   for (auto &[k, v] : obj->_properties) {
     if (k.field == name) {
@@ -126,24 +126,24 @@ variable *object_variable::getOwnProperty(context *ctx, variable *value,
   }
   return ctx->undefined();
 }
-variable *object_variable::getProperty(context *ctx, variable *value,
-                                       const std::string &name) {
-  variable *field = object_variable::getOwnProperty(ctx, value, name);
+variable *object_variable::get_property(context *ctx, variable *value,
+                                        const std::string &name) {
+  variable *field = object_variable::get_own_property(ctx, value, name);
   if (field->get_data()->get_type() != variable_type::VT_UNDEFINED) {
     return field;
   }
-  variable *proto = object_variable::getPrototypeOf(ctx, value);
+  variable *proto = object_variable::get_prototype_of(ctx, value);
   while (proto->get_data()->get_type() == variable_type::VT_OBJECT) {
-    field = object_variable::getOwnProperty(ctx, proto, name);
+    field = object_variable::get_own_property(ctx, proto, name);
     if (!field) {
-      proto = object_variable::getPrototypeOf(ctx, proto);
+      proto = object_variable::get_prototype_of(ctx, proto);
     } else {
       break;
     }
   }
   return field;
 }
-variable *object_variable::getPrototypeOf(context *ctx, variable *value) {
+variable *object_variable::get_prototype_of(context *ctx, variable *value) {
   auto *obj = (object_variable *)value->get_data();
   return ctx->get_scope()->create_variable(obj->_proto);
 }

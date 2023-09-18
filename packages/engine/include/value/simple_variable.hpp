@@ -1,5 +1,7 @@
 #pragma once
+#include "engine/include/framework/context.hpp"
 #include "engine/include/value/base_variable.hpp"
+#include "engine/include/value/variable.hpp"
 #include <cstdint>
 #include <string>
 namespace atom::engine {
@@ -12,6 +14,9 @@ public:
   simple_variable(const T &val = {}) : base_variable(vt), _value(val) {}
   const T &get_value() const { return _value; }
   T &get_value() { return _value; }
+  static variable *create(context *ctx, const T &val = {}) {
+    return ctx->get_scope()->create_variable(new simple_variable<T, vt>(val));
+  }
 };
 using string_variable =
     simple_variable<std::string, base_variable::variable_type::VT_STRING>;
@@ -26,4 +31,4 @@ using null_variable =
 using undefined_variable =
     simple_variable<void *, base_variable::variable_type::VT_UNDEFINED>;
 
-} // namespace atom::runtime
+} // namespace atom::engine

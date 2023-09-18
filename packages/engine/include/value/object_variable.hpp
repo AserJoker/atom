@@ -43,13 +43,13 @@ public:
   static variable *construct(context *ctx, variable *constructor,
                              const std::vector<variable *> &args = {});
   static std::vector<std::string> keys(variable *obj);
-  static variable *getOwnProperty(context *ctx, variable *value,
-                                  const std::string &name);
-  static variable *getProperty(context *ctx, variable *value,
-                               const std::string &name);
-  static variable *getPrototypeOf(context *ctx, variable *value);
-  static bool setProperty(context *ctx, variable *value,
-                          const std::string &name, variable *field);
+  static variable *get_own_property(context *ctx, variable *value,
+                                    const std::string &name);
+  static variable *get_property(context *ctx, variable *value,
+                                const std::string &name);
+  static variable *get_prototype_of(context *ctx, variable *value);
+  static bool set_property(context *ctx, variable *value,
+                           const std::string &name, variable *field);
   static bool define(variable *obj, const std::string &name, variable *field,
                      bool configurable = true, bool writable = true,
                      bool enumable = true);
