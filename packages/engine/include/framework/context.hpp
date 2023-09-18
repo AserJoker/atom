@@ -12,6 +12,8 @@ private:
   variable *_function_prototype;
   variable *_undefined;
   variable *_null;
+  variable *_object_constructor;
+  variable *_function_constructor;
 
 public:
   scope *get_scope();
@@ -23,6 +25,8 @@ public:
   variable *null();
   variable *object_prototype();
   variable *function_prototype();
+  variable *function_constructor();
+  variable *object_constructor();
   const core::auto_release<runtime> &get_runtime();
 };
 } // namespace atom::engine

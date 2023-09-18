@@ -1,4 +1,5 @@
 #include "engine/include/framework/context.hpp"
+#include "engine/include/value/function_variable.hpp"
 #include "engine/include/value/object_variable.hpp"
 #include "engine/include/value/simple_variable.hpp"
 using namespace atom::engine;
@@ -9,6 +10,16 @@ context::context(const core::auto_release<runtime> &rt) : _runtime(rt) {
   _null = _scope->create_variable(new null_variable());
   _object_prototype = object_variable::create(this, null());
   _function_prototype = object_variable::create(this, _object_prototype);
+  _object_constructor = function_variable::create(
+      this, "Object", 1,
+      [](context *ctx, variable *self, const std::vector<variable *> &args)
+          -> variable * { return ctx->undefined(); },
+      _object_prototype);
+  _function_constructor = function_variable::create(
+      this, "Function", 1,
+      [](context *ctx, variable *self, const std::vector<variable *> &args)
+          -> variable * { return ctx->undefined(); },
+      _function_prototype);
 }
 context::~context() { pop_scope(nullptr); }
 scope *context::get_scope() { return _scope; }
@@ -30,3 +41,5 @@ const core::auto_release<class runtime> &context::get_runtime() {
 }
 variable *context::object_prototype() { return _object_prototype; }
 variable *context::function_prototype() { return _function_prototype; }
+variable *context::object_constructor() { return _object_constructor; }
+variable *context::function_constructor() { return _function_constructor; }
