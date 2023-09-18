@@ -35,12 +35,13 @@ private:
 
 protected:
   node *_proto;
-  node *_prototype;
   object_variable();
 
 public:
   ~object_variable() override;
-  static variable *create(context *ctx, variable *proto  = nullptr);
+  static variable *create(context *ctx, variable *proto = nullptr);
+  static variable *construct(context *ctx, variable *constructor,
+                             const std::vector<variable *> &args = {});
   static std::vector<std::string> keys(variable *obj);
   static variable *getOwnProperty(context *ctx, variable *value,
                                   const std::string &name);

@@ -2,3 +2,5 @@
 *.out
 .cache
 build
+atom.*
+*.dll

@@ -12,8 +12,5 @@ private:
 public:
   runtime();
   ~runtime();
-  scope *get_scope();
-  node *undefined();
-  node *null();
 };
 } // namespace atom::engine

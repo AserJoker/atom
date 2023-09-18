@@ -14,6 +14,7 @@ variable *scope::create_variable(node *n) {
   variable *v = new variable(n);
   _variables.push_back(v);
   v->_scope = this;
+  _chunk->add_node(n);
   return v;
 }
 scope::~scope() {
@@ -27,6 +28,11 @@ scope::scope(scope *s) { _chunk = new chunk(s ? s->_chunk : nullptr); }
 void scope::remove_variable(variable *v) {
   v->_scope = nullptr;
   _chunk->remove_node(v->_node);
-  std::erase(_variables, v);
+  for (auto it = _variables.begin(); it != _variables.end(); it++) {
+    if (*it == v) {
+      _variables.erase(it);
+      break;
+    }
+  }
 }
 chunk *scope::get_chunk() { return _chunk; }

@@ -18,8 +18,9 @@ private:
 
 public:
   ~function_variable() override;
-  function_variable *create(context *ctx, const std::string &name,
-                            int32_t length, const function_handle &handle);
+  static variable *create(context *ctx, const std::string &name, int32_t length,
+                          const function_handle &handle,
+                          variable *prototype = nullptr);
   static variable *call(context *, variable *, variable *,
                         const std::vector<variable *> & = {});
 };

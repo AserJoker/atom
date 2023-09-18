@@ -4,6 +4,7 @@
 #include "engine/include/value/base_variable.hpp"
 #include <cstdint>
 #include <list>
+#include <vector>
 namespace atom::engine {
 class node : public core::object {
 private:
@@ -30,5 +31,6 @@ public:
   std::list<chunk *> &get_chunks();
   void auto_release();
   base_variable *get_data();
+  static inline std::vector<node *> nodes;
 };
-} // namespace atom::runtime
+} // namespace atom::engine

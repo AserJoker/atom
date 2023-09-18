@@ -10,6 +10,8 @@ private:
   core::auto_release<runtime> _runtime;
   variable *_object_prototype;
   variable *_function_prototype;
+  variable *_undefined;
+  variable *_null;
 
 public:
   scope *get_scope();

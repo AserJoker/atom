@@ -9,10 +9,15 @@ variable *object_variable::create(context *ctx, variable *proto) {
   object_variable *obj = new object_variable();
   obj->_proto = proto->get_node();
   variable *val = ctx->get_scope()->create_variable(obj);
-  obj->_proto->add_node(val->get_node());
-  obj->_prototype = obj->_proto;
-  obj->_prototype->add_node(val->get_node());
+  val->get_node()->add_node(obj->_proto);
   return val;
+}
+variable *object_variable::construct(context *ctx, variable *constructor,
+                                     const std::vector<variable *> &args) {
+  auto prototype = object_variable::getProperty(ctx, constructor, "prototype");
+  auto obj = object_variable::create(ctx, prototype);
+  delete function_variable::call(ctx, constructor, obj, args);
+  return obj;
 }
 object_variable::object_variable() : base_variable(variable_type::VT_OBJECT) {}
 object_variable::~object_variable() {}
@@ -131,14 +136,11 @@ variable *object_variable::getProperty(context *ctx, variable *value,
   while (proto->get_data()->get_type() == variable_type::VT_OBJECT) {
     field = object_variable::getOwnProperty(ctx, proto, name);
     if (!field) {
-      auto *oldproto = proto;
-      proto = object_variable::getPrototypeOf(ctx, oldproto);
-      delete oldproto;
+      proto = object_variable::getPrototypeOf(ctx, proto);
     } else {
       break;
     }
   }
-  delete proto;
   return field;
 }
 variable *object_variable::getPrototypeOf(context *ctx, variable *value) {

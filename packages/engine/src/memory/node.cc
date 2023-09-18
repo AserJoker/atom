@@ -3,9 +3,16 @@
 #include <set>
 using namespace atom::engine;
 using namespace atom;
-node::node(chunk *c, base_variable *d) : _data(d) { c->add_node(this); }
-node::node(node *p, base_variable *d) : _data(d) { p->add_node(this); }
+node::node(chunk *c, base_variable *d) : _data(d), _gc_time(0), _check_time(0) {
+  c->add_node(this);
+  node::nodes.push_back(this);
+}
+node::node(node *p, base_variable *d) : _data(d), _gc_time(0), _check_time(0) {
+  p->add_node(this);
+  node::nodes.push_back(this);
+}
 node::~node() {
+  std::erase(node::nodes, this);
   if (_data) {
     delete _data;
     _data = nullptr;
@@ -36,17 +43,19 @@ void node::auto_release() {
     return;
   }
   static uint64_t gc_time = 0;
+  static uint64_t check_time = 0;
   std::set<core::auto_release<node>> release_list;
   std::list<node *> worker_queue = {this};
   _gc_time = ++gc_time;
   while (!worker_queue.empty()) {
     auto n = *worker_queue.begin();
     worker_queue.erase(worker_queue.begin());
-    if (n->check_alone(gc_time)) {
-      for (auto &c : n->_children) {
+    if (n->check_alone(++check_time)) {
+      for (auto c : n->_children) {
+        std::erase(c->_parents, n);
         if (c->_gc_time != gc_time) {
           c->_gc_time = gc_time;
-        worker_queue.push_back(c);
+          worker_queue.push_back(c);
         }
       }
       release_list.insert(n);
