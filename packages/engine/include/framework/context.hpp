@@ -27,6 +27,8 @@ public:
   variable *function_prototype();
   variable *function_constructor();
   variable *object_constructor();
+  variable *create(auto...);
+  variable *assigment(variable *);
   const core::auto_release<runtime> &get_runtime();
 };
 } // namespace atom::engine

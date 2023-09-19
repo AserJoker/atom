@@ -25,3 +25,6 @@ public:
                         const std::vector<variable *> & = {});
 };
 } // namespace atom::engine
+#define native_function(name)                                                  \
+  engine::variable *name(engine::context *ctx, engine::variable *self,         \
+                         const std::vector<variable *> &args)

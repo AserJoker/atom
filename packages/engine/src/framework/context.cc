@@ -1,4 +1,5 @@
 #include "engine/include/framework/context.hpp"
+#include "engine/include/lib/object_helper.hpp"
 #include "engine/include/value/function_variable.hpp"
 #include "engine/include/value/object_variable.hpp"
 #include "engine/include/value/simple_variable.hpp"
@@ -20,6 +21,8 @@ context::context(const core::auto_release<runtime> &rt) : _runtime(rt) {
       [](context *ctx, variable *self, const std::vector<variable *> &args)
           -> variable * { return ctx->undefined(); },
       _function_prototype);
+
+  object_helper::init_object(this);
 }
 context::~context() { pop_scope(nullptr); }
 scope *context::get_scope() { return _scope; }
@@ -43,3 +46,24 @@ variable *context::object_prototype() { return _object_prototype; }
 variable *context::function_prototype() { return _function_prototype; }
 variable *context::object_constructor() { return _object_constructor; }
 variable *context::function_constructor() { return _function_constructor; }
+variable *context::create(auto... args) {
+  return get_scope()->create_variable(args...);
+}
+variable *context::assigment(variable *val) {
+  switch (base_variable::type_of(val)) {
+  case base_variable::variable_type::VT_NUMBER:
+    return number_variable::create(this, number_variable::value_of(val));
+  case base_variable::variable_type::VT_INTEGER:
+    return integer_variable::create(this, integer_variable::value_of(val));
+  case base_variable::variable_type::VT_STRING:
+    return string_variable::create(this, string_variable::value_of(val));
+  case base_variable::variable_type::VT_BOOLEAN:
+    return boolean_variable::create(this, boolean_variable::value_of(val));
+  case base_variable::variable_type::VT_UNDEFINED:
+    return undefined();
+  case base_variable::variable_type::VT_NULL:
+    return null();
+  default:
+    return create(val->get_node());
+  }
+}

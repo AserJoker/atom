@@ -1,6 +1,7 @@
 #pragma once
 #include "core/include/object.hpp"
 namespace atom::engine {
+class variable;
 class base_variable : public core::object {
 public:
   enum class variable_type {
@@ -8,11 +9,11 @@ public:
     VT_INTEGER,
     VT_STRING,
     VT_BOOLEAN,
+    VT_UNDEFINED,
+    VT_NULL,
     VT_OBJECT,
     VT_ARRAY,
     VT_FUNCTION,
-    VT_UNDEFINED,
-    VT_NULL
   };
 
 protected:
@@ -22,5 +23,6 @@ public:
   explicit base_variable(const variable_type &);
   virtual ~base_variable();
   const variable_type &get_type() const;
+  static const variable_type &type_of(variable *);
 };
 } // namespace atom::engine

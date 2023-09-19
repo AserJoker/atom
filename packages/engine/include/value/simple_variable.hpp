@@ -17,6 +17,10 @@ public:
   static variable *create(context *ctx, const T &val = {}) {
     return ctx->get_scope()->create_variable(new simple_variable<T, vt>(val));
   }
+  static T &value_of(variable *val) {
+    auto *v = (simple_variable<T, vt> *)val->get_data();
+    return v->get_value();
+  }
 };
 using string_variable =
     simple_variable<std::string, base_variable::variable_type::VT_STRING>;

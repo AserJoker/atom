@@ -19,7 +19,17 @@ engine::variable *print(engine::context *ctx, engine::variable *self,
 }
 engine::variable *DemoConstructor(engine::context *ctx, engine::variable *self,
                                   const std::vector<engine::variable *> &args) {
-  engine::object_variable::define(self, "data", args[0]);
+  // engine::object_variable::define(self, "data", args[0]);
+  auto object_constructor = ctx->object_constructor();
+  auto object_define_properties = engine::object_variable::get_property(
+      ctx, object_constructor, "defineProperties");
+  auto cfg = engine::object_variable::create(ctx);
+  auto datacfg = engine::object_variable::create(ctx);
+  engine::object_variable::define(datacfg, "value",
+                                  engine::number_variable::create(ctx, 123));
+  engine::object_variable::define(cfg, "data", datacfg);
+  engine::function_variable::call(ctx, object_define_properties, nullptr,
+                                  {self, cfg});
   return ctx->undefined();
 }
 void on_exit() {

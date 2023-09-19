@@ -42,7 +42,7 @@ public:
   static variable *create(context *ctx, variable *proto = nullptr);
   static variable *construct(context *ctx, variable *constructor,
                              const std::vector<variable *> &args = {});
-  static std::vector<std::string> keys(variable *obj);
+  static std::vector<std::string> keys(context *ctx, variable *obj);
   static variable *get_own_property(context *ctx, variable *value,
                                     const std::string &name);
   static variable *get_property(context *ctx, variable *value,
@@ -56,6 +56,9 @@ public:
   static bool define(variable *obj, const std::string &name, variable *getter,
                      variable *setter, bool configurable = true,
                      bool writable = true, bool enumable = true);
+  static bool set(variable *obj, const std::string &name, variable *value,
+                  variable *getter, variable *setter, bool configurable = true,
+                  bool writable = false, bool enumable = true);
   static bool remove(variable *obj, const std::string &name);
 };
 } // namespace atom::engine
