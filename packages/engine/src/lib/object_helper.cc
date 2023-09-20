@@ -8,8 +8,8 @@ static native_function(object_assign) {
   for (auto index = 1; index < args.size(); index++) {
     auto keys = object_variable::keys(ctx, args[index]);
     for (auto &k : keys) {
-      object_variable::set_property(
-          ctx, target, k, object_variable::get_property(ctx, args[index], k));
+      object_variable::set(ctx, target, k,
+                           object_variable::get(ctx, args[index], k));
     }
   }
   return target;
@@ -22,7 +22,7 @@ static native_function(object_define_properties) {
   auto configs = ctx->assigment(args[1]);
   auto keys = object_variable::keys(ctx, configs);
   for (auto &k : keys) {
-    auto config = object_variable::get_property(ctx, configs, k);
+    auto config = object_variable::get(ctx, configs, k);
     auto config_keys = object_variable::keys(ctx, config);
     if (std::find(config_keys.begin(), config_keys.end(), "value") !=
             config_keys.end() ||
@@ -32,47 +32,39 @@ static native_function(object_define_properties) {
             config_keys.end() ||
         std::find(config_keys.begin(), config_keys.end(), "set") !=
             config_keys.end()) {
-      auto configurable =
-          object_variable::get_property(ctx, config, "configurable");
-      if (base_variable::type_of(configurable) ==
-          base_variable::variable_type::VT_UNDEFINED) {
+      auto configurable = object_variable::get(ctx, config, "configurable");
+      if (base_variable::is_undefined(configurable)) {
         configurable = boolean_variable::create(ctx, false);
       }
-      auto writable = object_variable::get_property(ctx, config, "writable");
-      if (base_variable::type_of(writable) ==
-          base_variable::variable_type::VT_UNDEFINED) {
+      auto writable = object_variable::get(ctx, config, "writable");
+      if (base_variable::is_undefined(writable)) {
         writable = boolean_variable::create(ctx, false);
       }
-      auto enumerable =
-          object_variable::get_property(ctx, config, "enumerable");
-      if (base_variable::type_of(enumerable) ==
-          base_variable::variable_type::VT_UNDEFINED) {
+      auto enumerable = object_variable::get(ctx, config, "enumerable");
+      if (base_variable::is_undefined(enumerable)) {
         enumerable = boolean_variable::create(ctx, false);
       }
 
-      auto value = object_variable::get_property(ctx, config, "value");
-      auto getter = object_variable::get_property(ctx, config, "get");
-      auto setter = object_variable::get_property(ctx, config, "set");
-      if (base_variable::type_of(getter) ==
-          base_variable::variable_type::VT_UNDEFINED) {
+      auto value = object_variable::get(ctx, config, "value");
+      auto getter = object_variable::get(ctx, config, "get");
+      auto setter = object_variable::get(ctx, config, "set");
+      if (base_variable::is_undefined(getter)) {
         getter = nullptr;
       }
-      if (base_variable::type_of(setter) ==
-          base_variable::variable_type::VT_UNDEFINED) {
+      if (base_variable::is_undefined(setter)) {
         setter = nullptr;
       }
-      if (base_variable::type_of(value) ==
-          base_variable::variable_type::VT_UNDEFINED) {
+      if (base_variable::is_undefined(value)) {
         if (getter) {
           value = nullptr;
         }
       }
-      object_variable::set(target, k, value, getter, setter,
-                           boolean_variable::value_of(configurable),
-                           boolean_variable::value_of(writable),
-                           boolean_variable::value_of(enumerable));
+      object_variable::set_property(target, k, value, getter, setter,
+                                    boolean_variable::value_of(configurable),
+                                    boolean_variable::value_of(writable),
+                                    boolean_variable::value_of(enumerable));
     } else {
-      object_variable::set_property(ctx, target, k, config);
+      object_variable::set(ctx, target, k, config);
     }
   }
   return target;
@@ -81,26 +73,24 @@ static native_function(object_define_property) {
   auto target = ctx->assigment(args[0]);
   auto name = ctx->assigment(args[1]);
   auto descriptor = ctx->assigment(args[2]);
-  auto configurable =
-      object_variable::get_property(ctx, descriptor, "configurable");
+  auto configurable = object_variable::get(ctx, descriptor, "configurable");
   if (base_variable::type_of(configurable) ==
       base_variable::variable_type::VT_UNDEFINED) {
     configurable = boolean_variable::create(ctx, false);
   }
-  auto writable = object_variable::get_property(ctx, descriptor, "writable");
+  auto writable = object_variable::get(ctx, descriptor, "writable");
   if (base_variable::type_of(writable) ==
       base_variable::variable_type::VT_UNDEFINED) {
     writable = boolean_variable::create(ctx, false);
   }
-  auto enumerable =
-      object_variable::get_property(ctx, descriptor, "enumerable");
+  auto enumerable = object_variable::get(ctx, descriptor, "enumerable");
   if (base_variable::type_of(enumerable) ==
       base_variable::variable_type::VT_UNDEFINED) {
     enumerable = boolean_variable::create(ctx, false);
   }
-  auto value = object_variable::get_property(ctx, descriptor, "value");
-  auto getter = object_variable::get_property(ctx, descriptor, "get");
-  auto setter = object_variable::get_property(ctx, descriptor, "set");
+  auto value = object_variable::get(ctx, descriptor, "value");
+  auto getter = object_variable::get(ctx, descriptor, "get");
+  auto setter = object_variable::get(ctx, descriptor, "set");
   if (base_variable::type_of(getter) !=
       base_variable::variable_type::VT_UNDEFINED) {
     object_variable::define(target, string_variable::value_of(name), getter,

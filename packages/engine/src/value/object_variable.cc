@@ -14,23 +14,21 @@ variable *object_variable::create(context *ctx, variable *proto) {
 }
 variable *object_variable::construct(context *ctx, variable *constructor,
                                      const std::vector<variable *> &args) {
-  auto prototype = object_variable::get_property(ctx, constructor, "prototype");
+  auto prototype = object_variable::get(ctx, constructor, "prototype");
   auto obj = object_variable::create(ctx, prototype);
   delete function_variable::call(ctx, constructor, obj, args);
   return obj;
 }
 object_variable::object_variable() : base_variable(variable_type::VT_OBJECT) {}
 object_variable::~object_variable() {}
+
 bool object_variable::define(variable *value, const std::string &name,
                              variable *field, bool configurable, bool writable,
                              bool enumable) {
   object_variable *obj = (object_variable *)value->get_data();
-  for (auto &[k, v] : obj->_properties) {
-    if (k.field == name) {
-      return false;
-    }
+  if (obj->_properties.contains(name)) {
+    return false;
   }
-  key k = {.field = name, .symbol = nullptr};
   property prop = {.value = field->get_node(),
                    .getter = nullptr,
                    .setter = nullptr,
@@ -38,19 +36,16 @@ bool object_variable::define(variable *value, const std::string &name,
                    .writable = writable,
                    .enumable = enumable};
   value->get_node()->add_node(field->get_node());
-  obj->_properties[k] = prop;
+  obj->_properties[name] = prop;
   return true;
 }
 bool object_variable::define(variable *value, const std::string &name,
                              variable *getter, variable *setter,
                              bool configurable, bool writable, bool enumable) {
   object_variable *obj = (object_variable *)value->get_data();
-  for (auto &[k, v] : obj->_properties) {
-    if (k.field == name) {
-      return false;
-    }
+  if (obj->_properties.contains(name)) {
+    return false;
   }
-  key k = {.field = name, .symbol = nullptr};
   property prop = {.value = nullptr,
                    .getter = getter->get_node(),
                    .setter = setter ? setter->get_node() : nullptr,
@@ -61,15 +56,16 @@ bool object_variable::define(variable *value, const std::string &name,
   if (setter) {
     value->get_node()->add_node(setter->get_node());
   }
-  obj->_properties[k] = prop;
+  obj->_properties[name] = prop;
   return true;
 }
-bool object_variable::set(variable *value, const std::string &name,
-                          variable *val, variable *getter, variable *setter,
-                          bool configurable, bool writable, bool enumable) {
+bool object_variable::set_property(variable *value, const std::string &name,
+                                   variable *val, variable *getter,
+                                   variable *setter, bool configurable,
+                                   bool writable, bool enumable) {
   object_variable *obj = (object_variable *)value->get_data();
   for (auto &[k, v] : obj->_properties) {
-    if (k.field == name) {
+    if (k == name) {
       if (!v.configurable) {
         return false;
       }
@@ -98,7 +94,6 @@ bool object_variable::set(variable *value, const std::string &name,
       return true;
     }
   }
-  key k = {.field = name, .symbol = nullptr};
   property prop = {.value = nullptr,
                    .getter = nullptr,
                    .setter = nullptr,
@@ -116,14 +111,17 @@ bool object_variable::set(variable *value, const std::string &name,
     prop.value = val->get_node();
     value->get_node()->add_node(val->get_node());
   }
-  obj->_properties[k] = prop;
+  obj->_properties[name] = prop;
   return true;
 }
-bool object_variable::set_property(context *ctx, variable *value,
-                                   const std::string &name, variable *field) {
+bool object_variable::set(context *ctx, variable *value,
+                          const std::string &name, variable *field) {
   object_variable *obj = (object_variable *)value->get_data();
   for (auto &[k, v] : obj->_properties) {
-    if (k.field == name) {
+    if (!v.configurable || !v.writable) {
+      return false;
+    }
+    if (k == name) {
       if (v.value) {
         value->get_node()->add_node(field->get_node());
         value->get_node()->remove_node(v.value);
@@ -132,8 +130,7 @@ bool object_variable::set_property(context *ctx, variable *value,
           auto *setter = ctx->get_scope()->create_variable(v.setter);
           auto *result = function_variable::call(ctx, setter, value, {field});
           delete setter;
-          bool blresult =
-              dynamic_cast<boolean_variable *>(result->get_data())->get_value();
+          bool blresult = boolean_variable::value_of(result);
           delete result;
           return blresult;
         }
@@ -148,7 +145,7 @@ bool object_variable::set_property(context *ctx, variable *value,
 bool object_variable::remove(variable *value, const std::string &name) {
   object_variable *obj = (object_variable *)value->get_data();
   for (auto it = obj->_properties.begin(); it != obj->_properties.end(); it++) {
-    if (it->first.field == name) {
+    if (it->first == name) {
       if (it->second.value) {
         value->get_node()->remove_node(it->second.value);
       }
@@ -168,7 +165,7 @@ variable *object_variable::get_own_property(context *ctx, variable *value,
                                             const std::string &name) {
   object_variable *obj = (object_variable *)value->get_data();
   for (auto &[k, v] : obj->_properties) {
-    if (k.field == name) {
+    if (k == name) {
       if (v.value) {
         return ctx->get_scope()->create_variable(v.value);
       } else {
@@ -181,8 +178,8 @@ variable *object_variable::get_own_property(context *ctx, variable *value,
   }
   return ctx->undefined();
 }
-variable *object_variable::get_property(context *ctx, variable *value,
-                                        const std::string &name) {
+variable *object_variable::get(context *ctx, variable *value,
+                               const std::string &name) {
   variable *field = object_variable::get_own_property(ctx, value, name);
   if (field->get_data()->get_type() != variable_type::VT_UNDEFINED) {
     return field;
@@ -208,8 +205,8 @@ std::vector<std::string> object_variable::keys(context *ctx, variable *value) {
   std::vector<std::string> result;
   while (obj->_type >= base_variable::variable_type::VT_OBJECT) {
     for (auto &[k, v] : obj->_properties) {
-      if (!k.symbol && v.enumable) {
-        result.push_back(k.field);
+      if (v.enumable) {
+        result.push_back(k);
       }
     }
     auto old = val;

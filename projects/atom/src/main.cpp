@@ -12,17 +12,16 @@
 using namespace atom;
 engine::variable *print(engine::context *ctx, engine::variable *self,
                         const std::vector<engine::variable *> &args) {
-  auto data = engine::object_variable::get_property(ctx, self, "data");
-  auto *ndata = dynamic_cast<engine::number_variable *>(data->get_data());
-  std::cout << ndata->get_value() << std::endl;
+  auto data = engine::object_variable::get(ctx, self, "data");
+  std::cout << engine::number_variable::value_of(data) << std::endl;
   return ctx->undefined();
 }
 engine::variable *DemoConstructor(engine::context *ctx, engine::variable *self,
                                   const std::vector<engine::variable *> &args) {
   // engine::object_variable::define(self, "data", args[0]);
   auto object_constructor = ctx->object_constructor();
-  auto object_define_properties = engine::object_variable::get_property(
-      ctx, object_constructor, "defineProperties");
+  auto object_define_properties =
+      engine::object_variable::get(ctx, object_constructor, "defineProperties");
   auto cfg = engine::object_variable::create(ctx);
   auto datacfg = engine::object_variable::create(ctx);
   engine::object_variable::define(datacfg, "value",
@@ -53,8 +52,7 @@ int main(int argc, char *argv[]) {
                                                   DemoConstructor, proto);
     auto obj = engine::object_variable::construct(
         ctx.get(), Demo, {engine::number_variable::create(ctx.get(), 123)});
-    auto printFn =
-        engine::object_variable::get_property(ctx.get(), obj, "print");
+    auto printFn = engine::object_variable::get(ctx.get(), obj, "print");
     engine::function_variable::call(ctx.get(), printFn, obj);
   });
   runtime->run();

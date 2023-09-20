@@ -24,5 +24,11 @@ public:
   virtual ~base_variable();
   const variable_type &get_type() const;
   static const variable_type &type_of(variable *);
+  static bool is_undefined(variable *val) {
+    return type_of(val) == variable_type::VT_UNDEFINED;
+  };
+  static bool is_null(variable *val) {
+    return type_of(val) == variable_type::VT_NULL;
+  }
 };
 } // namespace atom::engine

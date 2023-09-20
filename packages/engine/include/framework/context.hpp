@@ -15,6 +15,8 @@ private:
   variable *_object_constructor;
   variable *_function_constructor;
 
+  inline static context *current = nullptr;
+
 public:
   scope *get_scope();
   scope *push_scope();
