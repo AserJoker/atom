@@ -14,6 +14,7 @@ private:
   function_handle _callee;
   int32_t _length;
   std::string _name;
+  node *_prototype;
   function_variable(const function_handle &handle);
 
 public:
@@ -23,6 +24,10 @@ public:
                           variable *prototype = nullptr);
   static variable *call(context *, variable *, variable *,
                         const std::vector<variable *> & = {});
+  static bool set_field(context *ctx, variable *obj, const std::string &name,
+                        variable *value);
+  static variable *get_field(context *ctx, variable *obj,
+                             const std::string &name);
 };
 } // namespace atom::engine
 #define native_function(name)                                                  \

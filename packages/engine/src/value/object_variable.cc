@@ -1,6 +1,10 @@
 #include "engine/include/value/object_variable.hpp"
+#include "engine/include/value/boolean_variable.hpp"
 #include "engine/include/value/function_variable.hpp"
+#include "engine/include/value/integer_variable.hpp"
+#include "engine/include/value/number_variable.hpp"
 #include "engine/include/value/simple_variable.hpp"
+#include "engine/include/value/string_variable.hpp"
 using namespace atom::engine;
 variable *object_variable::create(context *ctx, variable *proto) {
   if (!proto) {
@@ -10,210 +14,193 @@ variable *object_variable::create(context *ctx, variable *proto) {
   obj->_proto = proto->get_node();
   variable *val = ctx->get_scope()->create_variable(obj);
   val->get_node()->add_node(obj->_proto);
+  auto object_constructor = ctx->object_constructor();
+  if (object_constructor) {
+    obj->_constructor = object_constructor->get_node();
+    if (obj->_constructor) {
+      val->get_node()->add_node(obj->_constructor);
+    }
+  }
   return val;
 }
 variable *object_variable::construct(context *ctx, variable *constructor,
                                      const std::vector<variable *> &args) {
   auto prototype = object_variable::get(ctx, constructor, "prototype");
   auto obj = object_variable::create(ctx, prototype);
+  base_variable::set(ctx, obj, "constructor", constructor);
   delete function_variable::call(ctx, constructor, obj, args);
   return obj;
 }
-object_variable::object_variable() : base_variable(variable_type::VT_OBJECT) {}
+object_variable::object_variable()
+    : base_variable(variable_type::VT_OBJECT), _constructor(nullptr) {}
 object_variable::~object_variable() {}
 
-bool object_variable::define(variable *value, const std::string &name,
-                             variable *field, bool configurable, bool writable,
-                             bool enumable) {
-  object_variable *obj = (object_variable *)value->get_data();
-  if (obj->_properties.contains(name)) {
-    return false;
-  }
-  property prop = {.value = field->get_node(),
-                   .getter = nullptr,
-                   .setter = nullptr,
-                   .configurable = configurable,
-                   .writable = writable,
-                   .enumable = enumable};
-  value->get_node()->add_node(field->get_node());
-  obj->_properties[name] = prop;
-  return true;
+variable *object_variable::get_prototype_of(context *ctx, variable *obj) {
+  auto *o = dynamic_cast<object_variable *>(obj->get_data());
+  return ctx->create(o->_proto);
 }
-bool object_variable::define(variable *value, const std::string &name,
-                             variable *getter, variable *setter,
-                             bool configurable, bool writable, bool enumable) {
-  object_variable *obj = (object_variable *)value->get_data();
-  if (obj->_properties.contains(name)) {
-    return false;
+
+object_variable::property *
+object_variable::get_own_property(context *ctx, variable *obj,
+                                  const std::string &name) {
+  auto o = dynamic_cast<object_variable *>(obj->get_data());
+  if (o->_properties.contains(name)) {
+    return &o->_properties.at(name);
   }
-  property prop = {.value = nullptr,
-                   .getter = getter->get_node(),
-                   .setter = setter ? setter->get_node() : nullptr,
-                   .configurable = configurable,
-                   .writable = writable,
-                   .enumable = enumable};
-  value->get_node()->add_node(getter->get_node());
-  if (setter) {
-    value->get_node()->add_node(setter->get_node());
-  }
-  obj->_properties[name] = prop;
-  return true;
-}
-bool object_variable::set_property(variable *value, const std::string &name,
-                                   variable *val, variable *getter,
-                                   variable *setter, bool configurable,
-                                   bool writable, bool enumable) {
-  object_variable *obj = (object_variable *)value->get_data();
-  for (auto &[k, v] : obj->_properties) {
-    if (k == name) {
-      if (!v.configurable) {
-        return false;
-      }
-      if (val) {
-        value->get_node()->add_node(val->get_node());
-      }
-      if (getter) {
-        value->get_node()->add_node(getter->get_node());
-      }
-      if (setter) {
-        value->get_node()->add_node(setter->get_node());
-      }
-      if (v.value) {
-        value->get_node()->remove_node(v.value);
-      }
-      if (v.getter) {
-        value->get_node()->remove_node(v.getter);
-      }
-      if (v.setter) {
-        value->get_node()->remove_node(v.setter);
-      }
-      v.value = val->get_node();
-      v.getter = getter->get_node();
-      v.setter = setter->get_node();
-      v.writable = writable;
-      return true;
-    }
-  }
-  property prop = {.value = nullptr,
-                   .getter = nullptr,
-                   .setter = nullptr,
-                   .configurable = configurable,
-                   .writable = writable,
-                   .enumable = enumable};
-  if (getter) {
-    prop.getter = getter->get_node();
-    prop.setter = setter ? setter->get_node() : nullptr;
-    value->get_node()->add_node(getter->get_node());
-    if (setter) {
-      value->get_node()->add_node(setter->get_node());
-    }
-  } else {
-    prop.value = val->get_node();
-    value->get_node()->add_node(val->get_node());
-  }
-  obj->_properties[name] = prop;
-  return true;
-}
-bool object_variable::set(context *ctx, variable *value,
-                          const std::string &name, variable *field) {
-  object_variable *obj = (object_variable *)value->get_data();
-  for (auto &[k, v] : obj->_properties) {
-    if (!v.configurable || !v.writable) {
-      return false;
-    }
-    if (k == name) {
-      if (v.value) {
-        value->get_node()->add_node(field->get_node());
-        value->get_node()->remove_node(v.value);
-      } else {
-        if (v.setter) {
-          auto *setter = ctx->get_scope()->create_variable(v.setter);
-          auto *result = function_variable::call(ctx, setter, value, {field});
-          delete setter;
-          bool blresult = boolean_variable::value_of(result);
-          delete result;
-          return blresult;
-        }
-        return false;
-      }
-      v.value = field->get_node();
-      return true;
-    }
-  }
-  return false;
-}
-bool object_variable::remove(variable *value, const std::string &name) {
-  object_variable *obj = (object_variable *)value->get_data();
-  for (auto it = obj->_properties.begin(); it != obj->_properties.end(); it++) {
-    if (it->first == name) {
-      if (it->second.value) {
-        value->get_node()->remove_node(it->second.value);
-      }
-      if (it->second.getter) {
-        value->get_node()->remove_node(it->second.getter);
-      }
-      if (it->second.setter) {
-        value->get_node()->remove_node(it->second.setter);
-      }
-      obj->_properties.erase(it);
-      return true;
-    }
-  }
-  return false;
-}
-variable *object_variable::get_own_property(context *ctx, variable *value,
-                                            const std::string &name) {
-  object_variable *obj = (object_variable *)value->get_data();
-  for (auto &[k, v] : obj->_properties) {
-    if (k == name) {
-      if (v.value) {
-        return ctx->get_scope()->create_variable(v.value);
-      } else {
-        auto *getter = ctx->get_scope()->create_variable(v.getter);
-        auto *result = function_variable::call(ctx, getter, value);
-        delete getter;
-        return result;
-      }
-    }
-  }
-  return ctx->undefined();
-}
-variable *object_variable::get(context *ctx, variable *value,
-                               const std::string &name) {
-  variable *field = object_variable::get_own_property(ctx, value, name);
-  if (field->get_data()->get_type() != variable_type::VT_UNDEFINED) {
-    return field;
-  }
-  variable *proto = object_variable::get_prototype_of(ctx, value);
-  while (proto->get_data()->get_type() == variable_type::VT_OBJECT) {
-    field = object_variable::get_own_property(ctx, proto, name);
-    if (!field) {
-      proto = object_variable::get_prototype_of(ctx, proto);
-    } else {
-      break;
-    }
-  }
-  return field;
-}
-variable *object_variable::get_prototype_of(context *ctx, variable *value) {
-  auto *obj = (object_variable *)value->get_data();
-  return ctx->get_scope()->create_variable(obj->_proto);
-}
-std::vector<std::string> object_variable::keys(context *ctx, variable *value) {
-  auto val = ctx->assigment(value);
-  object_variable *obj = (object_variable *)val->get_data();
-  std::vector<std::string> result;
-  while (obj->_type >= base_variable::variable_type::VT_OBJECT) {
-    for (auto &[k, v] : obj->_properties) {
-      if (v.enumable) {
-        result.push_back(k);
+  return nullptr;
+};
+std::vector<std::string> object_variable::keys(context *ctx, variable *obj) {
+  auto val = ctx->assigment(obj);
+  std::vector<std::string> keys;
+  while (val && type_of(val) >= variable_type::VT_OBJECT) {
+    auto o = dynamic_cast<object_variable *>(val);
+    for (auto &[k, prop] : o->_properties) {
+      if (prop.enumable) {
+        keys.push_back(k);
       }
     }
     auto old = val;
     val = get_prototype_of(ctx, val);
     delete old;
-    obj = (object_variable *)val->get_data();
   }
   delete val;
-  return result;
+  return keys;
 }
+object_variable::property *
+object_variable::get_property(context *ctx, variable *obj,
+                              const std::string &name) {
+  auto o = ctx->assigment(obj);
+  property *field = nullptr;
+  while (type_of(o) >= variable_type::VT_OBJECT) {
+    field = object_variable::get_own_property(ctx, o, name);
+    if (field) {
+      break;
+    }
+    auto old = o;
+    o = get_prototype_of(ctx, o);
+    delete old;
+  }
+  delete o;
+  return field;
+}
+bool object_variable::define_property(context *ctx, variable *obj,
+                                      const std::string &name,
+                                      const object_variable::property &prop) {
+  auto *o = dynamic_cast<object_variable *>(obj->get_data());
+  if (o->_properties.contains(name)) {
+    return false;
+  }
+  o->_properties[name] = prop;
+  if (prop.value) {
+    obj->get_node()->add_node(prop.value);
+  }
+  if (prop.getter) {
+    obj->get_node()->add_node(prop.getter);
+  }
+  if (prop.setter) {
+    obj->get_node()->add_node(prop.setter);
+  }
+  return true;
+}
+bool object_variable::set_property(context *ctx, variable *obj,
+                                   const std::string &name,
+                                   const object_variable::property &value) {
+  auto prop = object_variable::get_property(ctx, obj, name);
+  if (prop) {
+    if (!prop->configurable || !prop->writable) {
+      return false;
+    }
+  } else {
+    auto o = dynamic_cast<object_variable *>(obj->get_data());
+    prop = &o->_properties[name];
+    prop->value = nullptr;
+    prop->getter = nullptr;
+    prop->setter = nullptr;
+    prop->configurable = value.configurable;
+    prop->writable = value.writable;
+    prop->enumable = value.enumable;
+  }
+  if (prop->value) {
+    obj->get_node()->remove_node(prop->value);
+  }
+  if (prop->getter) {
+    obj->get_node()->remove_node(prop->getter);
+  }
+  if (prop->setter) {
+    obj->get_node()->remove_node(prop->setter);
+  }
+  prop->value = value.value;
+  prop->setter = value.setter;
+  prop->getter = value.getter;
+  if (prop->value) {
+    obj->get_node()->add_node(prop->value);
+  }
+  if (prop->getter) {
+    obj->get_node()->add_node(prop->getter);
+  }
+  if (prop->setter) {
+    obj->get_node()->add_node(prop->setter);
+  }
+  return true;
+}
+bool object_variable::set_field(context *ctx, variable *obj,
+                                const std::string &name, variable *value) {
+  if (name == "constructor") {
+    auto o = dynamic_cast<object_variable *>(obj->get_data());
+    obj->get_node()->add_node(value->get_node());
+    if (o->_constructor) {
+      obj->get_node()->remove_node(o->_constructor);
+    }
+    o->_constructor = value->get_node();
+    return true;
+  }
+
+  auto prop = get_property(ctx, obj, name);
+  if (prop) {
+    if (!prop->writable) {
+      return false;
+    }
+    if (prop->value) {
+      obj->get_node()->add_node(value->get_node());
+      obj->get_node()->remove_node(prop->value);
+      prop->value = value->get_node();
+    } else {
+      if (!prop->setter) {
+        return false;
+      }
+      auto setter = ctx->create(prop->setter);
+      auto res = function_variable::call(ctx, setter, obj, {value});
+      delete setter;
+      auto blres = boolean_variable::value_of(res);
+      return blres;
+    }
+  } else {
+    return define_property(ctx, obj, name,
+                           {.value = value->get_node(),
+                            .getter = nullptr,
+                            .setter = nullptr,
+                            .configurable = true,
+                            .writable = true,
+                            .enumable = true});
+  }
+  return true;
+}
+variable *object_variable::get_field(context *ctx, variable *obj,
+                                     const std::string &name) {
+  if (name == "constructor") {
+    auto o = dynamic_cast<object_variable *>(obj->get_data());
+    return ctx->create(o->_constructor);
+  }
+  auto prop = get_property(ctx, obj, name);
+  if (!prop) {
+    return ctx->undefined();
+  }
+  if (prop->value) {
+    return ctx->create(prop->value);
+  } else {
+    auto getter = ctx->create(prop->getter);
+    auto res = function_variable::call(ctx, getter, obj);
+    delete getter;
+    return res;
+  }
+};

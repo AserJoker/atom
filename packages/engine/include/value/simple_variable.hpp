@@ -21,15 +21,15 @@ public:
     auto *v = (simple_variable<T, vt> *)val->get_data();
     return v->get_value();
   }
+  static bool set_field(context *ctx, variable *obj, const std::string &name,
+                        variable *value) {
+    return false;
+  }
+  static variable *get_field(context *ctx, variable *obj,
+                             const std::string &name) {
+    return nullptr;
+  }
 };
-using string_variable =
-    simple_variable<std::string, base_variable::variable_type::VT_STRING>;
-using number_variable =
-    simple_variable<double, base_variable::variable_type::VT_NUMBER>;
-using integer_variable =
-    simple_variable<int32_t, base_variable::variable_type::VT_INTEGER>;
-using boolean_variable =
-    simple_variable<bool, base_variable::variable_type::VT_BOOLEAN>;
 using null_variable =
     simple_variable<void *, base_variable::variable_type::VT_NULL>;
 using undefined_variable =

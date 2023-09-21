@@ -1,8 +1,9 @@
 #include "engine/include/framework/context.hpp"
 #include "engine/include/framework/runtime.hpp"
 #include "engine/include/value/function_variable.hpp"
+#include "engine/include/value/number_variable.hpp"
 #include "engine/include/value/object_variable.hpp"
-#include "engine/include/value/simple_variable.hpp"
+#include "engine/include/value/string_variable.hpp"
 #include "engine/include/value/variable.hpp"
 #include <fmt/format.h>
 #include <iostream>
@@ -18,21 +19,10 @@ engine::variable *print(engine::context *ctx, engine::variable *self,
 }
 engine::variable *DemoConstructor(engine::context *ctx, engine::variable *self,
                                   const std::vector<engine::variable *> &args) {
-  // engine::object_variable::define(self, "data", args[0]);
-  auto object_constructor = ctx->object_constructor();
-  auto object_define_properties =
-      engine::object_variable::get(ctx, object_constructor, "defineProperties");
-  auto cfg = engine::object_variable::create(ctx);
-  auto datacfg = engine::object_variable::create(ctx);
-  engine::object_variable::define(datacfg, "value",
-                                  engine::number_variable::create(ctx, 123));
-  engine::object_variable::define(cfg, "data", datacfg);
-  engine::function_variable::call(ctx, object_define_properties, nullptr,
-                                  {self, cfg});
+  engine::base_variable::set(ctx, self, "data", args[0]);
   return ctx->undefined();
 }
 void on_exit() {
-
   try {
     core::object::memory_leak_check();
   } catch (std::exception &e) {
@@ -45,8 +35,8 @@ int main(int argc, char *argv[]) {
   runtime->create_macro_job([runtime] {
     core::auto_release ctx = new engine::context(runtime);
     auto proto = engine::object_variable::create(ctx.get());
-    engine::object_variable::define(
-        proto, "print",
+    engine::base_variable::set(
+        ctx.get(), proto, "print",
         engine::function_variable::create(ctx.get(), "print", 0, print));
     auto Demo = engine::function_variable::create(ctx.get(), "Demo", 1,
                                                   DemoConstructor, proto);

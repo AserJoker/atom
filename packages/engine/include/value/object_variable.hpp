@@ -9,7 +9,7 @@
 #include <vector>
 namespace atom::engine {
 class object_variable : public base_variable {
-private:
+public:
   struct property {
     node *value;
     node *getter;
@@ -18,10 +18,13 @@ private:
     bool writable;
     bool enumable;
   };
+
+private:
   std::map<std::string, property> _properties;
 
 protected:
   node *_proto;
+  node *_constructor;
   object_variable();
 
 public:
@@ -29,25 +32,22 @@ public:
   static variable *create(context *ctx, variable *proto = nullptr);
   static variable *construct(context *ctx, variable *constructor,
                              const std::vector<variable *> &args = {});
+
+  static variable *get_prototype_of(context *ctx, variable *obj);
   static std::vector<std::string> keys(context *ctx, variable *obj);
-  static variable *get_own_property(context *ctx, variable *value,
+
+  static property *get_own_property(context *ctx, variable *obj,
                                     const std::string &name);
-  static variable *get_prototype_of(context *ctx, variable *value);
+  static property *get_property(context *ctx, variable *obj,
+                                const std::string &name);
+  static bool define_property(context *ctx, variable *obj,
+                              const std::string &name, const property &value);
+  static bool set_property(context *ctx, variable *obj, const std::string &name,
+                           const property &value);
 
-  static bool set_property(variable *obj, const std::string &name,
-                           variable *value, variable *getter, variable *setter,
-                           bool configurable = true, bool writable = false,
-                           bool enumable = true);
-  static bool define(variable *obj, const std::string &name, variable *field,
-                     bool configurable = true, bool writable = true,
-                     bool enumable = true);
-  static bool define(variable *obj, const std::string &name, variable *getter,
-                     variable *setter, bool configurable = true,
-                     bool writable = true, bool enumable = true);
-  static bool remove(variable *obj, const std::string &name);
-  static bool set(context *ctx, variable *value, const std::string &name,
-                  variable *field);
-
-  static variable *get(context *ctx, variable *value, const std::string &name);
+  static bool set_field(context *ctx, variable *obj, const std::string &name,
+                        variable *value);
+  static variable *get_field(context *ctx, variable *obj,
+                             const std::string &name);
 };
 } // namespace atom::engine

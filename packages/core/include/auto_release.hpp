@@ -19,7 +19,7 @@ public:
     }
   }
   auto_release(const auto_release<T> &another) {
-    _obj = (T *)another._obj;
+    _obj = dynamic_cast<T *>(another._obj);
     _obj->add_ref();
   }
   ~auto_release() { release(); }
@@ -28,7 +28,7 @@ public:
   T *operator->() const { return const_cast<T *>(_obj); }
   T &operator*() const { return *const_cast<T *>(_obj); }
   auto_release<T> &operator=(const auto_release<T> &another) {
-    auto *obj = (T *)another._obj;
+    auto *obj = const_cast<T *>(another._obj);
     if (obj) {
       obj->add_ref();
     }
@@ -37,7 +37,7 @@ public:
     return *this;
   }
   auto_release<T> &operator=(const T *another) {
-    auto *obj = (T *)another;
+    auto *obj = const_cast<T *>(another);
     if (obj) {
       obj->add_ref();
     }

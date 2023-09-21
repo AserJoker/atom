@@ -1,6 +1,8 @@
 #pragma once
 #include "core/include/object.hpp"
+#include <string>
 namespace atom::engine {
+class context;
 class variable;
 class base_variable : public core::object {
 public:
@@ -30,5 +32,9 @@ public:
   static bool is_null(variable *val) {
     return type_of(val) == variable_type::VT_NULL;
   }
+
+  static bool set(context *ctx, variable *obj, const std::string &name,
+                  variable *value);
+  static variable *get(context *ctx, variable *obj, const std::string &name);
 };
 } // namespace atom::engine

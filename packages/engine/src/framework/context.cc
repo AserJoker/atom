@@ -1,11 +1,17 @@
 #include "engine/include/framework/context.hpp"
 #include "engine/include/lib/object_helper.hpp"
+#include "engine/include/value/boolean_variable.hpp"
 #include "engine/include/value/function_variable.hpp"
+#include "engine/include/value/integer_variable.hpp"
+#include "engine/include/value/number_variable.hpp"
 #include "engine/include/value/object_variable.hpp"
-#include "engine/include/value/simple_variable.hpp"
+#include "engine/include/value/string_variable.hpp"
 using namespace atom::engine;
 using namespace atom;
-context::context(const core::auto_release<runtime> &rt) : _runtime(rt) {
+context::context(const core::auto_release<runtime> &rt)
+    : _runtime(rt), _undefined(nullptr), _null(nullptr),
+      _object_prototype(nullptr), _object_constructor(nullptr),
+      _function_prototype(nullptr), _function_constructor(nullptr) {
   _scope = new scope();
   _undefined = _scope->create_variable(new undefined_variable());
   _null = _scope->create_variable(new null_variable());
@@ -21,7 +27,10 @@ context::context(const core::auto_release<runtime> &rt) : _runtime(rt) {
       [](context *ctx, variable *self, const std::vector<variable *> &args)
           -> variable * { return ctx->undefined(); },
       _function_prototype);
-
+  base_variable::set(this, _object_prototype, "constructor",
+                     _object_constructor);
+  base_variable::set(this, _function_prototype, "constructor",
+                     _function_constructor);
   object_helper::init_object(this);
 }
 context::~context() { pop_scope(nullptr); }

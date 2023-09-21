@@ -2,6 +2,7 @@
 #include "core/include/object.hpp"
 #include "engine/include/memory/node.hpp"
 #include "engine/include/value/base_variable.hpp"
+#include <string>
 namespace atom::engine {
 class scope;
 class variable : public core::object {
@@ -18,4 +19,4 @@ public:
   ~variable();
   node *get_node();
 };
-} // namespace atom::engin
+} // namespace atom::engine
