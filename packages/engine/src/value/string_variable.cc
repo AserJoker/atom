@@ -13,3 +13,12 @@ variable *string_variable::get_field(context *ctx, variable *obj,
   }
   return ctx->undefined();
 }
+
+bool string_variable::set_field(context *ctx, variable *obj,
+                                const uint32_t &name, variable *value) {
+  return false;
+}
+variable *string_variable::get_field(context *ctx, variable *obj,
+                                     const uint32_t &name) {
+  return ctx->undefined();
+}

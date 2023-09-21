@@ -78,3 +78,12 @@ variable *function_variable::bind(context *ctx, variable *func, variable *obj) {
   }
   return result;
 }
+
+bool function_variable::set_field(context *ctx, variable *obj,
+                                  const uint32_t &index, variable *field) {
+  return object_variable::set_field(ctx, obj, index, field);
+};
+variable *function_variable::get_field(context *ctx, variable *obj,
+                                       const uint32_t &index) {
+  return object_variable::get_field(ctx, obj, index);
+}

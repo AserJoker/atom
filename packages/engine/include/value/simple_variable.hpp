@@ -21,14 +21,6 @@ public:
     auto *v = (simple_variable<T, vt> *)val->get_data();
     return v->get_value();
   }
-  static bool set_field(context *ctx, variable *obj, const std::string &name,
-                        variable *value) {
-    return false;
-  }
-  static variable *get_field(context *ctx, variable *obj,
-                             const std::string &name) {
-    return nullptr;
-  }
 };
 using null_variable =
     simple_variable<void *, base_variable::variable_type::VT_NULL>;

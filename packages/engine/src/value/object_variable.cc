@@ -204,3 +204,11 @@ variable *object_variable::get_field(context *ctx, variable *obj,
     return res;
   }
 };
+bool object_variable::set_field(context *ctx, variable *obj,
+                                const uint32_t &index, variable *field) {
+  return object_variable::set_field(ctx, obj, std::to_string(index), field);
+}
+variable *object_variable::get_field(context *ctx, variable *obj,
+                                     const uint32_t &index) {
+  return object_variable::get_field(ctx, obj, std::to_string(index));
+}

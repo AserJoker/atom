@@ -10,10 +10,12 @@ private:
   core::auto_release<runtime> _runtime;
   variable *_object_prototype;
   variable *_function_prototype;
-  variable *_undefined;
-  variable *_null;
+  variable *_array_prototype;
+  variable *_array_constructor;
   variable *_object_constructor;
   variable *_function_constructor;
+  variable *_undefined;
+  variable *_null;
 
   inline static context *current = nullptr;
 
@@ -25,12 +27,17 @@ public:
   ~context();
   variable *undefined();
   variable *null();
+
+  variable *array_prototype();
   variable *object_prototype();
   variable *function_prototype();
-  variable *function_constructor();
+
+  variable *array_constructor();
   variable *object_constructor();
-  variable *create(auto...);
-  variable *create(node *, variable *);
+  variable *function_constructor();
+
+  variable *create(base_variable *);
+  variable *create(node *, variable * = nullptr);
   variable *assigment(variable *);
   const core::auto_release<runtime> &get_runtime();
 };

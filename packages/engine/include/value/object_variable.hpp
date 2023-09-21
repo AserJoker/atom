@@ -43,6 +43,9 @@ public:
   static bool set_property(context *, variable *, const std::string &,
                            const property &);
 
+  static bool set_field(context *, variable *, const uint32_t &, variable *);
+  static variable *get_field(context *, variable *, const uint32_t &);
+
   static bool set_field(context *, variable *, const std::string &, variable *);
   static variable *get_field(context *, variable *, const std::string &);
 };

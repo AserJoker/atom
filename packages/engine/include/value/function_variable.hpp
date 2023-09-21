@@ -24,8 +24,13 @@ public:
                           const function_handle &, variable * = nullptr);
   static variable *call(context *, variable *, variable *,
                         const std::vector<variable *> & = {});
+
+  static bool set_field(context *, variable *, const uint32_t &, variable *);
+  static variable *get_field(context *, variable *, const uint32_t &);
+
   static bool set_field(context *, variable *, const std::string &, variable *);
   static variable *get_field(context *, variable *, const std::string &);
+
   static variable *bind(context *, variable *, variable *);
 };
 } // namespace atom::engine

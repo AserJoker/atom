@@ -30,11 +30,21 @@ public:
   static bool is_undefined(variable *val) {
     return type_of(val) == variable_type::VT_UNDEFINED;
   };
+
   static bool is_null(variable *val) {
     return type_of(val) == variable_type::VT_NULL;
   }
 
+  static bool set_field(context *, variable *, const std::string &, variable *);
+  static variable *get_field(context *, variable *, const std::string &);
+
+  static bool set_field(context *, variable *, const uint32_t &, variable *);
+  static variable *get_field(context *, variable *, const uint32_t &);
+
   static bool set(context *, variable *, const std::string &, variable *);
   static variable *get(context *, variable *, const std::string &);
+
+  static bool set(context *, variable *, const uint32_t &, variable *);
+  static variable *get(context *, variable *, const uint32_t &);
 };
 } // namespace atom::engine
