@@ -15,6 +15,7 @@ private:
   int32_t _length;
   std::string _name;
   node *_prototype;
+  node *_bind;
   function_variable(const function_handle &);
 
 public:
@@ -25,6 +26,7 @@ public:
                         const std::vector<variable *> & = {});
   static bool set_field(context *, variable *, const std::string &, variable *);
   static variable *get_field(context *, variable *, const std::string &);
+  static variable *bind(context *, variable *, variable *);
 };
 } // namespace atom::engine
 #define native_function(name)                                                  \

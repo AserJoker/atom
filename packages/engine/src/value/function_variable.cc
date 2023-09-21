@@ -5,7 +5,11 @@
 using namespace atom::engine;
 variable *function_variable::call(context *ctx, variable *func, variable *self,
                                   const std::vector<variable *> &args) {
+
   auto *fn = dynamic_cast<function_variable *>(func->get_data());
+  if (fn->_bind) {
+    self = ctx->create(fn->_bind);
+  }
   auto &callee = fn->_callee;
   auto *scope = ctx->push_scope();
   variable *res = callee(ctx, self == nullptr ? func->get_owner() : self, args);
@@ -16,7 +20,8 @@ variable *function_variable::call(context *ctx, variable *func, variable *self,
 function_variable::~function_variable() {}
 function_variable::function_variable(
     const function_variable::function_handle &handle)
-    : object_variable(), _callee(std::move(handle)), _prototype(nullptr) {
+    : object_variable(), _callee(std::move(handle)), _prototype(nullptr),
+      _bind(nullptr) {
   _type = variable_type::VT_FUNCTION;
 }
 variable *function_variable::create(context *ctx, const std::string &name,
@@ -63,4 +68,13 @@ variable *function_variable::get_field(context *ctx, variable *obj,
     return string_variable::create(ctx, fn->_name);
   }
   return object_variable::get_field(ctx, obj, name);
+}
+variable *function_variable::bind(context *ctx, variable *func, variable *obj) {
+  auto result = ctx->assigment(func);
+  auto fn = dynamic_cast<function_variable *>(result->get_data());
+  if (!fn->_bind) {
+    fn->_bind = obj->get_node();
+    result->get_node()->add_node(fn->_bind);
+  }
+  return result;
 }
