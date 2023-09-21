@@ -196,7 +196,7 @@ variable *object_variable::get_field(context *ctx, variable *obj,
     return ctx->undefined();
   }
   if (prop->value) {
-    return ctx->create(prop->value);
+    return ctx->create(prop->value, obj);
   } else {
     auto getter = ctx->create(prop->getter);
     auto res = function_variable::call(ctx, getter, obj);

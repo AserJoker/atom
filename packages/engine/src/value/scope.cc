@@ -10,8 +10,8 @@ variable *scope::create_variable(base_variable *data) {
   v->_scope = this;
   return v;
 }
-variable *scope::create_variable(node *n) {
-  variable *v = new variable(n);
+variable *scope::create_variable(node *n, variable *owner) {
+  variable *v = new variable(n, owner);
   _variables.push_back(v);
   v->_scope = this;
   _chunk->add_node(n);

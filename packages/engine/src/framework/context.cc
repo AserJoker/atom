@@ -58,6 +58,9 @@ variable *context::function_constructor() { return _function_constructor; }
 variable *context::create(auto... args) {
   return get_scope()->create_variable(args...);
 }
+variable *context::create(node *n, variable *owner) {
+  return get_scope()->create_variable(n, owner);
+}
 variable *context::assigment(variable *val) {
   switch (base_variable::type_of(val)) {
   case base_variable::variable_type::VT_NUMBER:

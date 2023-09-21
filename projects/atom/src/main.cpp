@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
     auto obj = engine::object_variable::construct(
         ctx.get(), Demo, {engine::number_variable::create(ctx.get(), 123)});
     auto printFn = engine::object_variable::get(ctx.get(), obj, "print");
-    engine::function_variable::call(ctx.get(), printFn, obj);
+    engine::function_variable::call(ctx.get(), printFn, nullptr);
   });
   runtime->run();
   return 0;

@@ -11,12 +11,14 @@ private:
 
 private:
   node *_node;
-  variable(node *);
+  variable(node *, variable * = nullptr);
   scope *_scope;
+  variable *_owner;
 
 public:
   base_variable *get_data();
   ~variable();
   node *get_node();
+  variable *get_owner();
 };
 } // namespace atom::engine

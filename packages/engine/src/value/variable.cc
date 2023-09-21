@@ -7,5 +7,6 @@ variable::~variable() {
     _scope->remove_variable(this);
   }
 }
-variable::variable(node *n) { _node = n; }
+variable::variable(node *n, variable *owner) : _owner(owner) { _node = n; }
 node *variable::get_node() { return _node; }
+variable *variable::get_owner() { return _owner; }

@@ -13,8 +13,8 @@ public:
   scope(scope * = nullptr);
   ~scope();
   variable *create_variable(base_variable * = nullptr);
-  variable *create_variable(node *);
+  variable *create_variable(node *, variable * = nullptr);
   chunk *get_chunk();
   void remove_variable(variable *);
 };
-} // namespace atom::runtime
+} // namespace atom::engine

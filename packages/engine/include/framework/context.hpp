@@ -30,6 +30,7 @@ public:
   variable *function_constructor();
   variable *object_constructor();
   variable *create(auto...);
+  variable *create(node *, variable *);
   variable *assigment(variable *);
   const core::auto_release<runtime> &get_runtime();
 };

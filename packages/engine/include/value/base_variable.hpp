@@ -4,6 +4,7 @@
 namespace atom::engine {
 class context;
 class variable;
+class node;
 class base_variable : public core::object {
 public:
   enum class variable_type {

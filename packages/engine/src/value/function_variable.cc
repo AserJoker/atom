@@ -1,4 +1,5 @@
 #include "engine/include/value/function_variable.hpp"
+#include "engine/include/value/string_variable.hpp"
 #include <algorithm>
 #include <iostream>
 using namespace atom::engine;
@@ -7,7 +8,7 @@ variable *function_variable::call(context *ctx, variable *func, variable *self,
   auto *fn = dynamic_cast<function_variable *>(func->get_data());
   auto &callee = fn->_callee;
   auto *scope = ctx->push_scope();
-  variable *res = callee(ctx, self, args);
+  variable *res = callee(ctx, self == nullptr ? func->get_owner() : self, args);
   variable *result = scope->create_variable(res->get_node());
   ctx->pop_scope(scope);
   return result;
@@ -46,6 +47,9 @@ bool function_variable::set_field(context *ctx, variable *obj,
     fn->_prototype = value->get_node();
     return true;
   }
+  if (name == "name") {
+    return false;
+  }
   return object_variable::set_field(ctx, obj, name, value);
 }
 variable *function_variable::get_field(context *ctx, variable *obj,
@@ -53,6 +57,10 @@ variable *function_variable::get_field(context *ctx, variable *obj,
   if (name == "prototype") {
     auto fn = dynamic_cast<function_variable *>(obj->get_data());
     return ctx->create(fn->_prototype);
+  }
+  if (name == "name") {
+    auto fn = dynamic_cast<function_variable *>(obj->get_data());
+    return string_variable::create(ctx, fn->_name);
   }
   return object_variable::get_field(ctx, obj, name);
 }
