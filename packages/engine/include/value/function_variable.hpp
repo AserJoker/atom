@@ -15,19 +15,16 @@ private:
   int32_t _length;
   std::string _name;
   node *_prototype;
-  function_variable(const function_handle &handle);
+  function_variable(const function_handle &);
 
 public:
   ~function_variable() override;
-  static variable *create(context *ctx, const std::string &name, int32_t length,
-                          const function_handle &handle,
-                          variable *prototype = nullptr);
+  static variable *create(context *, const std::string &, int32_t,
+                          const function_handle &, variable * = nullptr);
   static variable *call(context *, variable *, variable *,
                         const std::vector<variable *> & = {});
-  static bool set_field(context *ctx, variable *obj, const std::string &name,
-                        variable *value);
-  static variable *get_field(context *ctx, variable *obj,
-                             const std::string &name);
+  static bool set_field(context *, variable *, const std::string &, variable *);
+  static variable *get_field(context *, variable *, const std::string &);
 };
 } // namespace atom::engine
 #define native_function(name)                                                  \

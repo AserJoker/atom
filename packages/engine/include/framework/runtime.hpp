@@ -22,7 +22,7 @@ public:
   runtime();
   ~runtime();
   void run();
-  uint32_t create_macro_job(const event_handle &handle, uint64_t timeout = 4);
-  uint32_t create_micro_job(const event_handle &handle, uint64_t timeout = 0);
+  uint32_t create_macro_job(const event_handle &, uint64_t = 4);
+  uint32_t create_micro_job(const event_handle &, uint64_t = 0);
 };
 } // namespace atom::engine

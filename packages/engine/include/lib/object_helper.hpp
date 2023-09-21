@@ -3,6 +3,6 @@
 namespace atom::engine {
 class object_helper {
 public:
-  static void init_object(context *ctx);
+  static void init_object(context *);
 };
 } // namespace atom::engine

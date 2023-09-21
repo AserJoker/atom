@@ -29,25 +29,21 @@ protected:
 
 public:
   ~object_variable() override;
-  static variable *create(context *ctx, variable *proto = nullptr);
-  static variable *construct(context *ctx, variable *constructor,
-                             const std::vector<variable *> &args = {});
+  static variable *create(context *, variable * = nullptr);
+  static variable *construct(context *, variable *,
+                             const std::vector<variable *> & = {});
 
-  static variable *get_prototype_of(context *ctx, variable *obj);
-  static std::vector<std::string> keys(context *ctx, variable *obj);
+  static variable *get_prototype_of(context *, variable *);
+  static std::vector<std::string> keys(context *, variable *);
 
-  static property *get_own_property(context *ctx, variable *obj,
-                                    const std::string &name);
-  static property *get_property(context *ctx, variable *obj,
-                                const std::string &name);
-  static bool define_property(context *ctx, variable *obj,
-                              const std::string &name, const property &value);
-  static bool set_property(context *ctx, variable *obj, const std::string &name,
-                           const property &value);
+  static property *get_own_property(context *, variable *, const std::string &);
+  static property *get_property(context *, variable *, const std::string &);
+  static bool define_property(context *, variable *, const std::string &,
+                              const property &);
+  static bool set_property(context *, variable *, const std::string &,
+                           const property &);
 
-  static bool set_field(context *ctx, variable *obj, const std::string &name,
-                        variable *value);
-  static variable *get_field(context *ctx, variable *obj,
-                             const std::string &name);
+  static bool set_field(context *, variable *, const std::string &, variable *);
+  static variable *get_field(context *, variable *, const std::string &);
 };
 } // namespace atom::engine

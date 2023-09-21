@@ -21,7 +21,7 @@ public:
   scope *get_scope();
   scope *push_scope();
   void pop_scope(scope *);
-  context(const core::auto_release<runtime> &rt);
+  context(const core::auto_release<runtime> &);
   ~context();
   variable *undefined();
   variable *null();

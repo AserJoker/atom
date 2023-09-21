@@ -34,8 +34,7 @@ public:
     return type_of(val) == variable_type::VT_NULL;
   }
 
-  static bool set(context *ctx, variable *obj, const std::string &name,
-                  variable *value);
-  static variable *get(context *ctx, variable *obj, const std::string &name);
+  static bool set(context *, variable *, const std::string &, variable *);
+  static variable *get(context *, variable *, const std::string &);
 };
 } // namespace atom::engine
