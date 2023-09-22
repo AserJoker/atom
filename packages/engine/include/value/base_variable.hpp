@@ -8,6 +8,7 @@ class node;
 class base_variable : public core::object {
 public:
   enum class variable_type {
+    VT_USERDATA,
     VT_NUMBER,
     VT_INTEGER,
     VT_STRING,
@@ -17,6 +18,7 @@ public:
     VT_OBJECT,
     VT_ARRAY,
     VT_FUNCTION,
+    VT_CLASS,
   };
 
 protected:
@@ -46,5 +48,7 @@ public:
 
   static bool set(context *, variable *, const uint32_t &, variable *);
   static variable *get(context *, variable *, const uint32_t &);
+
+  static std::string type_name(variable_type type);
 };
 } // namespace atom::engine

@@ -1,13 +1,28 @@
 #include "engine/include/framework/context.hpp"
 #include "engine/include/lib/object_helper.hpp"
+#include "engine/include/value/array_variable.hpp"
 #include "engine/include/value/boolean_variable.hpp"
 #include "engine/include/value/function_variable.hpp"
 #include "engine/include/value/integer_variable.hpp"
 #include "engine/include/value/number_variable.hpp"
 #include "engine/include/value/object_variable.hpp"
 #include "engine/include/value/string_variable.hpp"
+#include <fmt/format.h>
 using namespace atom::engine;
 using namespace atom;
+
+native_function(Error) {
+  base_variable::set(ctx, self, "message", args[0]);
+  auto stacks = array_variable::create(ctx);
+  auto raw_stacks = ctx->get_call_stack(0, 0);
+  for (auto index = 1; index != raw_stacks.size(); index++) {
+    base_variable::set(ctx, stacks, index - 1,
+                       string_variable::create(ctx, raw_stacks[index]));
+  }
+  base_variable::set(ctx, self, "stacks", stacks);
+  return ctx->undefined();
+}
+
 context::context(const core::auto_release<runtime> &rt)
     : _runtime(rt), _undefined(nullptr), _null(nullptr),
       _object_prototype(nullptr), _object_constructor(nullptr),
@@ -43,9 +58,14 @@ context::context(const core::auto_release<runtime> &rt)
   base_variable::set(this, _function_prototype, "constructor",
                      _function_constructor);
   base_variable::set(this, _array_prototype, "constructor", _array_constructor);
+
   object_helper::init_object(this);
+
+  _call_stack.push_back(
+      call_frame{._filename = "<internel>", ._funcname = "<atom_runtime>"});
 }
 context::~context() { pop_scope(nullptr); }
+
 scope *context::get_scope() { return _scope; }
 scope *context::push_scope() {
   scope *old = _scope;
@@ -56,6 +76,32 @@ void context::pop_scope(scope *s) {
   delete _scope;
   _scope = s;
 }
+
+void context::push_call_stack(const call_frame &frame) {
+  auto &last = _call_stack[_call_stack.size() - 1];
+  last._line = frame._line;
+  last._column = frame._column;
+  _call_stack.push_back(call_frame{
+      ._filename = frame._filename,
+      ._funcname = frame._funcname,
+  });
+}
+void context::pop_call_stack() { _call_stack.pop_back(); }
+
+std::vector<std::string> context::get_call_stack(uint32_t line,
+                                                 uint32_t column) {
+  std::vector<std::string> result;
+  auto &last = _call_stack[_call_stack.size() - 1];
+  last._line = line;
+  last._column = column;
+  for (auto it = _call_stack.rbegin(); it != _call_stack.rend(); it++) {
+    auto &frame = *it;
+    result.push_back(fmt::format("{} ({}:{}:{})", frame._funcname,
+                                 frame._filename, frame._line, frame._column));
+  }
+  return result;
+}
+
 variable *context::undefined() {
   return _scope->create_variable(_undefined->get_node());
 }

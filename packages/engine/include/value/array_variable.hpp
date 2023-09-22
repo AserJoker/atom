@@ -8,11 +8,11 @@ private:
 
 public:
   ~array_variable();
-  variable *create(context *, const std::vector<variable *> &);
+  static variable *create(context *, const std::vector<variable *> & = {});
 
   static bool set_field(context *, variable *, const std::string &, variable *);
   static variable *get_field(context *, variable *, const std::string &);
-  
+
   static bool set_field(context *, variable *, const uint32_t &, variable *);
   static variable *get_field(context *, variable *, const uint32_t &);
 };

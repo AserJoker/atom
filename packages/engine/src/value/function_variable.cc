@@ -1,10 +1,12 @@
 #include "engine/include/value/function_variable.hpp"
 #include "engine/include/value/string_variable.hpp"
 #include <algorithm>
+#include <fmt/format.h>
 #include <iostream>
 using namespace atom::engine;
 variable *function_variable::call(context *ctx, variable *func, variable *self,
-                                  const std::vector<variable *> &args) {
+                                  const std::vector<variable *> &args,
+                                  const context::call_frame &frame) {
 
   auto *fn = dynamic_cast<function_variable *>(func->get_data());
   if (fn->_bind) {
@@ -12,8 +14,29 @@ variable *function_variable::call(context *ctx, variable *func, variable *self,
   }
   auto &callee = fn->_callee;
   auto *scope = ctx->push_scope();
-  variable *res = callee(ctx, self == nullptr ? func->get_owner() : self, args);
+  auto *owner = self == nullptr ? func->get_owner() : self;
+  std::string call_func_name = frame._funcname;
+  if (owner) {
+    auto constructor = base_variable::get(ctx, owner, "constructor");
+    auto name = base_variable::get(ctx, constructor, "name");
+    auto funcname = base_variable::get(ctx, func, "name");
+    call_func_name = fmt::format("{}.{}", string_variable::value_of(name),
+                                 string_variable::value_of(funcname));
+    delete funcname;
+    delete name;
+    delete constructor;
+  } else {
+    auto funcname = base_variable::get(ctx, func, "name");
+    call_func_name = fmt::format("{}", string_variable::value_of(funcname));
+    delete funcname;
+  }
+  ctx->push_call_stack({._filename = frame._filename,
+                        ._funcname = call_func_name,
+                        ._line = frame._line,
+                        ._column = frame._column});
+  variable *res = callee(ctx, self == nullptr ? owner : self, args);
   variable *result = scope->create_variable(res->get_node());
+  ctx->pop_call_stack();
   ctx->pop_scope(scope);
   return result;
 }

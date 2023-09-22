@@ -77,7 +77,7 @@ static native_function(object_define_properties) {
             config_keys.end()) {
       return object_define_property(ctx, self, {config});
     } else {
-      base_variable::set(ctx, target, k, config);
+      base_variable::set(ctx, target, k, config); 
     }
   }
   return target;
