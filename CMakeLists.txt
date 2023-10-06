@@ -14,3 +14,7 @@ ListDirectories(packages ${PROJECT_SOURCE_DIR}/packages)
 ListDirectories(projects ${PROJECT_SOURCE_DIR}/projects)
 add_subdirectory(packages)
 add_subdirectory(projects)
+
+if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    add_definitions(-D_DEBUG)
+endif()
